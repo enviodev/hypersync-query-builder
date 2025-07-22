@@ -3,7 +3,8 @@ open QueryStructure
 type blockFilterState = QueryStructure.blockSelection
 
 @react.component
-let make = (~filterState, ~onFilterChange, ~isExpanded, ~onToggleExpanded) => {
+let make = (~filterState, ~onFilterChange, ~onRemove, ~filterIndex) => {
+  let (isExpanded, setIsExpanded) = React.useState(() => true) // Start expanded for new filters
   let (newHash, setNewHash) = React.useState(() => "")
   let (newMiner, setNewMiner) = React.useState(() => "")
 
@@ -99,24 +100,35 @@ let make = (~filterState, ~onFilterChange, ~isExpanded, ~onToggleExpanded) => {
     <div className="p-4 border-b border-gray-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <h3 className="text-lg font-medium text-gray-900">{"Block Filters"->React.string}</h3>
+          <h3 className="text-lg font-medium text-gray-900">
+            {`Block Filter ${Int.toString(filterIndex + 1)}`->React.string}
+          </h3>
           {hasFilters
             ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                 {"Active"->React.string}
               </span>
             : React.null}
         </div>
-        <button
-          onClick={_ => onToggleExpanded()}
-          className="inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <svg
-            className={`w-4 h-4 transform transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={_ => setIsExpanded(prev => !prev)}
+            className="inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <svg
+              className={`w-4 h-4 transform transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <button
+            onClick={_ => onRemove()}
+            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-100 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 

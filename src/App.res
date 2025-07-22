@@ -3,31 +3,60 @@
 
 open QueryStructure
 
-// Combined filter state using proper QueryStructure types
-// TODO: this should use the QueryStructure.query type (not this custom type) - and it should be shared everywhere.
-///      Some of the fields in the query are not implemented yet so just default to sensible values or none if it is an option.
-type sharedQueryState = {
-  logFilter: logSelection,
-  transactionFilter: transactionSelection,
-  blockFilter: blockSelection,
-}
-
-// I believe each component should keep track if it is expanded or not? (since there could be many of them, or an array of them)?
-// I may be wrong on this. 
-type sectionExpansion = {
-  logs: bool,
-  transactions: bool,
-  blocks: bool,
-}
-
 @react.component
 let make = () => {
-  let (queryState, setQueryState) = React.useState(() => {
-    logFilter: {
+  let (query, setQuery) = React.useState(() => {
+    fromBlock: 0,
+    toBlock: None,
+    logs: None,
+    transactions: None,
+    traces: None,
+    blocks: None,
+    includeAllBlocks: None,
+    fieldSelection: {
+      block: [],
+      transaction: [],
+      log: [],
+      trace: [],
+    },
+    maxNumBlocks: None,
+    maxNumTransactions: None,
+    maxNumLogs: None,
+    maxNumTraces: None,
+    joinMode: None,
+  })
+
+  let addLogFilter = () => {
+    let newLogFilter: logSelection = {
       address: None,
       topics: None,
-    },
-    transactionFilter: {
+    }
+    setQuery(prev => {
+      ...prev,
+      logs: Some(Array.concat(prev.logs->Option.getOr([]), [newLogFilter])),
+    })
+  }
+
+  let updateLogFilter = (index: int, newFilter: logSelection) => {
+    setQuery(prev => {
+      let currentLogs = prev.logs->Option.getOr([])
+      let updatedLogs = Array.mapWithIndex(currentLogs, (filter, i) =>
+        i === index ? newFilter : filter
+      )
+      {...prev, logs: Some(updatedLogs)}
+    })
+  }
+
+  let removeLogFilter = (index: int) => {
+    setQuery(prev => {
+      let currentLogs = prev.logs->Option.getOr([])
+      let updatedLogs = Belt.Array.keepWithIndex(currentLogs, (_, i) => i !== index)
+      {...prev, logs: Array.length(updatedLogs) > 0 ? Some(updatedLogs) : None}
+    })
+  }
+
+  let addTransactionFilter = () => {
+    let newTransactionFilter: transactionSelection = {
       from_: None,
       to_: None,
       sighash: None,
@@ -35,39 +64,58 @@ let make = () => {
       kind: None,
       contractAddress: None,
       authorizationList: None,
-    },
-    blockFilter: {
+    }
+    setQuery(prev => {
+      ...prev,
+      transactions: Some(Array.concat(prev.transactions->Option.getOr([]), [newTransactionFilter])),
+    })
+  }
+
+  let updateTransactionFilter = (index: int, newFilter: transactionSelection) => {
+    setQuery(prev => {
+      let currentTransactions = prev.transactions->Option.getOr([])
+      let updatedTransactions = Array.mapWithIndex(currentTransactions, (filter, i) =>
+        i === index ? newFilter : filter
+      )
+      {...prev, transactions: Some(updatedTransactions)}
+    })
+  }
+
+  let removeTransactionFilter = (index: int) => {
+    setQuery(prev => {
+      let currentTransactions = prev.transactions->Option.getOr([])
+      let updatedTransactions = Belt.Array.keepWithIndex(currentTransactions, (_, i) => i !== index)
+      {...prev, transactions: Array.length(updatedTransactions) > 0 ? Some(updatedTransactions) : None}
+    })
+  }
+
+  let addBlockFilter = () => {
+    let newBlockFilter: blockSelection = {
       hash: None,
       miner: None,
-    },
-  })
-
-  let (expandedSections, setExpandedSections) = React.useState(() => {
-    logs: false,
-    transactions: false,
-    blocks: false,
-  })
-
-  let toggleSection = (section: [#logs | #transactions | #blocks]) => {
-    setExpandedSections(prev => 
-      switch section {
-      | #logs => {...prev, logs: !prev.logs}
-      | #transactions => {...prev, transactions: !prev.transactions}
-      | #blocks => {...prev, blocks: !prev.blocks}
-      }
-    )
+    }
+    setQuery(prev => {
+      ...prev,
+      blocks: Some(Array.concat(prev.blocks->Option.getOr([]), [newBlockFilter])),
+    })
   }
 
-  let updateLogFilter = (newLogFilter: logSelection) => {
-    setQueryState(prev => {...prev, logFilter: newLogFilter})
+  let updateBlockFilter = (index: int, newFilter: blockSelection) => {
+    setQuery(prev => {
+      let currentBlocks = prev.blocks->Option.getOr([])
+      let updatedBlocks = Array.mapWithIndex(currentBlocks, (filter, i) =>
+        i === index ? newFilter : filter
+      )
+      {...prev, blocks: Some(updatedBlocks)}
+    })
   }
 
-  let updateTransactionFilter = (newTransactionFilter: transactionSelection) => {
-    setQueryState(prev => {...prev, transactionFilter: newTransactionFilter})
-  }
-
-  let updateBlockFilter = (newBlockFilter: blockSelection) => {
-    setQueryState(prev => {...prev, blockFilter: newBlockFilter})
+  let removeBlockFilter = (index: int) => {
+    setQuery(prev => {
+      let currentBlocks = prev.blocks->Option.getOr([])
+      let updatedBlocks = Belt.Array.keepWithIndex(currentBlocks, (_, i) => i !== index)
+      {...prev, blocks: Array.length(updatedBlocks) > 0 ? Some(updatedBlocks) : None}
+    })
   }
 
   <div className="min-h-screen bg-gray-50">
@@ -92,28 +140,90 @@ let make = () => {
             {"Create Your Query"->React.string}
           </h2>
           <p className="text-gray-600">
-            {"Start by adding filters for logs, transactions, and blocks. Configure your query parameters below."->React.string}
+            {"Add filters for logs, transactions, and blocks. You can add multiple filters of each type."->React.string}
           </p>
         </div>
+
+        // Add Filter Buttons
+        <div className="mb-8">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">{"Add Filters"->React.string}</h3>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={_ => addLogFilter()}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              {"Add Log Filter"->React.string}
+            </button>
+            <button
+              onClick={_ => addTransactionFilter()}
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              {"Add Transaction Filter"->React.string}
+            </button>
+            <button
+              onClick={_ => addBlockFilter()}
+              className="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              {"Add Block Filter"->React.string}
+            </button>
+          </div>
+        </div>
+
+        // Filters
         <div className="space-y-4">
-          <LogFilter
-            filterState={queryState.logFilter}
-            onFilterChange={updateLogFilter}
-            isExpanded={expandedSections.logs}
-            onToggleExpanded={() => toggleSection(#logs)}
-          />
-          <TransactionFilter
-            filterState={queryState.transactionFilter}
-            onFilterChange={updateTransactionFilter}
-            isExpanded={expandedSections.transactions}
-            onToggleExpanded={() => toggleSection(#transactions)}
-          />
-          <BlockFilter
-            filterState={queryState.blockFilter}
-            onFilterChange={updateBlockFilter}
-            isExpanded={expandedSections.blocks}
-            onToggleExpanded={() => toggleSection(#blocks)}
-          />
+          // Log Filters
+          {Array.mapWithIndex(query.logs->Option.getOr([]), (logFilter, index) =>
+            <LogFilter
+              key={`log-${Int.toString(index)}`}
+              filterState={logFilter}
+              onFilterChange={newFilter => updateLogFilter(index, newFilter)}
+              onRemove={() => removeLogFilter(index)}
+              filterIndex={index}
+            />
+          )->React.array}
+
+          // Transaction Filters
+          {Array.mapWithIndex(query.transactions->Option.getOr([]), (transactionFilter, index) =>
+            <TransactionFilter
+              key={`transaction-${Int.toString(index)}`}
+              filterState={transactionFilter}
+              onFilterChange={newFilter => updateTransactionFilter(index, newFilter)}
+              onRemove={() => removeTransactionFilter(index)}
+              filterIndex={index}
+            />
+          )->React.array}
+
+          // Block Filters
+          {Array.mapWithIndex(query.blocks->Option.getOr([]), (blockFilter, index) =>
+            <BlockFilter
+              key={`block-${Int.toString(index)}`}
+              filterState={blockFilter}
+              onFilterChange={newFilter => updateBlockFilter(index, newFilter)}
+              onRemove={() => removeBlockFilter(index)}
+              filterIndex={index}
+            />
+          )->React.array}
+
+          // Empty state message
+          {Array.length(query.logs->Option.getOr([])) === 0 && 
+           Array.length(query.transactions->Option.getOr([])) === 0 && 
+           Array.length(query.blocks->Option.getOr([])) === 0
+            ? <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-500 mb-2">{"No filters added yet"->React.string}</h3>
+                <p className="text-gray-400">{"Click one of the buttons above to add your first filter"->React.string}</p>
+              </div>
+            : React.null}
         </div>
       </div>
     </main>

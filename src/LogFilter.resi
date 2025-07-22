@@ -5,6 +5,6 @@ type filterState = QueryStructure.logSelection
 let make: (
   ~filterState: filterState,
   ~onFilterChange: filterState => unit,
-  ~isExpanded: bool,
-  ~onToggleExpanded: unit => unit
+  ~onRemove: unit => unit,
+  ~filterIndex: int
 ) => React.element
