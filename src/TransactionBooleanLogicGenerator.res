@@ -1,22 +1,20 @@
-type transactionFilterState = {
-  from_: array<string>,
-  to_: array<string>,
-  sighash: array<string>,
-  status: option<int>,
-  kind: array<int>,
-  contractAddress: array<string>,
-}
+type transactionFilterState = QueryStructure.transactionSelection
 
 let generateEnglishDescription = (filterState: transactionFilterState) => {
   let {from_, to_, sighash, status, kind, contractAddress} = filterState
+  let fromArray = from_->Option.getOr([])
+  let toArray = to_->Option.getOr([])
+  let sighashArray = sighash->Option.getOr([])
+  let kindArray = kind->Option.getOr([])
+  let contractAddressArray = contractAddress->Option.getOr([])
   
   let hasAnyFilter = 
-    Array.length(from_) > 0 ||
-    Array.length(to_) > 0 ||
-    Array.length(sighash) > 0 ||
+    Array.length(fromArray) > 0 ||
+    Array.length(toArray) > 0 ||
+    Array.length(sighashArray) > 0 ||
     Option.isSome(status) ||
-    Array.length(kind) > 0 ||
-    Array.length(contractAddress) > 0
+    Array.length(kindArray) > 0 ||
+    Array.length(contractAddressArray) > 0
   
   if !hasAnyFilter {
     "No filters applied - will match all transactions"
@@ -24,33 +22,33 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
     let parts = []
     
     // From condition
-    if Array.length(from_) > 0 {
-      let fromCondition = if Array.length(from_) === 1 {
-        `the sender address is ${Array.getUnsafe(from_, 0)}`
+    if Array.length(fromArray) > 0 {
+      let fromCondition = if Array.length(fromArray) === 1 {
+        `the sender address is ${Array.getUnsafe(fromArray, 0)}`
       } else {
-        let fromList = from_->Array.join(" OR ")
+        let fromList = Array.join(fromArray, " OR ")
         `the sender address is ${fromList}`
       }
       parts->Array.push(fromCondition)->ignore
     }
     
     // To condition
-    if Array.length(to_) > 0 {
-      let toCondition = if Array.length(to_) === 1 {
-        `the recipient address is ${Array.getUnsafe(to_, 0)}`
+    if Array.length(toArray) > 0 {
+      let toCondition = if Array.length(toArray) === 1 {
+        `the recipient address is ${Array.getUnsafe(toArray, 0)}`
       } else {
-        let toList = to_->Array.join(" OR ")
+        let toList = Array.join(toArray, " OR ")
         `the recipient address is ${toList}`
       }
       parts->Array.push(toCondition)->ignore
     }
     
     // Sighash condition
-    if Array.length(sighash) > 0 {
-      let sighashCondition = if Array.length(sighash) === 1 {
-        `the function signature is ${Array.getUnsafe(sighash, 0)}`
+    if Array.length(sighashArray) > 0 {
+      let sighashCondition = if Array.length(sighashArray) === 1 {
+        `the function signature is ${Array.getUnsafe(sighashArray, 0)}`
       } else {
-        let sighashList = sighash->Array.join(" OR ")
+        let sighashList = Array.join(sighashArray, " OR ")
         `the function signature is ${sighashList}`
       }
       parts->Array.push(sighashCondition)->ignore
@@ -65,29 +63,39 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
     }
     
     // Kind condition
-    if Array.length(kind) > 0 {
-      let kindCondition = if Array.length(kind) === 1 {
-        `the transaction kind is ${Int.toString(Array.getUnsafe(kind, 0))}`
+    if Array.length(kindArray) > 0 {
+      let kindCondition = if Array.length(kindArray) === 1 {
+        `the transaction kind is ${Int.toString(Array.getUnsafe(kindArray, 0))}`
       } else {
-        let kindList = kind->Array.map(Int.toString)->Array.join(" OR ")
+        let kindList = switch Array.length(kindArray) {
+        | 0 => ""
+        | 1 => Int.toString(Array.getUnsafe(kindArray, 0))
+        | 2 => Int.toString(Array.getUnsafe(kindArray, 0)) ++ " OR " ++ Int.toString(Array.getUnsafe(kindArray, 1))
+        | _ => 
+          let first = Int.toString(Array.getUnsafe(kindArray, 0))
+          let second = Int.toString(Array.getUnsafe(kindArray, 1))
+          let rest = Array.sliceToEnd(kindArray, ~start=2)
+          let restStr = Array.reduce(rest, "", (acc, k) => acc ++ " OR " ++ Int.toString(k))
+          first ++ " OR " ++ second ++ restStr
+        }
         `the transaction kind is ${kindList}`
       }
       parts->Array.push(kindCondition)->ignore
     }
     
     // Contract address condition
-    if Array.length(contractAddress) > 0 {
-      let contractCondition = if Array.length(contractAddress) === 1 {
-        `the contract address is ${Array.getUnsafe(contractAddress, 0)}`
+    if Array.length(contractAddressArray) > 0 {
+      let contractCondition = if Array.length(contractAddressArray) === 1 {
+        `the contract address is ${Array.getUnsafe(contractAddressArray, 0)}`
       } else {
-        let contractList = contractAddress->Array.join(" OR ")
+        let contractList = Array.join(contractAddressArray, " OR ")
         `the contract address is ${contractList}`
       }
       parts->Array.push(contractCondition)->ignore
     }
     
     if Array.length(parts) > 0 {
-      `Match transactions where: ${parts->Array.join(" AND ")}`
+      `Match transactions where: ${Array.join(parts, " AND ")}`
     } else {
       "No filters applied - will match all transactions"
     }
@@ -96,14 +104,19 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
 
 let generateBooleanHierarchy = (filterState: transactionFilterState) => {
   let {from_, to_, sighash, status, kind, contractAddress} = filterState
+  let fromArray = from_->Option.getOr([])
+  let toArray = to_->Option.getOr([])
+  let sighashArray = sighash->Option.getOr([])
+  let kindArray = kind->Option.getOr([])
+  let contractAddressArray = contractAddress->Option.getOr([])
   
   let hasAnyFilter = 
-    Array.length(from_) > 0 ||
-    Array.length(to_) > 0 ||
-    Array.length(sighash) > 0 ||
+    Array.length(fromArray) > 0 ||
+    Array.length(toArray) > 0 ||
+    Array.length(sighashArray) > 0 ||
     Option.isSome(status) ||
-    Array.length(kind) > 0 ||
-    Array.length(contractAddress) > 0
+    Array.length(kindArray) > 0 ||
+    Array.length(contractAddressArray) > 0
   
   if !hasAnyFilter {
     "No filters"
@@ -111,12 +124,12 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     let lines = []
     
     let conditions = []
-    if Array.length(from_) > 0 { conditions->Array.push("from")->ignore }
-    if Array.length(to_) > 0 { conditions->Array.push("to")->ignore }
-    if Array.length(sighash) > 0 { conditions->Array.push("sighash")->ignore }
+    if Array.length(fromArray) > 0 { conditions->Array.push("from")->ignore }
+    if Array.length(toArray) > 0 { conditions->Array.push("to")->ignore }
+    if Array.length(sighashArray) > 0 { conditions->Array.push("sighash")->ignore }
     if Option.isSome(status) { conditions->Array.push("status")->ignore }
-    if Array.length(kind) > 0 { conditions->Array.push("kind")->ignore }
-    if Array.length(contractAddress) > 0 { conditions->Array.push("contractAddress")->ignore }
+    if Array.length(kindArray) > 0 { conditions->Array.push("kind")->ignore }
+    if Array.length(contractAddressArray) > 0 { conditions->Array.push("contractAddress")->ignore }
     
     let hasMultipleConditions = Array.length(conditions) > 1
     
@@ -127,16 +140,16 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     let conditionIndex = ref(0)
     
     // From addresses
-    if Array.length(from_) > 0 {
+    if Array.length(fromArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
       let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
       
-      if Array.length(from_) === 1 {
-        lines->Array.push(`${prefix}from = ${Array.getUnsafe(from_, 0)}`)->ignore
+      if Array.length(fromArray) === 1 {
+        lines->Array.push(`${prefix}from = ${Array.getUnsafe(fromArray, 0)}`)->ignore
       } else {
         lines->Array.push(`${prefix}OR (from)`)->ignore
-        Array.forEachWithIndex(from_, (i, addr) => {
-          let isLastAddr = i === Array.length(from_) - 1
+        Array.forEachWithIndex(fromArray, (addr, i) => {
+          let isLastAddr = i === Array.length(fromArray) - 1
           let addrPrefix = if hasMultipleConditions {
             if isLast {
               isLastAddr ? "    └── " : "    ├── "
@@ -153,16 +166,16 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     }
     
     // To addresses
-    if Array.length(to_) > 0 {
+    if Array.length(toArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
       let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
       
-      if Array.length(to_) === 1 {
-        lines->Array.push(`${prefix}to = ${Array.getUnsafe(to_, 0)}`)->ignore
+      if Array.length(toArray) === 1 {
+        lines->Array.push(`${prefix}to = ${Array.getUnsafe(toArray, 0)}`)->ignore
       } else {
         lines->Array.push(`${prefix}OR (to)`)->ignore
-        Array.forEachWithIndex(to_, (i, addr) => {
-          let isLastAddr = i === Array.length(to_) - 1
+        Array.forEachWithIndex(toArray, (addr, i) => {
+          let isLastAddr = i === Array.length(toArray) - 1
           let addrPrefix = if hasMultipleConditions {
             if isLast {
               isLastAddr ? "    └── " : "    ├── "
@@ -179,16 +192,16 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     }
     
     // Sighash
-    if Array.length(sighash) > 0 {
+    if Array.length(sighashArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
       let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
       
-      if Array.length(sighash) === 1 {
-        lines->Array.push(`${prefix}sighash = ${Array.getUnsafe(sighash, 0)}`)->ignore
+      if Array.length(sighashArray) === 1 {
+        lines->Array.push(`${prefix}sighash = ${Array.getUnsafe(sighashArray, 0)}`)->ignore
       } else {
         lines->Array.push(`${prefix}OR (sighash)`)->ignore
-        Array.forEachWithIndex(sighash, (i, sig) => {
-          let isLastSig = i === Array.length(sighash) - 1
+        Array.forEachWithIndex(sighashArray, (sig, i) => {
+          let isLastSig = i === Array.length(sighashArray) - 1
           let sigPrefix = if hasMultipleConditions {
             if isLast {
               isLastSig ? "    └── " : "    ├── "
@@ -216,16 +229,16 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     }
     
     // Kind
-    if Array.length(kind) > 0 {
+    if Array.length(kindArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
       let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
       
-      if Array.length(kind) === 1 {
-        lines->Array.push(`${prefix}kind = ${Int.toString(Array.getUnsafe(kind, 0))}`)->ignore
+      if Array.length(kindArray) === 1 {
+        lines->Array.push(`${prefix}kind = ${Int.toString(Array.getUnsafe(kindArray, 0))}`)->ignore
       } else {
         lines->Array.push(`${prefix}OR (kind)`)->ignore
-        Array.forEachWithIndex(kind, (i, k) => {
-          let isLastKind = i === Array.length(kind) - 1
+        Array.forEachWithIndex(kindArray, (k, i) => {
+          let isLastKind = i === Array.length(kindArray) - 1
           let kindPrefix = if hasMultipleConditions {
             if isLast {
               isLastKind ? "    └── " : "    ├── "
@@ -242,16 +255,16 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     }
     
     // Contract Address
-    if Array.length(contractAddress) > 0 {
+    if Array.length(contractAddressArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
       let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
       
-      if Array.length(contractAddress) === 1 {
-        lines->Array.push(`${prefix}contractAddress = ${Array.getUnsafe(contractAddress, 0)}`)->ignore
+      if Array.length(contractAddressArray) === 1 {
+        lines->Array.push(`${prefix}contractAddress = ${Array.getUnsafe(contractAddressArray, 0)}`)->ignore
       } else {
         lines->Array.push(`${prefix}OR (contractAddress)`)->ignore
-        Array.forEachWithIndex(contractAddress, (i, addr) => {
-          let isLastAddr = i === Array.length(contractAddress) - 1
+        Array.forEachWithIndex(contractAddressArray, (addr, i) => {
+          let isLastAddr = i === Array.length(contractAddressArray) - 1
           let addrPrefix = if hasMultipleConditions {
             if isLast {
               isLastAddr ? "    └── " : "    ├── "
@@ -267,6 +280,6 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
       conditionIndex := conditionIndex.contents + 1
     }
     
-    lines->Array.join("\n")
+    Array.join(lines, "\n")
   }
 } 

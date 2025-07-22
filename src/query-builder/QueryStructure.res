@@ -162,7 +162,7 @@ type query = {
   toBlock: option<int>,
   logs: option<array<logSelection>>,
   transactions: option<array<transactionSelection>>,
-  traces: option<array<traceSelection>>,
+  traces: option<array<traceSelection>>, // Won't implement.
   blocks: option<array<blockSelection>>,
   includeAllBlocks: option<bool>,
   fieldSelection: fieldSelection,

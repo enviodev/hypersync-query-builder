@@ -1,14 +1,13 @@
-type blockFilterState = {
-  hash: array<string>,
-  miner: array<string>,
-}
+type blockFilterState = QueryStructure.blockSelection
 
 let generateEnglishDescription = (filterState: blockFilterState) => {
   let {hash, miner} = filterState
+  let hashArray = hash->Option.getOr([])
+  let minerArray = miner->Option.getOr([])
   
   let hasAnyFilter = 
-    Array.length(hash) > 0 ||
-    Array.length(miner) > 0
+    Array.length(hashArray) > 0 ||
+    Array.length(minerArray) > 0
   
   if !hasAnyFilter {
     "No filters applied - will match all blocks"
@@ -16,29 +15,29 @@ let generateEnglishDescription = (filterState: blockFilterState) => {
     let parts = []
     
     // Hash condition
-    if Array.length(hash) > 0 {
-      let hashCondition = if Array.length(hash) === 1 {
-        `the block hash is ${Array.getUnsafe(hash, 0)}`
+    if Array.length(hashArray) > 0 {
+      let hashCondition = if Array.length(hashArray) === 1 {
+        `the block hash is ${Array.getUnsafe(hashArray, 0)}`
       } else {
-        let hashList = hash->Array.join(" OR ")
+        let hashList = Array.join(hashArray, " OR ")
         `the block hash is ${hashList}`
       }
       parts->Array.push(hashCondition)->ignore
     }
     
     // Miner condition
-    if Array.length(miner) > 0 {
-      let minerCondition = if Array.length(miner) === 1 {
-        `the miner address is ${Array.getUnsafe(miner, 0)}`
+    if Array.length(minerArray) > 0 {
+      let minerCondition = if Array.length(minerArray) === 1 {
+        `the miner address is ${Array.getUnsafe(minerArray, 0)}`
       } else {
-        let minerList = miner->Array.join(" OR ")
+        let minerList = Array.join(minerArray, " OR ")
         `the miner address is ${minerList}`
       }
       parts->Array.push(minerCondition)->ignore
     }
     
     if Array.length(parts) > 0 {
-      `Match blocks where: ${parts->Array.join(" AND ")}`
+      `Match blocks where: ${Array.join(parts, " AND ")}`
     } else {
       "No filters applied - will match all blocks"
     }
@@ -47,10 +46,12 @@ let generateEnglishDescription = (filterState: blockFilterState) => {
 
 let generateBooleanHierarchy = (filterState: blockFilterState) => {
   let {hash, miner} = filterState
+  let hashArray = hash->Option.getOr([])
+  let minerArray = miner->Option.getOr([])
   
   let hasAnyFilter = 
-    Array.length(hash) > 0 ||
-    Array.length(miner) > 0
+    Array.length(hashArray) > 0 ||
+    Array.length(minerArray) > 0
   
   if !hasAnyFilter {
     "No filters"
@@ -58,8 +59,8 @@ let generateBooleanHierarchy = (filterState: blockFilterState) => {
     let lines = []
     
     let conditions = []
-    if Array.length(hash) > 0 { conditions->Array.push("hash")->ignore }
-    if Array.length(miner) > 0 { conditions->Array.push("miner")->ignore }
+    if Array.length(hashArray) > 0 { conditions->Array.push("hash")->ignore }
+    if Array.length(minerArray) > 0 { conditions->Array.push("miner")->ignore }
     
     let hasMultipleConditions = Array.length(conditions) > 1
     
@@ -70,16 +71,16 @@ let generateBooleanHierarchy = (filterState: blockFilterState) => {
     let conditionIndex = ref(0)
     
     // Hash
-    if Array.length(hash) > 0 {
+    if Array.length(hashArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
       let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
       
-      if Array.length(hash) === 1 {
-        lines->Array.push(`${prefix}hash = ${Array.getUnsafe(hash, 0)}`)->ignore
+      if Array.length(hashArray) === 1 {
+        lines->Array.push(`${prefix}hash = ${Array.getUnsafe(hashArray, 0)}`)->ignore
       } else {
         lines->Array.push(`${prefix}OR (hash)`)->ignore
-        Array.forEachWithIndex(hash, (i, h) => {
-          let isLastHash = i === Array.length(hash) - 1
+        Array.forEachWithIndex(hashArray, (h, i) => {
+          let isLastHash = i === Array.length(hashArray) - 1
           let hashPrefix = if hasMultipleConditions {
             if isLast {
               isLastHash ? "    └── " : "    ├── "
@@ -96,31 +97,26 @@ let generateBooleanHierarchy = (filterState: blockFilterState) => {
     }
     
     // Miner
-    if Array.length(miner) > 0 {
-      let isLast = conditionIndex.contents === Array.length(conditions) - 1
-      let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
+    if Array.length(minerArray) > 0 {
+      // let isLast = conditionIndex.contents === Array.length(conditions) - 1
+      let prefix = hasMultipleConditions ? "└── " : ""
       
-      if Array.length(miner) === 1 {
-        lines->Array.push(`${prefix}miner = ${Array.getUnsafe(miner, 0)}`)->ignore
+      if Array.length(minerArray) === 1 {
+        lines->Array.push(`${prefix}miner = ${Array.getUnsafe(minerArray, 0)}`)->ignore
       } else {
         lines->Array.push(`${prefix}OR (miner)`)->ignore
-        Array.forEachWithIndex(miner, (i, m) => {
-          let isLastMiner = i === Array.length(miner) - 1
+        Array.forEachWithIndex(minerArray, (m, i) => {
+          let isLastMiner = i === Array.length(minerArray) - 1
           let minerPrefix = if hasMultipleConditions {
-            if isLast {
-              isLastMiner ? "    └── " : "    ├── "
-            } else {
-              isLastMiner ? "│   └── " : "│   ├── "
-            }
+            isLastMiner ? "    └── " : "    ├── "
           } else {
             isLastMiner ? "└── " : "├── "
           }
           lines->Array.push(`${minerPrefix}${m}`)->ignore
         })
       }
-      conditionIndex := conditionIndex.contents + 1
     }
     
-    lines->Array.join("\n")
+    Array.join(lines, "\n")
   }
 } 
