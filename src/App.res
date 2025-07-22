@@ -19,9 +19,9 @@ let make = () => {
       log: [],
       trace: [],
     },
-    maxNumBlocks: None,
-    maxNumTransactions: None,
-    maxNumLogs: None,
+    maxNumBlocks: Some(10),
+    maxNumTransactions: Some(10),
+    maxNumLogs: Some(10),
     maxNumTraces: None,
     joinMode: None,
   })
@@ -242,6 +242,12 @@ let make = () => {
         <FieldSelector 
           fieldSelection={query.fieldSelection}
           onFieldSelectionChange={updateFieldSelection}
+        />
+
+        // Advanced Options
+        <AdvancedOptions
+          query={query}
+          onQueryChange={newQuery => setQuery(_ => newQuery)}
         />
 
         // Results

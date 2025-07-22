@@ -512,4 +512,3 @@ let generateMultiBlockBooleanHierarchy = (filters: option<array<QueryStructure.b
     }
   }
 } 
-
