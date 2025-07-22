@@ -232,6 +232,7 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
   let executeQuery = async () => {
     switch selectedChainId {
     | Some(chainId) => {
+        setActiveTab(_ => Results) // Switch to Results tab when query starts
         setIsExecuting(_ => true)
         setQueryError(_ => None)
         setQueryResult(_ => None)
@@ -270,6 +271,34 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
         }
         
         setIsExecuting(_ => false)
+      }
+    | None => ()
+    }
+  }
+
+  let generateCurlCommand = (query: query, chainId: int) => {
+    let url = `https://${Int.toString(chainId)}.hypersync.xyz/query`
+    let body = serializeQuery(query)
+    let escapedBody = String.replaceAll(body, "\"", "\\\"")
+    
+    `curl -X POST "${url}" \\
+  -H "Content-Type: application/json" \\
+  -d "${escapedBody}"`
+  }
+
+  let copyCurlToClipboard = () => {
+    switch selectedChainId {
+    | Some(chainId) => {
+        let curlCommand = generateCurlCommand(query, chainId)
+        // Use the Clipboard API
+        let copyToClipboard: string => unit = %raw(`(curlCommand) => {
+          navigator.clipboard.writeText(curlCommand).then(() => {
+            console.log('cURL command copied to clipboard');
+          }).catch(err => {
+            console.error('Failed to copy: ', err);
+          })
+        }`)
+        copyToClipboard(curlCommand)
       }
     | None => ()
     }
@@ -336,12 +365,19 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
             <h4 className="text-sm font-medium text-gray-900">{"Query Structure"->React.string}</h4>
             {switch selectedChainId {
             | Some(_) => 
-              <button
-                onClick={_ => executeQuery()->ignore}
-                disabled={isExecuting}
-                className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
-                {(isExecuting ? "Executing..." : "Execute Query")->React.string}
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={_ => copyCurlToClipboard()}
+                  className="px-3 py-1 bg-gray-600 text-white text-xs font-medium rounded hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                  {"Copy cURL"->React.string}
+                </button>
+                <button
+                  onClick={_ => executeQuery()->ignore}
+                  disabled={isExecuting}
+                  className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+                  {(isExecuting ? "Executing..." : "Execute Query")->React.string}
+                </button>
+              </div>
             | None => React.null
             }}
           </div>
@@ -404,11 +440,18 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
               <p className="text-gray-400">{"Execute query to see results here..."->React.string}</p>
               {switch selectedChainId {
               | Some(_) => 
-                <button
-                  onClick={_ => executeQuery()->ignore}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  {"Execute Query"->React.string}
-                </button>
+                <div className="mt-4 flex justify-center space-x-2">
+                  <button
+                    onClick={_ => copyCurlToClipboard()}
+                    className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                    {"Copy cURL"->React.string}
+                  </button>
+                  <button
+                    onClick={_ => executeQuery()->ignore}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    {"Execute Query"->React.string}
+                  </button>
+                </div>
               | None => 
                 <div className="mt-4 text-sm text-orange-600">
                   {"Please select a chain to execute queries"->React.string}
