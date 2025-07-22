@@ -1,0 +1,26 @@
+{
+  "name": "query-builder",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "res:build": "rescript build",
+    "res:watch": "rescript build -w",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@rescript/core": "^1.6.1",
+    "@rescript/react": "^0.14.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "rescript": "^11.1.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "vite": "^7.0.5"
+  }
+}
