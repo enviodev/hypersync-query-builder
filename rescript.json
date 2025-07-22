@@ -1,8 +1,13 @@
 {
-  "name": "my-rescript-react",
+  "name": "vite-react-rescript-starter",
   "sources": [
     {
       "dir": "src",
+      "subdirs": true
+    },
+    {
+      "dir": "tests",
+      "type": "dev",
       "subdirs": true
     }
   ],
@@ -13,15 +18,12 @@
     }
   ],
   "suffix": ".bs.js",
-  "bs-dependencies": [
-    "@rescript/core",
-    "@rescript/react"
-  ],
   "jsx": {
     "version": 4,
     "mode": "automatic"
   },
-  "bsc-flags": [
-    "-open RescriptCore"
-  ]
+  "uncurried": false,
+  "bs-dependencies": ["@rescript/react", "@rescript/core", "rescript-webapi"],
+  "bs-dev-dependencies": ["rescript-vitest"],
+  "bsc-flags": ["-open RescriptCore"]
 }
