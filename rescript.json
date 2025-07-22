@@ -13,17 +13,25 @@
   ],
   "package-specs": [
     {
-      "module": "es6",
+      "module": "esmodule",
       "in-source": true
     }
   ],
-  "suffix": ".bs.js",
+  "suffix": ".res.js",
   "jsx": {
     "version": 4,
     "mode": "automatic"
   },
   "uncurried": false,
-  "bs-dependencies": ["@rescript/react", "@rescript/core", "rescript-webapi"],
-  "bs-dev-dependencies": ["rescript-vitest"],
-  "bsc-flags": ["-open RescriptCore"]
+  "bs-dependencies": [
+    "@rescript/react",
+    "@rescript/core",
+    "rescript-webapi"
+  ],
+  "bs-dev-dependencies": [
+    "rescript-vitest"
+  ],
+  "bsc-flags": [
+    "-open RescriptCore"
+  ]
 }

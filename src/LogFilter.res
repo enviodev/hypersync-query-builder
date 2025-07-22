@@ -17,10 +17,10 @@ let make = () => {
   let (currentTopicIndex, setCurrentTopicIndex) = React.useState(() => 0)
 
   let addAddress = () => {
-    if newAddress !== "" && newAddress->String.startsWith("0x") {
+    if newAddress !== "" && newAddress->Js.String2.startsWith("0x") {
       setFilterState(prevState => {
         ...prevState,
-        addresses: prevState.addresses->Array.concat([newAddress]),
+        addresses: Belt.Array.concat(prevState.addresses, [newAddress]),
       })
       setNewAddress(_ => "")
     }
@@ -29,225 +29,213 @@ let make = () => {
   let removeAddress = index => {
     setFilterState(prevState => {
       ...prevState,
-      addresses: prevState.addresses->Array.filterWithIndex((_, i) => i !== index),
+      addresses: Belt.Array.keepWithIndex(prevState.addresses, (_, i) => i !== index),
     })
   }
 
   let addTopic = () => {
-    if newTopic !== "" && newTopic->String.startsWith("0x") {
+    if newTopic !== "" && newTopic->Js.String2.startsWith("0x") {
       setFilterState(prevState => {
-        let updatedTopics = if currentTopicIndex >= prevState.topics->Array.length {
-          // Add new topic array
-          prevState.topics->Array.concat([[newTopic]])
+        let currentIndex: int = currentTopicIndex
+        let updatedTopics = if currentIndex >= Belt.Array.length(prevState.topics) {
+          // Create new topic array
+          Belt.Array.concat(prevState.topics, [[newTopic]])
         } else {
           // Add to existing topic array
-          prevState.topics->Array.mapWithIndex((topicArray, i) =>
-            if i === currentTopicIndex {
-              topicArray->Array.concat([newTopic])
+          Belt.Array.mapWithIndex(prevState.topics, (i, topicArray) =>
+            if i === currentIndex {
+              Belt.Array.concat(topicArray, [newTopic])
             } else {
               topicArray
             }
           )
         }
-        {...prevState, topics: updatedTopics}
+
+        {
+          ...prevState,
+          topics: updatedTopics,
+        }
       })
       setNewTopic(_ => "")
     }
   }
 
-  let removeTopic = (topicIndex, itemIndex) => {
+  let removeTopic = (topicIndex: int, itemIndex: int) => {
     setFilterState(prevState => {
-      let updatedTopics =
-        prevState.topics
-        ->Array.mapWithIndex((topicArray, i) =>
-          if i === topicIndex {
-            topicArray->Array.filterWithIndex((_, j) => j !== itemIndex)
-          } else {
-            topicArray
-          }
-        )
-        ->Array.filter(topicArray => topicArray->Array.length > 0)
+      let updatedTopics = Belt.Array.keep(
+        Belt.Array.mapWithIndex(
+          prevState.topics,
+          (i, topicArray) =>
+            if i === topicIndex {
+              Belt.Array.keepWithIndex(topicArray, (_, j) => j !== itemIndex)
+            } else {
+              topicArray
+            },
+        ),
+        topicArray => Belt.Array.length(topicArray) > 0,
+      )
+
       {...prevState, topics: updatedTopics}
     })
   }
 
-  let generateLogSelection = (): logSelection => {
-    {
-      address: if filterState.addresses->Array.length > 0 {
+  let logSelectionToStruct = (): option<logSelection> => {
+    let result: logSelection = {
+      address: if Belt.Array.length(filterState.addresses) > 0 {
         Some(filterState.addresses)
       } else {
         None
       },
-      topics: if filterState.topics->Array.length > 0 {
+      topics: if Belt.Array.length(filterState.topics) > 0 {
         Some(filterState.topics)
       } else {
         None
       },
     }
+    Some(result)
   }
 
-  let formatJsonPreview = (logSelection: logSelection) => {
-    let addressStr = switch logSelection.address {
-    | Some(addresses) =>
-      addresses->Array.joinWith(",\n    ")->(str => `  "address": [\n    "${str}"\n  ]`)
-    | None => ""
-    }
+  let generateCodeBlock = () => {
+    let {addresses, topics} = filterState
 
-    let topicsStr = switch logSelection.topics {
-    | Some(topics) => {
-        let topicsFormatted =
-          topics
-          ->Array.map(topicArray => {
-            let topicStr = topicArray->Array.joinWith(",\n      ")->(str => `"${str}"`)
-            `    [\n      ${topicStr}\n    ]`
-          })
-          ->Array.joinWith(",\n")
-        `  "topics": [\n${topicsFormatted}\n  ]`
-      }
-    | None => ""
-    }
-
-    let parts = [addressStr, topicsStr]->Array.filter(str => str !== "")
-    if parts->Array.length > 0 {
-      `{\n${parts->Array.joinWith(",\n")}\n}`
+    let addressStr = if Belt.Array.length(addresses) > 0 {
+      addresses->Js.Array2.joinWith(",\n    ")->(str => `  "address": [\n    "${str}"\n  ]`)
     } else {
-      `{
-  // Add addresses and topics above to see the query structure
-}`
+      ""
+    }
+
+    let topicsStr = if Belt.Array.length(topics) > 0 {
+      let topicsContent =
+        topics
+        ->Belt.Array.map(topicArray => {
+          let topicStr = topicArray->Js.Array2.joinWith(",\n      ")->(str => `"${str}"`)
+          `    [\n      ${topicStr}\n    ]`
+        })
+        ->Js.Array2.joinWith(",\n")
+      `  "topics": [\n${topicsContent}\n  ]`
+    } else {
+      ""
+    }
+
+    let parts = [addressStr, topicsStr]->Belt.Array.keep(str => str !== "")
+    if Belt.Array.length(parts) > 0 {
+      `{\n${parts->Js.Array2.joinWith(",\n")}\n}`
+    } else {
+      "{}"
     }
   }
 
-  <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-    <h2 className="text-2xl font-bold mb-6 text-gray-800"> {"Log Filters"->React.string} </h2>
-    // Info section
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-      <h4 className="font-medium text-blue-800 mb-2">
-        {"💡 How to use Log Filters"->React.string}
-      </h4>
-      <ul className="text-sm text-blue-700 space-y-1">
-        <li>
-          {"• Add contract addresses (0x...) to filter logs from specific contracts"->React.string}
-        </li>
-        <li>
-          {"• Add topic hashes (0x...) to filter by specific events - topics are organized by position"->React.string}
-        </li>
-        <li> {"• Topic 0 is typically the event signature hash"->React.string} </li>
-      </ul>
-    </div>
-    // Addresses Section
-    <div className="mb-8">
-      <h3 className="text-lg font-semibold mb-4 text-gray-700">
+  <div className="bg-white rounded-lg shadow p-6">
+    <h3 className="text-lg font-medium text-gray-900 mb-4"> {"Log Filters"->React.string} </h3>
+    // Address Filters
+    <div className="mb-6">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
         {"Contract Addresses"->React.string}
-      </h3>
-      <div className="flex gap-2 mb-4">
+      </label>
+      <div className="flex space-x-2 mb-3">
         <input
           type_="text"
           value={newAddress}
           onChange={e => {
-            let value = (e->ReactEvent.Form.target)["value"]
-            setNewAddress(_ => value)
+            let target = ReactEvent.Form.target(e)
+            setNewAddress(_ => target["value"])
           }}
-          placeholder="0xA0b86a33E6441b8bB2e86b5D7b7b9b5e8E3e9a8C (USDC contract)"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="0x..."
+          className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
         <button
-          onClick={_e => addAddress()}
-          disabled={newAddress->String.length == 0 || !(newAddress->String.startsWith("0x"))}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+          onClick={_ => addAddress()}
+          disabled={Js.String.length(newAddress) == 0 || !(newAddress->Js.String2.startsWith("0x"))}
+          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
           {"Add Address"->React.string}
         </button>
       </div>
       <div className="space-y-2">
-        {filterState.addresses
-        ->Array.mapWithIndex((address, index) =>
+        {Belt.Array.mapWithIndex(filterState.addresses, (index, address) =>
           <div
-            key={index->Int.toString}
-            className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
-            <span className="font-mono text-sm text-gray-700"> {address->React.string} </span>
+            key={Js.Int.toString(index)}
+            className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+            <span className="text-sm font-mono text-gray-800"> {address->React.string} </span>
             <button
-              onClick={_e => removeAddress(index)}
-              className="text-red-500 hover:text-red-700 text-sm font-medium">
+              onClick={_ => removeAddress(index)}
+              className="text-red-600 hover:text-red-800 text-sm">
               {"Remove"->React.string}
             </button>
           </div>
-        )
-        ->React.array}
+        )->React.array}
       </div>
     </div>
-    // Topics Section
-    <div className="mb-8">
-      <h3 className="text-lg font-semibold mb-4 text-gray-700"> {"Event Topics"->React.string} </h3>
-      <div className="flex gap-2 mb-4">
+    // Topic Filters
+    <div className="mb-6">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {"Event Topics"->React.string}
+      </label>
+      <div className="flex space-x-2 mb-3">
         <select
-          value={currentTopicIndex->Int.toString}
+          value={Js.Int.toString(currentTopicIndex)}
           onChange={e => {
-            let value = (e->ReactEvent.Form.target)["value"]
-            setCurrentTopicIndex(_ => value->Int.fromString->Option.getOr(0))
+            let target = ReactEvent.Form.target(e)
+            setCurrentTopicIndex(_ =>
+              Belt.Int.fromString(target["value"])->Belt.Option.getWithDefault(0)
+            )
           }}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          {[0, 1, 2, 3] // Hardcoded to 4 topic positions for now
-          ->Array.mapWithIndex((_, i) =>
-            <option key={i->Int.toString} value={i->Int.toString}>
-              {`Topic ${i->Int.toString}`->React.string}
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          {Belt.Array.mapWithIndex(Belt.Array.range(0, 3), (i, _) =>
+            <option key={Js.Int.toString(i)} value={Js.Int.toString(i)}>
+              {`Topic ${Js.Int.toString(i)}`->React.string}
             </option>
-          )
-          ->React.array}
+          )->React.array}
         </select>
         <input
           type_="text"
           value={newTopic}
           onChange={e => {
-            let value = (e->ReactEvent.Form.target)["value"]
-            setNewTopic(_ => value)
+            let target = ReactEvent.Form.target(e)
+            setNewTopic(_ => target["value"])
           }}
-          placeholder="0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef (Transfer)"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="0x..."
+          className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
         <button
-          onClick={_e => addTopic()}
-          disabled={newTopic->String.length == 0 || !(newTopic->String.startsWith("0x"))}
-          className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+          onClick={_ => addTopic()}
+          disabled={Js.String.length(newTopic) == 0 || !(newTopic->Js.String2.startsWith("0x"))}
+          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
           {"Add Topic"->React.string}
         </button>
       </div>
       <div className="space-y-3">
-        {filterState.topics
-        ->Array.mapWithIndex((topicArray, topicIndex) =>
-          <div key={topicIndex->Int.toString} className="border border-gray-200 rounded-lg p-3">
-            <h4 className="font-medium text-gray-600 mb-2">
-              {`Topic ${topicIndex->Int.toString}`->React.string}
+        {Belt.Array.mapWithIndex(filterState.topics, (topicIndex, topicArray) =>
+          <div key={Js.Int.toString(topicIndex)} className="border border-gray-200 rounded-md p-3">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">
+              {`Topic ${Js.Int.toString(topicIndex)}`->React.string}
             </h4>
             <div className="space-y-2">
-              {topicArray
-              ->Array.mapWithIndex((topic, itemIndex) =>
+              {Belt.Array.mapWithIndex(topicArray, (itemIndex, topic) =>
                 <div
-                  key={itemIndex->Int.toString}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
-                  <span className="font-mono text-sm text-gray-700"> {topic->React.string} </span>
+                  key={`${Js.Int.toString(topicIndex)}-${Js.Int.toString(itemIndex)}`}
+                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                  <span className="text-sm font-mono text-gray-800"> {topic->React.string} </span>
                   <button
-                    onClick={_e => removeTopic(topicIndex, itemIndex)}
-                    className="text-red-500 hover:text-red-700 text-sm font-medium">
+                    onClick={_ => removeTopic(topicIndex, itemIndex)}
+                    className="text-red-600 hover:text-red-800 text-sm">
                     {"Remove"->React.string}
                   </button>
                 </div>
-              )
-              ->React.array}
+              )->React.array}
             </div>
           </div>
-        )
-        ->React.array}
+        )->React.array}
       </div>
     </div>
-    // Preview Section
-    <div className="border-t pt-6">
-      <h3 className="text-lg font-semibold mb-4 text-gray-700">
-        {"Query Preview"->React.string}
-      </h3>
-      <div className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
-        <pre className="whitespace-pre-wrap">
-          {formatJsonPreview(generateLogSelection())->React.string}
-        </pre>
-      </div>
+    // Generated Code Block
+    <div className="mt-6">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {"Generated Query Structure"->React.string}
+      </label>
+      <pre
+        className="bg-gray-100 border border-gray-300 rounded-md p-4 text-sm font-mono overflow-x-auto">
+        {generateCodeBlock()->React.string}
+      </pre>
     </div>
   </div>
 }
