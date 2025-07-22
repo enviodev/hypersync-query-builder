@@ -3,18 +3,18 @@ open QueryStructure
 type blockFilterState = QueryStructure.blockSelection
 
 @react.component
-let make = (~filterState, ~onFilterChange, ~onRemove, ~filterIndex) => {
+let make = (~filterState: blockFilterState, ~onFilterChange, ~onRemove, ~filterIndex) => {
   let (isExpanded, setIsExpanded) = React.useState(() => true) // Start expanded for new filters
   let (newHash, setNewHash) = React.useState(() => "")
   let (newMiner, setNewMiner) = React.useState(() => "")
 
-  let exampleSetFilterState: blockFilterState = {
-    hash: Some(["0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"]),
-    miner: Some(["0xminer1234567890123456789012345678901234567890"]),
+  let titanBuilderExample: blockFilterState = {
+    hash: None,
+    miner: Some(["0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97"]),
   }
 
-  let setExampleFilterState = () => {
-    onFilterChange(exampleSetFilterState)
+  let setTitanBuilderExample = () => {
+    onFilterChange(titanBuilderExample)
   }
 
   let addHash = () => {
@@ -113,10 +113,10 @@ let make = (~filterState, ~onFilterChange, ~onRemove, ~filterIndex) => {
           <button
             onClick={_ => setIsExpanded(prev => !prev)}
             className="inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <svg
+            <svg 
               className={`w-4 h-4 transform transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}
-              fill="none"
-              stroke="currentColor"
+              fill="none" 
+              stroke="currentColor" 
               viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
             </svg>
@@ -131,14 +131,14 @@ let make = (~filterState, ~onFilterChange, ~onRemove, ~filterIndex) => {
         </div>
       </div>
     </div>
-
+    
     {isExpanded
       ? <div className="p-6">
           <div className="mb-4">
             <button
-              onClick={_ => setExampleFilterState()}
+              onClick={_ => setTitanBuilderExample()}
               className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
-              {"Set Example Filter State"->React.string}
+              {"Titan Builder Blocks"->React.string}
             </button>
           </div>
 

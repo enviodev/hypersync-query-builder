@@ -12,18 +12,61 @@ let make = (~filterState: transactionFilterState, ~onFilterChange, ~onRemove, ~f
   let (newKind, setNewKind) = React.useState(() => "")
   let (newContractAddress, setNewContractAddress) = React.useState(() => "")
 
-  let exampleSetFilterState: transactionFilterState = {
-    from_: Some(["0x1234567890123456789012345678901234567890"]),
-    to_: Some(["0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef"]),
-    sighash: Some(["0xa9059cbb", "0x23b872dd"]),
-    status: Some(1),
-    kind: Some([0, 1]),
-    contractAddress: Some(["0xcontract123456789012345678901234567890"]),
+  // Example filter states
+  let eip7702Example: transactionFilterState = {
+    from_: None,
+    to_: None,
+    sighash: None,
+    status: None,
+    kind: Some([4]),
+    contractAddress: None,
     authorizationList: None,
   }
 
-  let setExampleFilterState = () => {
-    onFilterChange(exampleSetFilterState)
+  let failedTransactionsExample: transactionFilterState = {
+    from_: None,
+    to_: None,
+    sighash: None,
+    status: Some(0),
+    kind: None,
+    contractAddress: None,
+    authorizationList: None,
+  }
+
+  let transferCallExample: transactionFilterState = {
+    from_: None,
+    to_: None,
+    sighash: Some(["0xa9059cbb"]),
+    status: None,
+    kind: None,
+    contractAddress: None,
+    authorizationList: None,
+  }
+
+  let approveCallExample: transactionFilterState = {
+    from_: None,
+    to_: None,
+    sighash: Some(["0x095ea7b3"]),
+    status: None,
+    kind: None,
+    contractAddress: None,
+    authorizationList: None,
+  }
+
+  let setEip7702Example = () => {
+    onFilterChange(eip7702Example)
+  }
+
+  let setFailedTransactionsExample = () => {
+    onFilterChange(failedTransactionsExample)
+  }
+
+  let setTransferCallExample = () => {
+    onFilterChange(transferCallExample)
+  }
+
+  let setApproveCallExample = () => {
+    onFilterChange(approveCallExample)
   }
 
   let addFrom = () => {
@@ -239,10 +282,10 @@ let make = (~filterState: transactionFilterState, ~onFilterChange, ~onRemove, ~f
           <button
             onClick={_ => setIsExpanded(prev => !prev)}
             className="inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <svg
+            <svg 
               className={`w-4 h-4 transform transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}
-              fill="none"
-              stroke="currentColor"
+              fill="none" 
+              stroke="currentColor" 
               viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
             </svg>
@@ -257,14 +300,29 @@ let make = (~filterState: transactionFilterState, ~onFilterChange, ~onRemove, ~f
         </div>
       </div>
     </div>
-
+    
     {isExpanded
       ? <div className="p-6">
-          <div className="mb-4">
+          <div className="mb-4 flex flex-wrap gap-2">
             <button
-              onClick={_ => setExampleFilterState()}
+              onClick={_ => setEip7702Example()}
               className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
-              {"Set Example Filter State"->React.string}
+              {"EIP-7702 Transactions"->React.string}
+            </button>
+            <button
+              onClick={_ => setFailedTransactionsExample()}
+              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+              {"Failed Transactions"->React.string}
+            </button>
+            <button
+              onClick={_ => setTransferCallExample()}
+              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+              {"Transfer EOA Calls"->React.string}
+            </button>
+            <button
+              onClick={_ => setApproveCallExample()}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              {"Approve EOA Calls"->React.string}
             </button>
           </div>
 
@@ -423,7 +481,7 @@ let make = (~filterState: transactionFilterState, ~onFilterChange, ~onRemove, ~f
             | None => React.null
             }}
           </div>
-
+          
           // Kind
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">

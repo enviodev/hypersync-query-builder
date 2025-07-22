@@ -1,3 +1,5 @@
+open QueryStructure
+
 type filterState = QueryStructure.logSelection
 
 @react.component
@@ -7,13 +9,27 @@ let make = (~filterState: filterState, ~onFilterChange, ~onRemove, ~filterIndex)
   let (newTopic, setNewTopic) = React.useState(() => "")
   let (currentTopicIndex, setCurrentTopicIndex) = React.useState(() => 0)
 
-  let exampleSetFilterState: filterState = {
-    address: Some(["0x1234567890123456789012345678901234567890"]),
-    topics: Some([["0x1", "0x2", "0x3"], [], ["0x4"]]),
+  // Example filter states
+  let transferEventsExample: filterState = {
+    address: None,
+    topics: Some([["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]]),
   }
 
-  let setExampleFilterState = () => {
-    onFilterChange(exampleSetFilterState)
+  let burnEventsExample: filterState = {
+    address: None,
+    topics: Some([
+      ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"],
+      [],
+      ["0x0000000000000000000000000000000000000000000000000000000000000000"]
+    ]),
+  }
+
+  let setTransferEventsExample = () => {
+    onFilterChange(transferEventsExample)
+  }
+
+  let setBurnEventsExample = () => {
+    onFilterChange(burnEventsExample)
   }
 
   let addAddress = () => {
@@ -38,7 +54,6 @@ let make = (~filterState: filterState, ~onFilterChange, ~onRemove, ~filterIndex)
   let addTopic = () => {
     if newTopic !== "" && newTopic->String.startsWith("0x") {
       let currentIndex: int = currentTopicIndex
-      // Ensure topics array is long enough to accommodate the current index
       let requiredLength = max(filterState.topics->Option.getOr([])->Array.length, currentIndex + 1)
       let paddedTopics = Belt.Array.makeBy(requiredLength, i => {
         if i < filterState.topics->Option.getOr([])->Array.length {
@@ -48,35 +63,31 @@ let make = (~filterState: filterState, ~onFilterChange, ~onRemove, ~filterIndex)
         }
       })
       
-      // Add the new topic to the correct index
-      let updatedTopics = Array.mapWithIndex(paddedTopics, (topicArray, i) =>
-        if i === currentIndex {
-          Array.concat(topicArray, [newTopic])
-        } else {
-          topicArray
-        }
-      )
-
+      let existingTopics = Belt.Array.get(paddedTopics, currentIndex)->Option.getOr([])
+      let newTopics = Array.concat(existingTopics, [newTopic])
+      Array.setUnsafe(paddedTopics, currentIndex, newTopics)
+      
       onFilterChange({
         ...filterState,
-        topics: Some(updatedTopics),
+        topics: Some(paddedTopics),
       })
       setNewTopic(_ => "")
     }
   }
 
-  let removeTopic = (topicIndex: int, itemIndex: int) => {
-    let updatedTopics = Array.mapWithIndex(
-      filterState.topics->Option.getOr([]),
-      (topicArray, i) =>
-        if i === topicIndex {
-          Belt.Array.keepWithIndex(topicArray, (_, j) => j !== itemIndex)
-        } else {
-          topicArray
-        },
+  let removeTopic = (topicIndex, itemIndex) => {
+    let currentTopics = filterState.topics->Option.getOr([])
+    let topicArray = Belt.Array.get(currentTopics, topicIndex)->Option.getOr([])
+    let newTopicArray = Belt.Array.keepWithIndex(topicArray, (_, i) => i !== itemIndex)
+    let newTopics = Array.mapWithIndex(currentTopics, (topic, i) => 
+      i === topicIndex ? newTopicArray : topic
     )
-
-    onFilterChange({...filterState, topics: Some(updatedTopics)})
+    onFilterChange({
+      ...filterState,
+      topics: Array.length(newTopics) > 0 && Array.some(newTopics, arr => Array.length(arr) > 0) 
+        ? Some(newTopics) 
+        : None,
+    })
   }
 
   let generateEnglishDescription = () => {
@@ -164,16 +175,22 @@ let make = (~filterState: filterState, ~onFilterChange, ~onRemove, ~filterIndex)
         </div>
       </div>
     </div>
-
+    
     {isExpanded
       ? <div className="p-6">
-          <div className="mb-4">
+          <div className="mb-4 flex flex-wrap gap-2">
             <button
-              onClick={_ => setExampleFilterState()}
-              className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
-              {"Set Example Filter State"->React.string}
+              onClick={_ => setTransferEventsExample()}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              {"Transfer Events"->React.string}
+            </button>
+            <button
+              onClick={_ => setBurnEventsExample()}
+              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+              {"Burn Events"->React.string}
             </button>
           </div>
+
           // Address Filters
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -212,6 +229,7 @@ let make = (~filterState: filterState, ~onFilterChange, ~onRemove, ~filterIndex)
               )->React.array}
             </div>
           </div>
+
           // Topic Filters
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -222,9 +240,10 @@ let make = (~filterState: filterState, ~onFilterChange, ~onRemove, ~filterIndex)
                 value={Int.toString(currentTopicIndex)}
                 onChange={e => {
                   let target = ReactEvent.Form.target(e)
-                  setCurrentTopicIndex(_ =>
-                    Int.fromString(target["value"])->Option.getOr(0)
-                  )
+                  switch Int.fromString(target["value"]) {
+                  | Some(index) => setCurrentTopicIndex(_ => index)
+                  | None => ()
+                  }
                 }}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {Array.mapWithIndex(Belt.Array.range(0, 3), (_, i) =>
@@ -279,6 +298,7 @@ let make = (~filterState: filterState, ~onFilterChange, ~onRemove, ~filterIndex)
               )->React.array}
             </div>
           </div>
+
           // English Description and Boolean Logic
           <div className="mt-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
