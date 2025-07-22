@@ -7,18 +7,87 @@ type chain = {
 }
 
 let defaultChains = [
-  {name: "eth", tier: "GOLD", chain_id: 1, ecosystem: "evm", additional_features: None},
+  {name: "curtis", tier: "STONE", chain_id: 33111, ecosystem: "evm", additional_features: None},
+  {name: "metall2", tier: "STONE", chain_id: 1750, ecosystem: "evm", additional_features: None},
+  {name: "unichain", tier: "STONE", chain_id: 130, ecosystem: "evm", additional_features: None},
+  {name: "ink", tier: "STONE", chain_id: 57073, ecosystem: "evm", additional_features: None},
+  {name: "plume", tier: "STONE", chain_id: 98866, ecosystem: "evm", additional_features: None},
+  {name: "soneium", tier: "STONE", chain_id: 1868, ecosystem: "evm", additional_features: None},
+  {name: "chainweb-testnet-21", tier: "STONE", chain_id: 5921, ecosystem: "evm", additional_features: None},
+  {name: "chiliz", tier: "STONE", chain_id: 88888, ecosystem: "evm", additional_features: None},
+  {name: "swell", tier: "STONE", chain_id: 1923, ecosystem: "evm", additional_features: None},
+  {name: "fraxtal", tier: "STONE", chain_id: 252, ecosystem: "evm", additional_features: None},
+  {name: "chainweb-testnet-20", tier: "STONE", chain_id: 5920, ecosystem: "evm", additional_features: None},
+  {name: "xdc", tier: "SILVER", chain_id: 50, ecosystem: "evm", additional_features: None},
+  {name: "taraxa", tier: "BRONZE", chain_id: 841, ecosystem: "evm", additional_features: None},
+  {name: "abstract", tier: "STONE", chain_id: 2741, ecosystem: "evm", additional_features: None},
+  {name: "hyperliquid", tier: "STONE", chain_id: 645749, ecosystem: "evm", additional_features: None},
+  {name: "megaeth-testnet", tier: "STONE", chain_id: 6342, ecosystem: "evm", additional_features: None},
+  {name: "sophon-testnet", tier: "TESTNET", chain_id: 531050104, ecosystem: "evm", additional_features: None},
+  {name: "xdc-testnet", tier: "TESTNET", chain_id: 51, ecosystem: "evm", additional_features: None},
+  {name: "worldchain", tier: "STONE", chain_id: 480, ecosystem: "evm", additional_features: None},
+  {name: "fuji", tier: "TESTNET", chain_id: 43113, ecosystem: "evm", additional_features: None},
   {name: "base", tier: "GOLD", chain_id: 8453, ecosystem: "evm", additional_features: None},
-  {name: "arbitrum", tier: "SILVER", chain_id: 42161, ecosystem: "evm", additional_features: None},
-  {name: "optimism", tier: "GOLD", chain_id: 10, ecosystem: "evm", additional_features: None},
-  {name: "polygon", tier: "SILVER", chain_id: 137, ecosystem: "evm", additional_features: None},
-  {name: "bsc", tier: "BRONZE", chain_id: 56, ecosystem: "evm", additional_features: None},
-  {name: "avalanche", tier: "BRONZE", chain_id: 43114, ecosystem: "evm", additional_features: None},
-  {name: "gnosis", tier: "GOLD", chain_id: 100, ecosystem: "evm", additional_features: None},
-  {name: "sepolia", tier: "TESTNET", chain_id: 11155111, ecosystem: "evm", additional_features: None},
-  {name: "base-sepolia", tier: "TESTNET", chain_id: 84532, ecosystem: "evm", additional_features: None},
+  {name: "rootstock", tier: "STONE", chain_id: 30, ecosystem: "evm", additional_features: None},
   {name: "arbitrum-sepolia", tier: "TESTNET", chain_id: 421614, ecosystem: "evm", additional_features: None},
+  {name: "sepolia", tier: "TESTNET", chain_id: 11155111, ecosystem: "evm", additional_features: None},
+  {name: "fantom", tier: "STONE", chain_id: 250, ecosystem: "evm", additional_features: None},
+  {name: "moonbeam", tier: "STONE", chain_id: 1284, ecosystem: "evm", additional_features: None},
+  {name: "gnosis-traces", tier: "BRONZE", chain_id: 100, ecosystem: "evm", additional_features: None},
+  {name: "opbnb", tier: "STONE", chain_id: 204, ecosystem: "evm", additional_features: None},
+  {name: "eth", tier: "GOLD", chain_id: 1, ecosystem: "evm", additional_features: None},
+  {name: "moonbase-alpha", tier: "STONE", chain_id: 1287, ecosystem: "evm", additional_features: None},
+  {name: "polygon-zkevm", tier: "STONE", chain_id: 1101, ecosystem: "evm", additional_features: None},
+  {name: "zircuit", tier: "STONE", chain_id: 48900, ecosystem: "evm", additional_features: None},
+  {name: "cyber", tier: "STONE", chain_id: 7560, ecosystem: "evm", additional_features: None},
+  {name: "holesky", tier: "TESTNET", chain_id: 17000, ecosystem: "evm", additional_features: None},
+  {name: "kroma", tier: "STONE", chain_id: 255, ecosystem: "evm", additional_features: None},
+  {name: "arbitrum", tier: "SILVER", chain_id: 42161, ecosystem: "evm", additional_features: None},
+  {name: "eth-traces", tier: "GOLD", chain_id: 1, ecosystem: "evm", additional_features: Some(["TRACES"])},
+  {name: "superseed", tier: "STONE", chain_id: 5330, ecosystem: "evm", additional_features: None},
+  {name: "flare", tier: "STONE", chain_id: 14, ecosystem: "evm", additional_features: None},
+  {name: "merlin", tier: "STONE", chain_id: 4200, ecosystem: "evm", additional_features: None},
+  {name: "saakuru", tier: "STONE", chain_id: 7225878, ecosystem: "evm", additional_features: None},
+  {name: "mode", tier: "STONE", chain_id: 34443, ecosystem: "evm", additional_features: None},
+  {name: "aurora", tier: "STONE", chain_id: 1313161554, ecosystem: "evm", additional_features: None},
+  {name: "lukso", tier: "STONE", chain_id: 42, ecosystem: "evm", additional_features: None},
+  {name: "gnosis-chiado", tier: "TESTNET", chain_id: 10200, ecosystem: "evm", additional_features: None},
+  {name: "polygon-amoy", tier: "BRONZE", chain_id: 80002, ecosystem: "evm", additional_features: None},
+  {name: "zksync", tier: "BRONZE", chain_id: 324, ecosystem: "evm", additional_features: None},
+  {name: "zeta", tier: "STONE", chain_id: 7000, ecosystem: "evm", additional_features: None},
+  {name: "tangle", tier: "STONE", chain_id: 5845, ecosystem: "evm", additional_features: None},
+  {name: "monad-testnet", tier: "GOLD", chain_id: 10143, ecosystem: "evm", additional_features: None},
+  {name: "manta", tier: "STONE", chain_id: 169, ecosystem: "evm", additional_features: None},
+  {name: "avalanche", tier: "BRONZE", chain_id: 43114, ecosystem: "evm", additional_features: None},
+  {name: "bsc", tier: "BRONZE", chain_id: 56, ecosystem: "evm", additional_features: None},
+  {name: "scroll", tier: "BRONZE", chain_id: 534352, ecosystem: "evm", additional_features: None},
+  {name: "celo", tier: "STONE", chain_id: 42220, ecosystem: "evm", additional_features: None},
+  {name: "blast", tier: "BRONZE", chain_id: 81457, ecosystem: "evm", additional_features: None},
+  {name: "arbitrum-nova", tier: "BRONZE", chain_id: 42170, ecosystem: "evm", additional_features: None},
+  {name: "boba", tier: "STONE", chain_id: 288, ecosystem: "evm", additional_features: None},
+  {name: "lukso-testnet", tier: "TESTNET", chain_id: 4201, ecosystem: "evm", additional_features: None},
+  {name: "gnosis", tier: "GOLD", chain_id: 100, ecosystem: "evm", additional_features: None},
+  {name: "sonic", tier: "STONE", chain_id: 146, ecosystem: "evm", additional_features: None},
+  {name: "berachain", tier: "BRONZE", chain_id: 80094, ecosystem: "evm", additional_features: None},
+  {name: "linea", tier: "BRONZE", chain_id: 59144, ecosystem: "evm", additional_features: None},
+  {name: "bsc-testnet", tier: "TESTNET", chain_id: 97, ecosystem: "evm", additional_features: None},
+  {name: "citrea-testnet", tier: "STONE", chain_id: 5115, ecosystem: "evm", additional_features: None},
+  {name: "harmony-shard-0", tier: "STONE", chain_id: 1666600000, ecosystem: "evm", additional_features: None},
+  {name: "optimism", tier: "GOLD", chain_id: 10, ecosystem: "evm", additional_features: None},
+  {name: "unichain-sepolia", tier: "TESTNET", chain_id: 1301, ecosystem: "evm", additional_features: None},
+  {name: "base-sepolia", tier: "TESTNET", chain_id: 84532, ecosystem: "evm", additional_features: None},
+  {name: "polygon", tier: "SILVER", chain_id: 137, ecosystem: "evm", additional_features: None},
+  {name: "shimmer-evm", tier: "STONE", chain_id: 148, ecosystem: "evm", additional_features: None},
+  {name: "mev-commit", tier: "STONE", chain_id: 17864, ecosystem: "evm", additional_features: None},
+  {name: "morph", tier: "STONE", chain_id: 2818, ecosystem: "evm", additional_features: None},
+  {name: "blast-sepolia", tier: "TESTNET", chain_id: 168587773, ecosystem: "evm", additional_features: None},
+  {name: "berachain-bartio", tier: "TESTNET", chain_id: 80084, ecosystem: "evm", additional_features: None},
+  {name: "mantle", tier: "STONE", chain_id: 5000, ecosystem: "evm", additional_features: None},
   {name: "optimism-sepolia", tier: "TESTNET", chain_id: 11155420, ecosystem: "evm", additional_features: None},
+  {name: "zora", tier: "STONE", chain_id: 7777777, ecosystem: "evm", additional_features: None},
+  {name: "sophon", tier: "STONE", chain_id: 50104, ecosystem: "evm", additional_features: None},
+  {name: "galadriel-devnet", tier: "TESTNET", chain_id: 696969, ecosystem: "evm", additional_features: None},
+  {name: "lisk", tier: "STONE", chain_id: 1135, ecosystem: "evm", additional_features: None},
 ]
 
 let getTierColor = (tier: string) => {
@@ -169,32 +238,15 @@ let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
     // Selected Chain Display
     {switch selectedChain {
     | Some(chain) => 
-      <button
-        onClick={_ => handleSelectedChainClick()}
-        className="w-full mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
+      <button onClick={_ => handleSelectedChainClick()} className="w-full mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <span className="text-lg">{getEcosystemIcon(chain.ecosystem)->React.string}</span>
-            <div className="text-left">
-              <div className="font-medium text-blue-900">
-                {chain.name->React.string}
-              </div>
-              <div className="text-sm text-blue-600">
-                {`Chain ID: ${Int.toString(chain.chain_id)} • ${String.toUpperCase(chain.ecosystem)}`->React.string}
-              </div>
-            </div>
+          <div className="text-left">
+            <div className="font-medium text-blue-900">{chain.name->React.string}</div>
+            <div className="text-sm text-blue-600">{`Chain ID: ${Int.toString(chain.chain_id)}`->React.string}</div>
           </div>
           <div className="flex items-center space-x-2">
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTierColor(chain.tier)}`}>
-              {chain.tier->React.string}
-            </span>
-            <svg 
-              className={`w-5 h-5 text-blue-500 transform transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTierColor(chain.tier)}`}>{chain.tier->React.string}</span>
+            <svg className={`w-5 h-5 text-blue-500 transform transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
             </svg>
           </div>
