@@ -1,5 +1,5 @@
 {
-  "name": "hs-query-builder",
+  "name": "hypersync-query-builder-component",
   "sources": [
     {
       "dir": "src",

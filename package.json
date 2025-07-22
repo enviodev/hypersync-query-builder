@@ -1,27 +1,65 @@
 {
-  "name": "hs-query-builder",
-  "private": true,
-  "version": "0.0.0",
+  "name": "hypersync-query-builder-component",
+  "version": "0.0.1",
+  "description": "React component for building HyperSync blockchain queries with an intuitive UI",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js"
+    },
+    "./styles": "./dist/styles.css"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "react",
+    "blockchain",
+    "ethereum",
+    "query-builder",
+    "hypersync",
+    "web3",
+    "rescript"
+  ],
+  "author": "Envio",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/envio-corp/hypersync-query-builder-component"
+  },
+  "homepage": "https://github.com/envio-corp/hypersync-query-builder-component#readme",
   "scripts": {
     "res:build": "rescript",
     "res:clean": "rescript clean",
     "res:dev": "rescript watch",
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run res:build && vite build --config vite.config.lib.js",
+    "build:dev": "vite build",
     "preview": "vite preview",
-    "test": "rescript build && retest tests/**/*.res.mjs"
+    "test": "rescript build && retest tests/**/*.res.mjs",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@glennsl/rescript-fetch": "^0.2.3",
-    "@rescript/react": "^0.13.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "rescript": "^12.0.0-beta.2"
+    "@rescript/react": "^0.13.0"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rescript": "^12.0.0-beta.2",
     "rescript-test": "7.0.1",
     "tailwindcss": "^4.0.3",
     "vite": "^6.0.0"
