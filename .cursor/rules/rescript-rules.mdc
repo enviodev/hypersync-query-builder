@@ -1,0 +1,10 @@
+---
+description: 
+globs: *.res
+alwaysApply: false
+---
+Use " instead of '
+Instead of Belt.<smth> use <smth>
+Instead of Js.<smth> use <smth>
+Always follow ReScript 12 documentation
+Never suggest ReasonML syntax

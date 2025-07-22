@@ -99,7 +99,10 @@ let make = () => {
     let {addresses, topics} = filterState
 
     let addressStr = if Belt.Array.length(addresses) > 0 {
-      addresses->Js.Array2.joinWith(",\n    ")->(str => `  "address": [\n    "${str}"\n  ]`)
+      let addressList = addresses
+        ->Belt.Array.map(addr => `    "${addr}"`)
+        ->Js.Array2.joinWith(",\n")
+      `  "address": [\n${addressList}\n  ]`
     } else {
       ""
     }
@@ -108,8 +111,10 @@ let make = () => {
       let topicsContent =
         topics
         ->Belt.Array.map(topicArray => {
-          let topicStr = topicArray->Js.Array2.joinWith(",\n      ")->(str => `"${str}"`)
-          `    [\n      ${topicStr}\n    ]`
+          let topicList = topicArray
+            ->Belt.Array.map(topic => `      "${topic}"`)
+            ->Js.Array2.joinWith(",\n")
+          `    [\n${topicList}\n    ]`
         })
         ->Js.Array2.joinWith(",\n")
       `  "topics": [\n${topicsContent}\n  ]`
@@ -147,7 +152,7 @@ let make = () => {
           onClick={_ => addAddress()}
           disabled={Js.String.length(newAddress) == 0 || !(newAddress->Js.String2.startsWith("0x"))}
           className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-          {"Add Address"->React.string}
+          {(Belt.Array.length(filterState.addresses) > 0 ? "Add (via OR) Address" : "Add Address")->React.string}
         </button>
       </div>
       <div className="space-y-2">
@@ -200,7 +205,12 @@ let make = () => {
           onClick={_ => addTopic()}
           disabled={Js.String.length(newTopic) == 0 || !(newTopic->Js.String2.startsWith("0x"))}
           className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
-          {"Add Topic"->React.string}
+          {(
+            currentTopicIndex < Belt.Array.length(filterState.topics) && 
+            Belt.Array.length(Belt.Array.getUnsafe(filterState.topics, currentTopicIndex)) > 0 
+              ? "Add (via OR) Topic" 
+              : "Add Topic"
+          )->React.string}
         </button>
       </div>
       <div className="space-y-3">
