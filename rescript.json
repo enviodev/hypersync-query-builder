@@ -1,13 +1,8 @@
 {
-  "name": "vite-react-rescript-starter",
+  "name": "hs-query-builder",
   "sources": [
     {
       "dir": "src",
-      "subdirs": true
-    },
-    {
-      "dir": "tests",
-      "type": "dev",
       "subdirs": true
     }
   ],
@@ -17,21 +12,12 @@
       "in-source": true
     }
   ],
-  "suffix": ".res.js",
-  "jsx": {
-    "version": 4,
-    "mode": "automatic"
-  },
-  "uncurried": false,
+  "suffix": ".res.mjs",
   "bs-dependencies": [
-    "@rescript/react",
-    "@rescript/core",
-    "rescript-webapi"
+    "@rescript/react"
   ],
-  "bs-dev-dependencies": [
-    "rescript-vitest"
-  ],
-  "bsc-flags": [
-    "-open RescriptCore"
-  ]
+  "bsc-flags": [],
+  "jsx": {
+    "version": 4
+  }
 }

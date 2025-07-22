@@ -1,33 +1,40 @@
-# Vite React ReScript Starter
+# ReScript / Vite Starter Template
 
-- [Vite](https://vitejs.dev): Next Generation Frontend Tooling.
-- [React](https://reactjs.org): A JavaScript library for building user interfaces.
-- [ReScript](https://rescript-lang.org): The JavaScript-like language you have been waiting for. (previously known as BuckleScript and Reason)
-  - [@jihchi/vite-plugin-rescript](https://github.com/jihchi/vite-plugin-rescript): Integrate ReScript with Vite seamlessly.
-- [vitest](https://vitest.dev/): A blazing fast unit-test framework, powered by [Vite](https://vitejs.dev) ⚡️.
-  - [rescript-vitest](https://github.com/cometkim/rescript-vitest): ReScript bindings to Vitest.
-  - [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/): Helps you test UI components in a user-centric way.
-- [Tailwind CSS](https://tailwindcss.com): A utility-first CSS framework for rapid UI development.
+- [Installation](../../README.md)
 
-## Getting Started
+This is a Vite-based template with following setup:
+
+- [ReScript](https://rescript-lang.org) 11.0 with @rescript/react, [Core](https://github.com/rescript-association/rescript-core) and JSX v4
+- ES6 modules (ReScript code compiled to `.res.mjs` files)
+- Vite 4 with React Plugin (Fast Refresh)
+- Tailwind 3
+
+## Development
+
+Run ReScript in dev mode:
 
 ```sh
-npx degit jihchi/vitejs-template-react-rescript my-vitejs-react-rescript
-cd my-vitejs-react-rescript
-npm install
-npm start
+npm run res:dev
 ```
 
-## Alternatives
+In another tab, run the Vite dev server:
 
-- [rescript-lang/create-react-app](https://github.com/rescript-lang/create-rescript-app)
+```sh
+npm run dev
+```
 
-## Contributors
+## Tips
 
-Many thanks for your help!
+### Fast Refresh & ReScript
 
-<a href="https://github.com/jihchi/vitejs-template-react-rescript/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=jihchi/vitejs-template-react-rescript" />
-</a>
+Make sure to create interface files (`.resi`) for each `*.res` file.
 
-The image of contributors is made with [contrib.rocks](https://contrib.rocks).
+Fast Refresh requires you to **only export React components**, and it's easy to unintenionally export other values that will disable Fast Refresh (you will see a message in the browser console whenever this happens).
+
+### Why are the generated `.res.mjs` files tracked in git?
+
+In ReScript, it's a good habit to keep track of the actual JS output the compiler emits. It allows quick sanity checking if we made any changes that actually have an impact on the resulting JS code (especially when doing major compiler upgrades, it's a good way to verify if production code will behave the same way as before the upgrade).
+
+This will also make it easier for your Non-ReScript coworkers to read and understand the changes in Github PRs, and call you out when you are writing inefficient code.
+
+If you want to opt-out, feel free to remove all compiled `.res.mjs` files within the `src` directory and add `src/**/*.res.mjs` in your `.gitignore`.

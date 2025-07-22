@@ -1,5 +1,6 @@
 @module("./logo.svg") external logo: string = "default"
 %%raw(`import './App.css'`)
+%%raw(`import './tailwind.css'`)
 
 @react.component
 let make = () => {
