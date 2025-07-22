@@ -39,8 +39,6 @@ export default defineConfig({
     emptyOutDir: true
   },
   css: {
-    postcss: {
-      plugins: []
-    }
+    postcss: './postcss.config.js'
   }
 }) 
