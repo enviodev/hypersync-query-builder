@@ -1,4 +1,3 @@
-@module("./logo.svg") external logo: string = "default"
 %%raw(`import './App.css'`)
 %%raw(`import './tailwind.css'`)
 
@@ -9,7 +8,6 @@ let make = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <img src={logo} className="h-8 w-8 mr-3" alt="logo" />
             <h1 className="text-xl font-semibold text-gray-900">
               {"HyperSync Query Builder"->React.string}
             </h1>

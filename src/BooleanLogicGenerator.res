@@ -6,43 +6,43 @@ type filterState = {
 let generateEnglishDescription = (filterState: filterState) => {
   let {addresses, topics} = filterState
   
-  if Belt.Array.length(addresses) === 0 && Belt.Array.length(topics) === 0 {
+  if Array.length(addresses) === 0 && Array.length(topics) === 0 {
     "No filters applied - will match all logs"
   } else {
     let parts = []
     
     // Address condition
-    if Belt.Array.length(addresses) > 0 {
-      let addressCondition = if Belt.Array.length(addresses) === 1 {
-        `the contract address is ${Belt.Array.getUnsafe(addresses, 0)}`
+    if Array.length(addresses) > 0 {
+      let addressCondition = if Array.length(addresses) === 1 {
+        `the contract address is ${Array.getUnsafe(addresses, 0)}`
       } else {
-        let addressList = addresses->Js.Array2.joinWith(" OR ")
+        let addressList = addresses->Array.join(" OR ")
         `the contract address is ${addressList}`
       }
-      parts->Js.Array2.push(addressCondition)->ignore
+      parts->Array.push(addressCondition)->ignore
     }
     
     // Topic conditions
     let topicConditions = []
-    Belt.Array.forEachWithIndex(topics, (i, topicArray) => {
-      if Belt.Array.length(topicArray) > 0 {
-        let condition = if Belt.Array.length(topicArray) === 1 {
-          `topic[${Js.Int.toString(i)}] is ${Belt.Array.getUnsafe(topicArray, 0)}`
+    Array.forEachWithIndex(topics, (i, topicArray) => {
+      if Array.length(topicArray) > 0 {
+        let condition = if Array.length(topicArray) === 1 {
+          `topic[${Int.toString(i)}] is ${Array.getUnsafe(topicArray, 0)}`
         } else {
-          let topicList = topicArray->Js.Array2.joinWith(" OR ")
-          `topic[${Js.Int.toString(i)}] is ${topicList}`
+          let topicList = topicArray->Array.join(" OR ")
+          `topic[${Int.toString(i)}] is ${topicList}`
         }
-        topicConditions->Js.Array2.push(condition)->ignore
+        topicConditions->Array.push(condition)->ignore
       }
     })
     
-    if Belt.Array.length(topicConditions) > 0 {
-      let topicCondition = topicConditions->Js.Array2.joinWith(" AND ")
-      parts->Js.Array2.push(topicCondition)->ignore
+    if Array.length(topicConditions) > 0 {
+      let topicCondition = topicConditions->Array.join(" AND ")
+      parts->Array.push(topicCondition)->ignore
     }
     
-    if Belt.Array.length(parts) > 0 {
-      `Match logs where: ${parts->Js.Array2.joinWith(" AND ")}`
+    if Array.length(parts) > 0 {
+      `Match logs where: ${parts->Array.join(" AND ")}`
     } else {
       "No filters applied - will match all logs"
     }
@@ -52,52 +52,52 @@ let generateEnglishDescription = (filterState: filterState) => {
 let generateBooleanHierarchy = (filterState: filterState) => {
   let {addresses, topics} = filterState
   
-  if Belt.Array.length(addresses) === 0 && Belt.Array.length(topics) === 0 {
+  if Array.length(addresses) === 0 && Array.length(topics) === 0 {
     "No filters"
   } else {
     let lines = []
     
     let hasMultipleConditions = 
-      (Belt.Array.length(addresses) > 0) && 
-      (topics->Belt.Array.some(topicArray => Belt.Array.length(topicArray) > 0))
+      (Array.length(addresses) > 0) && 
+      (topics->Array.some(topicArray => Array.length(topicArray) > 0))
     
     if hasMultipleConditions {
-      lines->Js.Array2.push("AND")->ignore
+      lines->Array.push("AND")->ignore
     }
     
     // Address hierarchy
-    if Belt.Array.length(addresses) > 0 {
+    if Array.length(addresses) > 0 {
       let prefix = hasMultipleConditions ? "├── " : ""
-      if Belt.Array.length(addresses) === 1 {
-        lines->Js.Array2.push(`${prefix}address = ${Belt.Array.getUnsafe(addresses, 0)}`)->ignore
+      if Array.length(addresses) === 1 {
+        lines->Array.push(`${prefix}address = ${Array.getUnsafe(addresses, 0)}`)->ignore
       } else {
-        lines->Js.Array2.push(`${prefix}OR (address)`)->ignore
-        Belt.Array.forEachWithIndex(addresses, (i, addr) => {
-          let isLast = i === Belt.Array.length(addresses) - 1
+        lines->Array.push(`${prefix}OR (address)`)->ignore
+        Array.forEachWithIndex(addresses, (i, addr) => {
+          let isLast = i === Array.length(addresses) - 1
           let addrPrefix = if hasMultipleConditions {
             isLast ? "│   └── " : "│   ├── "
           } else {
             isLast ? "└── " : "├── "
           }
-          lines->Js.Array2.push(`${addrPrefix}${addr}`)->ignore
+          lines->Array.push(`${addrPrefix}${addr}`)->ignore
         })
       }
     }
     
     // Topic hierarchy
-    let nonEmptyTopics = topics->Belt.Array.keepWithIndex((topicArray, _) => Belt.Array.length(topicArray) > 0)
-    if Belt.Array.length(nonEmptyTopics) > 0 {
-      let hasTopicConditions = Belt.Array.length(nonEmptyTopics) > 1
+    let nonEmptyTopics = topics->Array.keepWithIndex((topicArray, _) => Array.length(topicArray) > 0)
+    if Array.length(nonEmptyTopics) > 0 {
+      let hasTopicConditions = Array.length(nonEmptyTopics) > 1
       let topicPrefix = hasMultipleConditions ? "└── " : ""
       
       if hasTopicConditions {
-        lines->Js.Array2.push(`${topicPrefix}AND (topics)`)->ignore
+        lines->Array.push(`${topicPrefix}AND (topics)`)->ignore
       }
       
       let topicIndex = ref(0)
-      Belt.Array.forEachWithIndex(topics, (i, topicArray) => {
-        if Belt.Array.length(topicArray) > 0 {
-          let isLastTopic = topicIndex.contents === Belt.Array.length(nonEmptyTopics) - 1
+      Array.forEachWithIndex(topics, (i, topicArray) => {
+        if Array.length(topicArray) > 0 {
+          let isLastTopic = topicIndex.contents === Array.length(nonEmptyTopics) - 1
           let basePrefix = if hasMultipleConditions {
             if hasTopicConditions {
               isLastTopic ? "    └── " : "    ├── "
@@ -112,12 +112,12 @@ let generateBooleanHierarchy = (filterState: filterState) => {
             }
           }
           
-          if Belt.Array.length(topicArray) === 1 {
-            lines->Js.Array2.push(`${basePrefix}topic[${Js.Int.toString(i)}] = ${Belt.Array.getUnsafe(topicArray, 0)}`)->ignore
+          if Array.length(topicArray) === 1 {
+            lines->Array.push(`${basePrefix}topic[${Int.toString(i)}] = ${Array.getUnsafe(topicArray, 0)}`)->ignore
           } else {
-            lines->Js.Array2.push(`${basePrefix}OR (topic[${Js.Int.toString(i)}])`)->ignore
-            Belt.Array.forEachWithIndex(topicArray, (j, topic) => {
-              let isLastValue = j === Belt.Array.length(topicArray) - 1
+            lines->Array.push(`${basePrefix}OR (topic[${Int.toString(i)}])`)->ignore
+            Array.forEachWithIndex(topicArray, (j, topic) => {
+              let isLastValue = j === Array.length(topicArray) - 1
               let valuePrefix = if hasMultipleConditions {
                 if hasTopicConditions {
                   if isLastTopic {
@@ -139,7 +139,7 @@ let generateBooleanHierarchy = (filterState: filterState) => {
                   isLastValue ? "└── " : "├── "
                 }
               }
-              lines->Js.Array2.push(`${valuePrefix}${topic}`)->ignore
+              lines->Array.push(`${valuePrefix}${topic}`)->ignore
             })
           }
           topicIndex := topicIndex.contents + 1
@@ -147,6 +147,6 @@ let generateBooleanHierarchy = (filterState: filterState) => {
       })
     }
     
-    lines->Js.Array2.joinWith("\n")
+    lines->Array.join("\n")
   }
 } 

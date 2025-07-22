@@ -26,10 +26,10 @@ let make = () => {
   }
 
   let addAddress = () => {
-    if newAddress !== "" && newAddress->Js.String2.startsWith("0x") {
+    if newAddress !== "" && newAddress->String.startsWith("0x") {
       setFilterState(prevState => {
         ...prevState,
-        addresses: Belt.Array.concat(prevState.addresses, [newAddress]),
+        addresses: Array.concat(prevState.addresses, [newAddress]),
       })
       setNewAddress(_ => "")
     }
@@ -38,28 +38,28 @@ let make = () => {
   let removeAddress = index => {
     setFilterState(prevState => {
       ...prevState,
-      addresses: Belt.Array.keepWithIndex(prevState.addresses, (_, i) => i !== index),
+      addresses: Array.keepWithIndex(prevState.addresses, (_, i) => i !== index),
     })
   }
 
   let addTopic = () => {
-    if newTopic !== "" && newTopic->Js.String2.startsWith("0x") {
+    if newTopic !== "" && newTopic->String.startsWith("0x") {
       setFilterState(prevState => {
         let currentIndex: int = currentTopicIndex
         // Ensure topics array is long enough to accommodate the current index
-        let requiredLength = max(Belt.Array.length(prevState.topics), currentIndex + 1)
-        let paddedTopics = Belt.Array.makeBy(requiredLength, i => {
-          if i < Belt.Array.length(prevState.topics) {
-            Belt.Array.getUnsafe(prevState.topics, i)
+        let requiredLength = max(Array.length(prevState.topics), currentIndex + 1)
+        let paddedTopics = Array.makeBy(requiredLength, i => {
+          if i < Array.length(prevState.topics) {
+            Array.getUnsafe(prevState.topics, i)
           } else {
             []
           }
         })
         
         // Add the new topic to the correct index
-        let updatedTopics = Belt.Array.mapWithIndex(paddedTopics, (i, topicArray) =>
+        let updatedTopics = Array.mapWithIndex(paddedTopics, (i, topicArray) =>
           if i === currentIndex {
-            Belt.Array.concat(topicArray, [newTopic])
+            Array.concat(topicArray, [newTopic])
           } else {
             topicArray
           }
@@ -76,11 +76,11 @@ let make = () => {
 
   let removeTopic = (topicIndex: int, itemIndex: int) => {
     setFilterState(prevState => {
-      let updatedTopics = Belt.Array.mapWithIndex(
+      let updatedTopics = Array.mapWithIndex(
         prevState.topics,
         (i, topicArray) =>
           if i === topicIndex {
-            Belt.Array.keepWithIndex(topicArray, (_, j) => j !== itemIndex)
+            Array.keepWithIndex(topicArray, (_, j) => j !== itemIndex)
           } else {
             topicArray
           },
@@ -92,12 +92,12 @@ let make = () => {
 
   let logSelectionToStruct = (): option<logSelection> => {
     let result: logSelection = {
-      address: if Belt.Array.length(filterState.addresses) > 0 {
+      address: if Array.length(filterState.addresses) > 0 {
         Some(filterState.addresses)
       } else {
         None
       },
-      topics: if Belt.Array.length(filterState.topics) > 0 {
+      topics: if Array.length(filterState.topics) > 0 {
         Some(filterState.topics)
       } else {
         None
@@ -123,37 +123,37 @@ let make = () => {
   let generateCodeBlock = () => {
     let {addresses, topics} = filterState
 
-    let addressStr = if Belt.Array.length(addresses) > 0 {
+    let addressStr = if Array.length(addresses) > 0 {
       let addressList = addresses
-        ->Belt.Array.map(addr => `    "${addr}"`)
-        ->Js.Array2.joinWith(",\n")
+        ->Array.map(addr => `    "${addr}"`)
+        ->Array.join(",\n")
       `  "address": [\n${addressList}\n  ]`
     } else {
       ""
     }
 
-    let topicsStr = if Belt.Array.length(topics) > 0 {
+    let topicsStr = if Array.length(topics) > 0 {
       let topicsContent =
         topics
-        ->Belt.Array.map(topicArray => {
-          if Belt.Array.length(topicArray) === 0 {
+        ->Array.map(topicArray => {
+          if Array.length(topicArray) === 0 {
             "    []"
           } else {
             let topicList = topicArray
-              ->Belt.Array.map(topic => `      "${topic}"`)
-              ->Js.Array2.joinWith(",\n")
+              ->Array.map(topic => `      "${topic}"`)
+              ->Array.join(",\n")
             `    [\n${topicList}\n    ]`
           }
         })
-        ->Js.Array2.joinWith(",\n")
+        ->Array.join(",\n")
       `  "topics": [\n${topicsContent}\n  ]`
     } else {
       ""
     }
 
-    let parts = [addressStr, topicsStr]->Belt.Array.keep(str => str !== "")
-    if Belt.Array.length(parts) > 0 {
-      `{\n${parts->Js.Array2.joinWith(",\n")}\n}`
+    let parts = [addressStr, topicsStr]->Array.keep(str => str !== "")
+    if Array.length(parts) > 0 {
+      `{\n${parts->Array.join(",\n")}\n}`
     } else {
       "{}"
     }
@@ -186,15 +186,15 @@ let make = () => {
         />
         <button
           onClick={_ => addAddress()}
-          disabled={Js.String.length(newAddress) == 0 || !(newAddress->Js.String2.startsWith("0x"))}
+          disabled={String.length(newAddress) == 0 || !(newAddress->String.startsWith("0x"))}
           className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-          {(Belt.Array.length(filterState.addresses) > 0 ? "Add (via OR) Address" : "Add Address")->React.string}
+          {(Array.length(filterState.addresses) > 0 ? "Add (via OR) Address" : "Add Address")->React.string}
         </button>
       </div>
       <div className="space-y-2">
-        {Belt.Array.mapWithIndex(filterState.addresses, (index, address) =>
+        {Array.mapWithIndex(filterState.addresses, (index, address) =>
           <div
-            key={Js.Int.toString(index)}
+            key={Int.toString(index)}
             className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
             <span className="text-sm font-mono text-gray-800"> {address->React.string} </span>
             <button
@@ -213,17 +213,17 @@ let make = () => {
       </label>
       <div className="flex space-x-2 mb-3">
         <select
-          value={Js.Int.toString(currentTopicIndex)}
+          value={Int.toString(currentTopicIndex)}
           onChange={e => {
             let target = ReactEvent.Form.target(e)
             setCurrentTopicIndex(_ =>
-              Belt.Int.fromString(target["value"])->Belt.Option.getWithDefault(0)
+              Int.fromString(target["value"])->Option.getOr(0)
             )
           }}
           className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          {Belt.Array.mapWithIndex(Belt.Array.range(0, 3), (i, _) =>
-            <option key={Js.Int.toString(i)} value={Js.Int.toString(i)}>
-              {`Topic ${Js.Int.toString(i)}`->React.string}
+          {Array.mapWithIndex(Array.range(0, 3), (i, _) =>
+            <option key={Int.toString(i)} value={Int.toString(i)}>
+              {`Topic ${Int.toString(i)}`->React.string}
             </option>
           )->React.array}
         </select>
@@ -239,26 +239,26 @@ let make = () => {
         />
         <button
           onClick={_ => addTopic()}
-          disabled={Js.String.length(newTopic) == 0 || !(newTopic->Js.String2.startsWith("0x"))}
+          disabled={String.length(newTopic) == 0 || !(newTopic->String.startsWith("0x"))}
           className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
           {(
-            currentTopicIndex < Belt.Array.length(filterState.topics) && 
-            Belt.Array.length(Belt.Array.getUnsafe(filterState.topics, currentTopicIndex)) > 0 
+            currentTopicIndex < Array.length(filterState.topics) && 
+            Array.length(Array.getUnsafe(filterState.topics, currentTopicIndex)) > 0 
               ? "Add (via OR) Topic" 
               : "Add Topic"
           )->React.string}
         </button>
       </div>
       <div className="space-y-3">
-        {Belt.Array.mapWithIndex(filterState.topics, (topicIndex, topicArray) =>
-          <div key={Js.Int.toString(topicIndex)} className="border border-gray-200 rounded-md p-3">
+        {Array.mapWithIndex(filterState.topics, (topicIndex, topicArray) =>
+          <div key={Int.toString(topicIndex)} className="border border-gray-200 rounded-md p-3">
             <h4 className="text-sm font-medium text-gray-700 mb-2">
-              {`Topic ${Js.Int.toString(topicIndex)}`->React.string}
+              {`Topic ${Int.toString(topicIndex)}`->React.string}
             </h4>
             <div className="space-y-2">
-              {Belt.Array.mapWithIndex(topicArray, (itemIndex, topic) =>
+              {Array.mapWithIndex(topicArray, (itemIndex, topic) =>
                 <div
-                  key={`${Js.Int.toString(topicIndex)}-${Js.Int.toString(itemIndex)}`}
+                  key={`${Int.toString(topicIndex)}-${Int.toString(itemIndex)}`}
                   className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
                   <span className="text-sm font-mono text-gray-800"> {topic->React.string} </span>
                   <button
