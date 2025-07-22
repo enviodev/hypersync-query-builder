@@ -19,7 +19,8 @@
   "suffix": ".res.mjs",
   "bs-dependencies": [
     "@rescript/react",
-    "rescript-test"
+    "rescript-test",
+    "@glennsl/rescript-fetch"
   ],
   "bs-dev-dependencies": [],
   "bsc-flags": [],

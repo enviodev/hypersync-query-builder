@@ -1,6 +1,4 @@
 open QueryStructure
-open TransactionBooleanLogicGenerator
-open BlockBooleanLogicGenerator
 
 type filterState = QueryStructure.logSelection
 
@@ -515,7 +513,3 @@ let generateMultiBlockBooleanHierarchy = (filters: option<array<QueryStructure.b
   }
 } 
 
-
-curl 'https://1.hypersync.xyz/query' \
-  -H 'content-type: application/json' \
-  --data-raw $'{\n  "from_block": 0,\n  "logs": [\n    {"topics": [["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]]}\n  ],\n  "field_selection": {\n    "block": [],\n    "transaction": [],\n    "log": []\n  }\n}'

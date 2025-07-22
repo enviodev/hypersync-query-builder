@@ -1,10 +1,5 @@
 open QueryStructure
-
-// Simple fetch binding
-external fetch: (string, 'a) => promise<'response> = "fetch"
-external text: 'response => promise<string> = "text"
-external ok: 'response => bool = "ok" 
-external status: 'response => int = "status"
+open Fetch
 
 type activeTab = QueryJson | QueryLogic | Results
 
@@ -147,17 +142,29 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
           let body = serializeQuery(query)
           
           let response = await fetch(url, {
-            "method": "POST",
-            "headers": {"Content-Type": "application/json"},
-            "body": body,
+            method: #POST,
+            body: Body.string(body),
+            headers: Headers.fromObject({
+              "Content-Type": "application/json",
+            }),
           })
-          
-          let resultText = await text(response)
-          
-          if ok(response) {
-            setQueryResult(_ => Some(resultText))
+ 
+          let resultJson = await response->Response.json
+
+          if response->Response.ok {
+            // Convert JSON back to string for display purposes
+            try {
+              let resultText = Js.Json.stringifyWithSpace(resultJson, 2)
+              setQueryResult(_ => Some(resultText))
+            } catch {
+            | e => 
+              Console.log(e)
+              setQueryError(_ => Some("Caught exception - during stringify of json"))
+            }
+            // ->Option.getOr("Invalid JSON response")
           } else {
-            setQueryError(_ => Some(`HTTP ${Int.toString(status(response))}: ${resultText}`))
+            let errorText = await response->Response.text
+            setQueryError(_ => Some(`HTTP ${Int.toString(response->Response.status)}: ${errorText}`))
           }
         } catch {
         | _ => setQueryError(_ => Some("Network error occurred"))
