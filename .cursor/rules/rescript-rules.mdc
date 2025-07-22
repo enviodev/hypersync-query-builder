@@ -6,3 +6,5 @@ alwaysApply: false
 Use " instead of '
 Always follow ReScript 12 documentation
 Never suggest ReasonML syntax
+Always leave the code in a compiling state, compile with `pnpm res:build`
+Prefer using the standard library (use `Belt.` and `Js.` as last option only)
