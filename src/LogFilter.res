@@ -16,6 +16,15 @@ let make = () => {
   let (newTopic, setNewTopic) = React.useState(() => "")
   let (currentTopicIndex, setCurrentTopicIndex) = React.useState(() => 0)
 
+  let exampleSetFilterState = {
+    addresses: ["0x1234567890123456789012345678901234567890"],
+    topics: [["0x1", "0x2", "0x3"], [], ["0x4"]],
+  }
+
+  let setExampleFilterState = () => {
+    setFilterState(_ => exampleSetFilterState)
+  }
+
   let addAddress = () => {
     if newAddress !== "" && newAddress->Js.String2.startsWith("0x") {
       setFilterState(prevState => {
@@ -37,19 +46,24 @@ let make = () => {
     if newTopic !== "" && newTopic->Js.String2.startsWith("0x") {
       setFilterState(prevState => {
         let currentIndex: int = currentTopicIndex
-        let updatedTopics = if currentIndex >= Belt.Array.length(prevState.topics) {
-          // Create new topic array
-          Belt.Array.concat(prevState.topics, [[newTopic]])
-        } else {
-          // Add to existing topic array
-          Belt.Array.mapWithIndex(prevState.topics, (i, topicArray) =>
-            if i === currentIndex {
-              Belt.Array.concat(topicArray, [newTopic])
-            } else {
-              topicArray
-            }
-          )
-        }
+        // Ensure topics array is long enough to accommodate the current index
+        let requiredLength = max(Belt.Array.length(prevState.topics), currentIndex + 1)
+        let paddedTopics = Belt.Array.makeBy(requiredLength, i => {
+          if i < Belt.Array.length(prevState.topics) {
+            Belt.Array.getUnsafe(prevState.topics, i)
+          } else {
+            []
+          }
+        })
+        
+        // Add the new topic to the correct index
+        let updatedTopics = Belt.Array.mapWithIndex(paddedTopics, (i, topicArray) =>
+          if i === currentIndex {
+            Belt.Array.concat(topicArray, [newTopic])
+          } else {
+            topicArray
+          }
+        )
 
         {
           ...prevState,
@@ -62,17 +76,14 @@ let make = () => {
 
   let removeTopic = (topicIndex: int, itemIndex: int) => {
     setFilterState(prevState => {
-      let updatedTopics = Belt.Array.keep(
-        Belt.Array.mapWithIndex(
-          prevState.topics,
-          (i, topicArray) =>
-            if i === topicIndex {
-              Belt.Array.keepWithIndex(topicArray, (_, j) => j !== itemIndex)
-            } else {
-              topicArray
-            },
-        ),
-        topicArray => Belt.Array.length(topicArray) > 0,
+      let updatedTopics = Belt.Array.mapWithIndex(
+        prevState.topics,
+        (i, topicArray) =>
+          if i === topicIndex {
+            Belt.Array.keepWithIndex(topicArray, (_, j) => j !== itemIndex)
+          } else {
+            topicArray
+          },
       )
 
       {...prevState, topics: updatedTopics}
@@ -95,6 +106,154 @@ let make = () => {
     Some(result)
   }
 
+  let generateEnglishDescription = () => {
+    let {addresses, topics} = filterState
+    
+    if Belt.Array.length(addresses) === 0 && Belt.Array.length(topics) === 0 {
+      "No filters applied - will match all logs"
+    } else {
+      let parts = []
+      
+      // Address condition
+      if Belt.Array.length(addresses) > 0 {
+        let addressCondition = if Belt.Array.length(addresses) === 1 {
+          `the contract address is ${Belt.Array.getUnsafe(addresses, 0)}`
+        } else {
+          let addressList = addresses->Js.Array2.joinWith(" OR ")
+          `the contract address is ${addressList}`
+        }
+        parts->Js.Array2.push(addressCondition)->ignore
+      }
+      
+      // Topic conditions
+      let topicConditions = []
+      Belt.Array.forEachWithIndex(topics, (i, topicArray) => {
+        if Belt.Array.length(topicArray) > 0 {
+          let condition = if Belt.Array.length(topicArray) === 1 {
+            `topic[${Js.Int.toString(i)}] is ${Belt.Array.getUnsafe(topicArray, 0)}`
+          } else {
+            let topicList = topicArray->Js.Array2.joinWith(" OR ")
+            `topic[${Js.Int.toString(i)}] is ${topicList}`
+          }
+          topicConditions->Js.Array2.push(condition)->ignore
+        }
+      })
+      
+      if Belt.Array.length(topicConditions) > 0 {
+        let topicCondition = topicConditions->Js.Array2.joinWith(" AND ")
+        parts->Js.Array2.push(topicCondition)->ignore
+      }
+      
+      if Belt.Array.length(parts) > 0 {
+        `Match logs where: ${parts->Js.Array2.joinWith(" AND ")}`
+      } else {
+        "No filters applied - will match all logs"
+      }
+    }
+  }
+
+  let generateBooleanHierarchy = () => {
+    let {addresses, topics} = filterState
+    
+    if Belt.Array.length(addresses) === 0 && Belt.Array.length(topics) === 0 {
+      "No filters"
+    } else {
+      let lines = []
+      
+      let hasMultipleConditions = 
+        (Belt.Array.length(addresses) > 0) && 
+        (topics->Belt.Array.some(topicArray => Belt.Array.length(topicArray) > 0))
+      
+      if hasMultipleConditions {
+        lines->Js.Array2.push("AND")->ignore
+      }
+      
+      // Address hierarchy
+      if Belt.Array.length(addresses) > 0 {
+        let prefix = hasMultipleConditions ? "├── " : ""
+        if Belt.Array.length(addresses) === 1 {
+          lines->Js.Array2.push(`${prefix}address = ${Belt.Array.getUnsafe(addresses, 0)}`)->ignore
+        } else {
+          lines->Js.Array2.push(`${prefix}OR (address)`)->ignore
+          Belt.Array.forEachWithIndex(addresses, (i, addr) => {
+            let isLast = i === Belt.Array.length(addresses) - 1
+            let addrPrefix = if hasMultipleConditions {
+              isLast ? "│   └── " : "│   ├── "
+            } else {
+              isLast ? "└── " : "├── "
+            }
+            lines->Js.Array2.push(`${addrPrefix}${addr}`)->ignore
+          })
+        }
+      }
+      
+      // Topic hierarchy
+      let nonEmptyTopics = topics->Belt.Array.keepWithIndex((topicArray, _) => Belt.Array.length(topicArray) > 0)
+      if Belt.Array.length(nonEmptyTopics) > 0 {
+        let hasTopicConditions = Belt.Array.length(nonEmptyTopics) > 1
+        let topicPrefix = hasMultipleConditions ? "└── " : ""
+        
+        if hasTopicConditions {
+          lines->Js.Array2.push(`${topicPrefix}AND (topics)`)->ignore
+        }
+        
+        let topicIndex = ref(0)
+        Belt.Array.forEachWithIndex(topics, (i, topicArray) => {
+          if Belt.Array.length(topicArray) > 0 {
+            let isLastTopic = topicIndex.contents === Belt.Array.length(nonEmptyTopics) - 1
+            let basePrefix = if hasMultipleConditions {
+              if hasTopicConditions {
+                isLastTopic ? "    └── " : "    ├── "
+              } else {
+                "└── "
+              }
+            } else {
+              if hasTopicConditions {
+                isLastTopic ? "└── " : "├── "
+              } else {
+                ""
+              }
+            }
+            
+            if Belt.Array.length(topicArray) === 1 {
+              lines->Js.Array2.push(`${basePrefix}topic[${Js.Int.toString(i)}] = ${Belt.Array.getUnsafe(topicArray, 0)}`)->ignore
+            } else {
+              lines->Js.Array2.push(`${basePrefix}OR (topic[${Js.Int.toString(i)}])`)->ignore
+              Belt.Array.forEachWithIndex(topicArray, (j, topic) => {
+                let isLastValue = j === Belt.Array.length(topicArray) - 1
+                let valuePrefix = if hasMultipleConditions {
+                  if hasTopicConditions {
+                    if isLastTopic {
+                      isLastValue ? "    └── " : "    ├── "
+                    } else {
+                      isLastValue ? "│   └── " : "│   ├── "
+                    }
+                  } else {
+                    isLastValue ? "└── " : "├── "
+                  }
+                } else {
+                  if hasTopicConditions {
+                    if isLastTopic {
+                      isLastValue ? "└── " : "├── "
+                    } else {
+                      isLastValue ? "│  └── " : "│  ├── "
+                    }
+                  } else {
+                    isLastValue ? "└── " : "├── "
+                  }
+                }
+                lines->Js.Array2.push(`${valuePrefix}${topic}`)->ignore
+              })
+            }
+            topicIndex := topicIndex.contents + 1
+          }
+        })
+      }
+      
+      lines->Js.Array2.joinWith("\n")
+    }
+  }
+
   let generateCodeBlock = () => {
     let {addresses, topics} = filterState
 
@@ -111,10 +270,14 @@ let make = () => {
       let topicsContent =
         topics
         ->Belt.Array.map(topicArray => {
-          let topicList = topicArray
-            ->Belt.Array.map(topic => `      "${topic}"`)
-            ->Js.Array2.joinWith(",\n")
-          `    [\n${topicList}\n    ]`
+          if Belt.Array.length(topicArray) === 0 {
+            "    []"
+          } else {
+            let topicList = topicArray
+              ->Belt.Array.map(topic => `      "${topic}"`)
+              ->Js.Array2.joinWith(",\n")
+            `    [\n${topicList}\n    ]`
+          }
         })
         ->Js.Array2.joinWith(",\n")
       `  "topics": [\n${topicsContent}\n  ]`
@@ -132,6 +295,10 @@ let make = () => {
 
   <div className="bg-white rounded-lg shadow p-6">
     <h3 className="text-lg font-medium text-gray-900 mb-4"> {"Log Filters"->React.string} </h3>
+    <button
+      onClick={_ => setExampleFilterState()}
+      > {"Set Example Filter State"->React.string}
+    </button>
     // Address Filters
     <div className="mb-6">
       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -237,8 +404,22 @@ let make = () => {
         )->React.array}
       </div>
     </div>
-    // Generated Code Block
+    // English Description and Boolean Logic
     <div className="mt-6">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {"English Description"->React.string}
+      </label>
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+        <p className="text-sm text-blue-800"> {generateEnglishDescription()->React.string} </p>
+      </div>
+      
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {"Boolean Logic Hierarchy"->React.string}
+      </label>
+      <pre className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono mb-4 whitespace-pre overflow-x-auto">
+        {generateBooleanHierarchy()->React.string}
+      </pre>
+      
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {"Generated Query Structure"->React.string}
       </label>
