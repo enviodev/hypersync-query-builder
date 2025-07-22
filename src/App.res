@@ -26,6 +26,12 @@ let make = () => {
     joinMode: None,
   })
 
+  let (selectedChainId, setSelectedChainId) = React.useState(() => None)
+
+  let updateFieldSelection = (newFieldSelection: fieldSelection) => {
+    setQuery(prev => {...prev, fieldSelection: newFieldSelection})
+  }
+
   let addLogFilter = () => {
     let newLogFilter: logSelection = {
       address: None,
@@ -140,9 +146,15 @@ let make = () => {
             {"Create Your Query"->React.string}
           </h2>
           <p className="text-gray-600">
-            {"Add filters for logs, transactions, and blocks. You can add multiple filters of each type."->React.string}
+            {"Select a chain, configure your filters, and choose fields for your blockchain query."->React.string}
           </p>
         </div>
+
+        // Chain Selection
+        <ChainSelector 
+          selectedChainId={selectedChainId}
+          onChainSelect={chainId => setSelectedChainId(_ => Some(chainId))}
+        />
 
         // Add Filter Buttons
         <div className="mb-8">
@@ -176,7 +188,7 @@ let make = () => {
         </div>
 
         // Filters
-        <div className="space-y-4">
+        <div className="space-y-4 mb-8">
           // Log Filters
           {Array.mapWithIndex(query.logs->Option.getOr([]), (logFilter, index) =>
             <LogFilter
@@ -225,6 +237,18 @@ let make = () => {
               </div>
             : React.null}
         </div>
+
+        // Field Selection
+        <FieldSelector 
+          fieldSelection={query.fieldSelection}
+          onFieldSelectionChange={updateFieldSelection}
+        />
+
+        // Results
+        <QueryResults 
+          query={query}
+          selectedChainId={selectedChainId}
+        />
       </div>
     </main>
     <footer className="bg-white border-t mt-16">

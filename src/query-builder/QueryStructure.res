@@ -145,7 +145,7 @@ type fieldSelection = {
   block: array<blockField>,
   transaction: array<transactionField>,
   log: array<logField>,
-  trace: array<traceField>,
+  trace: array<traceField>, // Not used for now.
 }
 
 // Join mode enum
