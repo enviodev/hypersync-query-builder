@@ -48,7 +48,56 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
     | _ => None
     }
     
-    let allParts = [fromJson, toJson]->Array.filterMap(x => x)
+    let sighashJson = switch transactionFilter.sighash {
+    | Some(sighashes) when Array.length(sighashes) > 0 =>
+      let sighashesStr = Array.map(sighashes, sighash => `"${sighash}"`)->Array.join(", ")
+      Some(`"sighash": [${sighashesStr}]`)
+    | _ => None
+    }
+    
+    let statusJson = switch transactionFilter.status {
+    | Some(status) => Some(`"status": ${Int.toString(status)}`)
+    | None => None
+    }
+    
+    let kindJson = switch transactionFilter.kind {
+    | Some(kinds) when Array.length(kinds) > 0 =>
+      let kindsStr = Array.map(kinds, kind => Int.toString(kind))->Array.join(", ")
+      Some(`"kind": [${kindsStr}]`)
+    | _ => None
+    }
+    
+    let contractAddressJson = switch transactionFilter.contractAddress {
+    | Some(addresses) when Array.length(addresses) > 0 =>
+      let addressesStr = Array.map(addresses, addr => `"${addr}"`)->Array.join(", ")
+      Some(`"contract_address": [${addressesStr}]`)
+    | _ => None
+    }
+    
+    let authorizationListJson = switch transactionFilter.authorizationList {
+    | Some(authList) when Array.length(authList) > 0 =>
+      let authListStr = Array.map(authList, auth => {
+        let chainIdPart = switch auth.chainId {
+        | Some(chainIds) when Array.length(chainIds) > 0 =>
+          let chainIdsStr = Array.map(chainIds, id => Int.toString(id))->Array.join(", ")
+          Some(`"chainId": [${chainIdsStr}]`)
+        | _ => None
+        }
+        let addressPart = switch auth.address {
+        | Some(addresses) when Array.length(addresses) > 0 =>
+          let addressesStr = Array.map(addresses, addr => `"${addr}"`)->Array.join(", ")
+          Some(`"address": [${addressesStr}]`)
+        | _ => None
+        }
+        let parts = [chainIdPart, addressPart]->Array.filterMap(x => x)
+        let content = Array.join(parts, ", ")
+        `{${content}}`
+      })->Array.join(", ")
+      Some(`"authorization_list": [${authListStr}]`)
+    | _ => None
+    }
+    
+    let allParts = [fromJson, toJson, sighashJson, statusJson, kindJson, contractAddressJson, authorizationListJson]->Array.filterMap(x => x)
     let content = Array.join(allParts, ", ")
     `{${content}}`
   }
@@ -92,6 +141,11 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
   let serializeQuery = (query: query) => {
     let fromBlockPart = `"from_block": ${Int.toString(query.fromBlock)}`
     
+    let toBlockPart = switch query.toBlock {
+    | Some(toBlock) => Some(`"to_block": ${Int.toString(toBlock)}`)
+    | None => None
+    }
+    
     let logsPart = switch query.logs {
     | Some(logs) when Array.length(logs) > 0 =>
       let logsStr = Array.map(logs, serializeLogFilter)->Array.join(",\n    ")
@@ -119,10 +173,55 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
     | _ => None
     }
     
+    let includeAllBlocksPart = switch query.includeAllBlocks {
+    | Some(true) => Some(`"include_all_blocks": true`)
+    | Some(false) => Some(`"include_all_blocks": false`)
+    | None => None
+    }
+    
     let fieldSelectionPart = serializeFieldSelection(query.fieldSelection)
     
-    let allParts = [Some(fromBlockPart), logsPart, transactionsPart, blocksPart, Some(fieldSelectionPart)]
-      ->Array.filterMap(x => x)
+    let maxNumBlocksPart = switch query.maxNumBlocks {
+    | Some(max) => Some(`"max_num_blocks": ${Int.toString(max)}`)
+    | None => None
+    }
+    
+    let maxNumTransactionsPart = switch query.maxNumTransactions {
+    | Some(max) => Some(`"max_num_transactions": ${Int.toString(max)}`)
+    | None => None
+    }
+    
+    let maxNumLogsPart = switch query.maxNumLogs {
+    | Some(max) => Some(`"max_num_logs": ${Int.toString(max)}`)
+    | None => None
+    }
+    
+    let maxNumTracesPart = switch query.maxNumTraces {
+    | Some(max) => Some(`"max_num_traces": ${Int.toString(max)}`)
+    | None => None
+    }
+    
+    let joinModePart = switch query.joinMode {
+    | Some(Default) => Some(`"join_mode": "default"`)
+    | Some(JoinAll) => Some(`"join_mode": "join_all"`)
+    | Some(JoinNothing) => Some(`"join_mode": "join_nothing"`)
+    | None => None
+    }
+    
+    let allParts = [
+      Some(fromBlockPart), 
+      toBlockPart, 
+      logsPart, 
+      transactionsPart, 
+      blocksPart, 
+      includeAllBlocksPart,
+      Some(fieldSelectionPart),
+      maxNumBlocksPart,
+      maxNumTransactionsPart,
+      maxNumLogsPart,
+      maxNumTracesPart,
+      joinModePart
+    ]->Array.filterMap(x => x)
     
     let content = Array.join(allParts, ",\n  ")
     `{
