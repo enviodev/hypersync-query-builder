@@ -147,7 +147,7 @@ let make = (~query: query) => {
                   </label>
                   <div className="bg-green-50 border border-green-200 rounded-md p-4">
                     <p className="text-sm text-green-800">
-                      {"Transaction filter logic visualization coming soon..."->React.string}
+                      {generateMultiTransactionFilterDescription(query.transactions)->React.string}
                     </p>
                   </div>
                 </div>
@@ -158,7 +158,7 @@ let make = (~query: query) => {
                     {"Boolean Logic Hierarchy"->React.string}
                   </label>
                   <pre className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto">
-                    {"Transaction hierarchy visualization coming soon..."->React.string}
+                    {generateMultiTransactionBooleanHierarchy(query.transactions)->React.string}
                   </pre>
                 </div>
               </div>
@@ -192,7 +192,7 @@ let make = (~query: query) => {
                   </label>
                   <div className="bg-purple-50 border border-purple-200 rounded-md p-4">
                     <p className="text-sm text-purple-800">
-                      {"Block filter logic visualization coming soon..."->React.string}
+                      {generateMultiBlockFilterDescription(query.blocks)->React.string}
                     </p>
                   </div>
                 </div>
@@ -203,7 +203,7 @@ let make = (~query: query) => {
                     {"Boolean Logic Hierarchy"->React.string}
                   </label>
                   <pre className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto">
-                    {"Block hierarchy visualization coming soon..."->React.string}
+                    {generateMultiBlockBooleanHierarchy(query.blocks)->React.string}
                   </pre>
                 </div>
               </div>

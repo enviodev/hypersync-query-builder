@@ -1,3 +1,7 @@
+open QueryStructure
+open TransactionBooleanLogicGenerator
+open BlockBooleanLogicGenerator
+
 type filterState = QueryStructure.logSelection
 
 // Helper function to check if a filter is empty
@@ -6,6 +10,33 @@ let isEmptyFilter = (filterState: filterState) => {
   let addressArray = address->Option.getOr([])
   let topicsArray = topics->Option.getOr([])
   Array.length(addressArray) === 0 && Array.length(topicsArray) === 0
+}
+
+// Helper function to check if a transaction filter is empty
+let isEmptyTransactionFilter = (filterState: QueryStructure.transactionSelection) => {
+  let {from_, to_, sighash, status, kind, contractAddress, authorizationList} = filterState
+  let fromArray = from_->Option.getOr([])
+  let toArray = to_->Option.getOr([])
+  let sighashArray = sighash->Option.getOr([])
+  let kindArray = kind->Option.getOr([])
+  let contractAddressArray = contractAddress->Option.getOr([])
+  let authArray = authorizationList->Option.getOr([])
+  
+  Array.length(fromArray) === 0 &&
+  Array.length(toArray) === 0 &&
+  Array.length(sighashArray) === 0 &&
+  Option.isNone(status) &&
+  Array.length(kindArray) === 0 &&
+  Array.length(contractAddressArray) === 0 &&
+  Array.length(authArray) === 0
+}
+
+// Helper function to check if a block filter is empty
+let isEmptyBlockFilter = (filterState: QueryStructure.blockSelection) => {
+  let {hash, miner} = filterState
+  let hashArray = hash->Option.getOr([])
+  let minerArray = miner->Option.getOr([])
+  Array.length(hashArray) === 0 && Array.length(minerArray) === 0
 }
 
 // Helper function to generate a clean filter description (without "Match logs where:" prefix)
@@ -49,6 +80,24 @@ let generateFilterDescription = (filterState: filterState) => {
   Array.join(parts, " AND ")
 }
 
+// Helper function to generate transaction filter description
+let generateTransactionFilterDescription = (filterState: QueryStructure.transactionSelection) => {
+  let description = TransactionBooleanLogicGenerator.generateEnglishDescription(filterState)
+  switch String.startsWith(description, "Match transactions where: ") {
+  | true => String.sliceToEnd(description, ~start=26) // Remove "Match transactions where: " prefix
+  | false => description
+  }
+}
+
+// Helper function to generate block filter description  
+let generateBlockFilterDescription = (filterState: QueryStructure.blockSelection) => {
+  let description = BlockBooleanLogicGenerator.generateEnglishDescription(filterState)
+  switch String.startsWith(description, "Match blocks where: ") {
+  | true => String.sliceToEnd(description, ~start=20) // Remove "Match blocks where: " prefix
+  | false => description
+  }
+}
+
 let generateMultiFilterDescription = (filters: option<array<filterState>>) => {
   switch filters {
   | None => "selecting None"
@@ -77,6 +126,72 @@ let generateMultiFilterDescription = (filters: option<array<filterState>>) => {
         "selecting None"
       } else {
         `Match logs where: ${Array.join(filterDescriptions, " OR ")}`
+      }
+    }
+  }
+}
+
+let generateMultiTransactionFilterDescription = (filters: option<array<QueryStructure.transactionSelection>>) => {
+  switch filters {
+  | None => "selecting None"
+  | Some(filterArray) => 
+    if Array.length(filterArray) === 0 {
+      "selecting None"
+    } else if Array.length(filterArray) === 1 && isEmptyTransactionFilter(Array.getUnsafe(filterArray, 0)) {
+      "selecting ALL"
+    } else {
+      let filterDescriptions = filterArray
+        ->Array.map(filter => {
+          if isEmptyTransactionFilter(filter) {
+            "ALL transactions"
+          } else {
+            let description = generateTransactionFilterDescription(filter)
+            if String.includes(description, " AND ") {
+              `(${description})`
+            } else {
+              description
+            }
+          }
+        })
+        ->Array.filter(desc => desc !== "")
+      
+      if Array.length(filterDescriptions) === 0 {
+        "selecting None"
+      } else {
+        `Match transactions where: ${Array.join(filterDescriptions, " OR ")}`
+      }
+    }
+  }
+}
+
+let generateMultiBlockFilterDescription = (filters: option<array<QueryStructure.blockSelection>>) => {
+  switch filters {
+  | None => "selecting None"
+  | Some(filterArray) => 
+    if Array.length(filterArray) === 0 {
+      "selecting None"
+    } else if Array.length(filterArray) === 1 && isEmptyBlockFilter(Array.getUnsafe(filterArray, 0)) {
+      "selecting ALL"
+    } else {
+      let filterDescriptions = filterArray
+        ->Array.map(filter => {
+          if isEmptyBlockFilter(filter) {
+            "ALL blocks"
+          } else {
+            let description = generateBlockFilterDescription(filter)
+            if String.includes(description, " AND ") {
+              `(${description})`
+            } else {
+              description
+            }
+          }
+        })
+        ->Array.filter(desc => desc !== "")
+      
+      if Array.length(filterDescriptions) === 0 {
+        "selecting None"
+      } else {
+        `Match blocks where: ${Array.join(filterDescriptions, " OR ")}`
       }
     }
   }
@@ -289,3 +404,118 @@ let generateMultiBooleanHierarchy = (filters: option<array<filterState>>) => {
     }
   }
 } 
+
+let generateMultiTransactionBooleanHierarchy = (filters: option<array<QueryStructure.transactionSelection>>) => {
+  switch filters {
+  | None => "No filters"
+  | Some(filterArray) => 
+    if Array.length(filterArray) === 0 {
+      "No filters"
+    } else if Array.length(filterArray) === 1 && isEmptyTransactionFilter(Array.getUnsafe(filterArray, 0)) {
+      "All transactions"
+    } else {
+      let nonEmptyFilters = filterArray->Array.filter(filter => !isEmptyTransactionFilter(filter))
+      let hasEmptyFilter = filterArray->Array.some(isEmptyTransactionFilter)
+      
+      if Array.length(nonEmptyFilters) === 0 && hasEmptyFilter {
+        "All transactions"
+      } else if Array.length(nonEmptyFilters) === 1 && !hasEmptyFilter {
+        // Single non-empty filter, no OR needed
+        TransactionBooleanLogicGenerator.generateBooleanHierarchy(Array.getUnsafe(nonEmptyFilters, 0))
+      } else {
+        let lines = []
+        lines->Array.push("OR")->ignore
+        
+        let allFilters = hasEmptyFilter ? Array.concat(nonEmptyFilters, [{from_: None, to_: None, sighash: None, status: None, kind: None, contractAddress: None, authorizationList: None}]) : nonEmptyFilters
+        
+        Array.forEachWithIndex(allFilters, (filter, i) => {
+          let isLast = i === Array.length(allFilters) - 1
+          let prefix = isLast ? "└── " : "├── "
+          
+          if isEmptyTransactionFilter(filter) {
+            lines->Array.push(`${prefix}All transactions`)->ignore
+          } else {
+            let filterHierarchy = TransactionBooleanLogicGenerator.generateBooleanHierarchy(filter)
+            if String.includes(filterHierarchy, "\n") {
+              // Multi-line hierarchy needs proper indentation
+              let hierarchyLines = String.split(filterHierarchy, "\n")
+              Array.forEachWithIndex(hierarchyLines, (line, lineIndex) => {
+                if lineIndex === 0 {
+                  lines->Array.push(`${prefix}${line}`)->ignore
+                } else {
+                  let indent = if isLast { "    " } else { "│   " }
+                  lines->Array.push(`${indent}${line}`)->ignore
+                }
+              })
+            } else {
+              // Single line hierarchy
+              lines->Array.push(`${prefix}${filterHierarchy}`)->ignore
+            }
+          }
+        })
+        
+        Array.join(lines, "\n")
+      }
+    }
+  }
+}
+
+let generateMultiBlockBooleanHierarchy = (filters: option<array<QueryStructure.blockSelection>>) => {
+  switch filters {
+  | None => "No filters"
+  | Some(filterArray) => 
+    if Array.length(filterArray) === 0 {
+      "No filters"
+    } else if Array.length(filterArray) === 1 && isEmptyBlockFilter(Array.getUnsafe(filterArray, 0)) {
+      "All blocks"
+    } else {
+      let nonEmptyFilters = filterArray->Array.filter(filter => !isEmptyBlockFilter(filter))
+      let hasEmptyFilter = filterArray->Array.some(isEmptyBlockFilter)
+      
+      if Array.length(nonEmptyFilters) === 0 && hasEmptyFilter {
+        "All blocks"
+      } else if Array.length(nonEmptyFilters) === 1 && !hasEmptyFilter {
+        // Single non-empty filter, no OR needed
+        BlockBooleanLogicGenerator.generateBooleanHierarchy(Array.getUnsafe(nonEmptyFilters, 0))
+      } else {
+        let lines = []
+        lines->Array.push("OR")->ignore
+        
+        let allFilters = hasEmptyFilter ? Array.concat(nonEmptyFilters, [{hash: None, miner: None}]) : nonEmptyFilters
+        
+        Array.forEachWithIndex(allFilters, (filter, i) => {
+          let isLast = i === Array.length(allFilters) - 1
+          let prefix = isLast ? "└── " : "├── "
+          
+          if isEmptyBlockFilter(filter) {
+            lines->Array.push(`${prefix}All blocks`)->ignore
+          } else {
+            let filterHierarchy = BlockBooleanLogicGenerator.generateBooleanHierarchy(filter)
+            if String.includes(filterHierarchy, "\n") {
+              // Multi-line hierarchy needs proper indentation
+              let hierarchyLines = String.split(filterHierarchy, "\n")
+              Array.forEachWithIndex(hierarchyLines, (line, lineIndex) => {
+                if lineIndex === 0 {
+                  lines->Array.push(`${prefix}${line}`)->ignore
+                } else {
+                  let indent = if isLast { "    " } else { "│   " }
+                  lines->Array.push(`${indent}${line}`)->ignore
+                }
+              })
+            } else {
+              // Single line hierarchy
+              lines->Array.push(`${prefix}${filterHierarchy}`)->ignore
+            }
+          }
+        })
+        
+        Array.join(lines, "\n")
+      }
+    }
+  }
+} 
+
+
+curl 'https://1.hypersync.xyz/query' \
+  -H 'content-type: application/json' \
+  --data-raw $'{\n  "from_block": 0,\n  "logs": [\n    {"topics": [["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]]}\n  ],\n  "field_selection": {\n    "block": [],\n    "transaction": [],\n    "log": []\n  }\n}'

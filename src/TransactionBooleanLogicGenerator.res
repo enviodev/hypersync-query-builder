@@ -1,12 +1,13 @@
 type transactionFilterState = QueryStructure.transactionSelection
 
 let generateEnglishDescription = (filterState: transactionFilterState) => {
-  let {from_, to_, sighash, status, kind, contractAddress} = filterState
+  let {from_, to_, sighash, status, kind, contractAddress, authorizationList} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
   let kindArray = kind->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
+  let authArray = authorizationList->Option.getOr([])
   
   let hasAnyFilter = 
     Array.length(fromArray) > 0 ||
@@ -14,7 +15,8 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
     Array.length(sighashArray) > 0 ||
     Option.isSome(status) ||
     Array.length(kindArray) > 0 ||
-    Array.length(contractAddressArray) > 0
+    Array.length(contractAddressArray) > 0 ||
+    Array.length(authArray) > 0
   
   if !hasAnyFilter {
     "No filters applied - will match all transactions"
@@ -94,6 +96,16 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
       parts->Array.push(contractCondition)->ignore
     }
     
+    // Authorization list condition
+    if Array.length(authArray) > 0 {
+      let authCondition = if Array.length(authArray) === 1 {
+        `the authorization list includes ${Int.toString(Array.length(authArray))} authorization`
+      } else {
+        `the authorization list includes ${Int.toString(Array.length(authArray))} authorizations`
+      }
+      parts->Array.push(authCondition)->ignore
+    }
+    
     if Array.length(parts) > 0 {
       `Match transactions where: ${Array.join(parts, " AND ")}`
     } else {
@@ -103,12 +115,13 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
 }
 
 let generateBooleanHierarchy = (filterState: transactionFilterState) => {
-  let {from_, to_, sighash, status, kind, contractAddress} = filterState
+  let {from_, to_, sighash, status, kind, contractAddress, authorizationList} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
   let kindArray = kind->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
+  let authArray = authorizationList->Option.getOr([])
   
   let hasAnyFilter = 
     Array.length(fromArray) > 0 ||
@@ -116,7 +129,8 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     Array.length(sighashArray) > 0 ||
     Option.isSome(status) ||
     Array.length(kindArray) > 0 ||
-    Array.length(contractAddressArray) > 0
+    Array.length(contractAddressArray) > 0 ||
+    Array.length(authArray) > 0
   
   if !hasAnyFilter {
     "No filters"
@@ -130,6 +144,7 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     if Option.isSome(status) { conditions->Array.push("status")->ignore }
     if Array.length(kindArray) > 0 { conditions->Array.push("kind")->ignore }
     if Array.length(contractAddressArray) > 0 { conditions->Array.push("contractAddress")->ignore }
+    if Array.length(authArray) > 0 { conditions->Array.push("authorizationList")->ignore }
     
     let hasMultipleConditions = Array.length(conditions) > 1
     
@@ -276,6 +291,19 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
           }
           lines->Array.push(`${addrPrefix}${addr}`)->ignore
         })
+      }
+      conditionIndex := conditionIndex.contents + 1
+    }
+
+    // Authorization List
+    if Array.length(authArray) > 0 {
+      let isLast = conditionIndex.contents === Array.length(conditions) - 1
+      let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
+      
+      if Array.length(authArray) === 1 {
+        lines->Array.push(`${prefix}authorizationList has ${Int.toString(Array.length(authArray))} authorization`)->ignore
+      } else {
+        lines->Array.push(`${prefix}authorizationList has ${Int.toString(Array.length(authArray))} authorizations`)->ignore
       }
       conditionIndex := conditionIndex.contents + 1
     }
