@@ -9,7 +9,9 @@
     "res:dev": "rescript -w",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "rescript build && retest tests/BooleanLogicGenerator_test.res.mjs",
+    "test:watch": "rescript build -w"
   },
   "dependencies": {
     "@rescript/react": "^0.13.0",
@@ -20,6 +22,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "rescript-test": "7.0.1",
     "tailwindcss": "^4.0.3",
     "vite": "^6.0.0"
   }
