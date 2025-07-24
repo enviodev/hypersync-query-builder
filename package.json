@@ -41,6 +41,7 @@
     "res:dev": "rescript watch",
     "dev": "vite",
     "build": "npm run res:build && vite build --config vite.config.lib.js",
+    "build:site": "npm run res:build && vite build",
     "build:dev": "vite build",
     "preview": "vite preview",
     "test": "rescript build && retest tests/**/*.res.mjs",
