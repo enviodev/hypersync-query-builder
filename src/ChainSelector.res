@@ -177,7 +177,7 @@ let fetchChains = async () => {
 let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
   let (searchTerm, setSearchTerm) = React.useState(() => "")
   let (chains, setChains) = React.useState(() => defaultChains)
-  let (isExpanded, setIsExpanded) = React.useState(() => true)
+  let (isExpanded, setIsExpanded) = React.useState(() => Option.isNone(selectedChainId))
   let (isLoading, setIsLoading) = React.useState(() => true)
 
   // Load chains on component mount
