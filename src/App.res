@@ -8,8 +8,8 @@ open UrlEncoder
 let make = () => {
   let (query, setQuery) = React.useState(() => {
     // Try to load query from URL first, fallback to default
-    switch UrlEncoder.getQueryFromUrl() {
-    | Some(urlQuery) => urlQuery
+    switch UrlEncoder.getUrlStateFromUrl() {
+    | Some(urlState) => urlState.query
     | None => {
         fromBlock: 0,
         toBlock: None,
@@ -33,7 +33,14 @@ let make = () => {
     }
   })
 
-  let (selectedChainId, setSelectedChainId) = React.useState(() => None)
+
+    let (selectedChainId, setSelectedChainId) = React.useState(() => {
+    // Try to load selectedChainId from URL first, fallback to None
+    switch UrlEncoder.getUrlStateFromUrl() {
+    | Some(urlState) => urlState.selectedChainId
+    | None => None
+    }
+  })
   let (expandedFilterKey, setExpandedFilterKey) = React.useState(() => None)
 
   let toggleFilter = key =>
@@ -42,11 +49,12 @@ let make = () => {
     | None => Some(key)
     })
 
-  // Update URL when query changes
+
+  // Update URL when query or selectedChainId changes
   React.useEffect1(() => {
-    UrlEncoder.updateUrlWithQuery(query)
+    UrlEncoder.updateUrlWithState({query, selectedChainId})
     None
-  }, [query])
+  }, [(query, selectedChainId)])
 
   let updateFieldSelection = (newFieldSelection: fieldSelection) => {
     setQuery(prev => {...prev, fieldSelection: newFieldSelection})

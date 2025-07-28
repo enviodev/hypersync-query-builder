@@ -13,22 +13,34 @@ open QueryStructure
 @get external history: 'a => 'b = "history"
 @send external pushState: ('a, 'b, string, string) => unit = "pushState"
 
-let serializeQuery = (query: query): string => {
+// Type for the complete state that includes both query and selectedChainId
+type urlState = {
+  query: query,
+  selectedChainId: option<int>,
+}
+
+let serializeUrlState = (state: urlState): string => {
   let json = Js.Json.object_(Js.Dict.fromArray([
-    ("fromBlock", Js.Json.number(Int.toFloat(query.fromBlock))),
-    ("toBlock", switch query.toBlock {
-      | Some(value) => Js.Json.number(Int.toFloat(value))
-      | None => Js.Json.null
-    }),
-    ("maxNumBlocks", switch query.maxNumBlocks {
-      | Some(value) => Js.Json.number(Int.toFloat(value))
-      | None => Js.Json.null
-    }),
-    ("maxNumTransactions", switch query.maxNumTransactions {
-      | Some(value) => Js.Json.number(Int.toFloat(value))
-      | None => Js.Json.null
-    }),
-    ("maxNumLogs", switch query.maxNumLogs {
+    ("query", Js.Json.object_(Js.Dict.fromArray([
+      ("fromBlock", Js.Json.number(Int.toFloat(state.query.fromBlock))),
+      ("toBlock", switch state.query.toBlock {
+        | Some(value) => Js.Json.number(Int.toFloat(value))
+        | None => Js.Json.null
+      }),
+      ("maxNumBlocks", switch state.query.maxNumBlocks {
+        | Some(value) => Js.Json.number(Int.toFloat(value))
+        | None => Js.Json.null
+      }),
+      ("maxNumTransactions", switch state.query.maxNumTransactions {
+        | Some(value) => Js.Json.number(Int.toFloat(value))
+        | None => Js.Json.null
+      }),
+      ("maxNumLogs", switch state.query.maxNumLogs {
+        | Some(value) => Js.Json.number(Int.toFloat(value))
+        | None => Js.Json.null
+      }),
+    ]))),
+    ("selectedChainId", switch state.selectedChainId {
       | Some(value) => Js.Json.number(Int.toFloat(value))
       | None => Js.Json.null
     }),
@@ -36,7 +48,7 @@ let serializeQuery = (query: query): string => {
   Js.Json.stringify(json)
 }
 
-let deserializeQuery = (jsonString: string): option<query> => {
+let deserializeUrlState = (jsonString: string): option<urlState> => {
   switch Js.Json.parseExn(jsonString) {
   | json => {
     let obj = Js.Json.decodeObject(json)
@@ -44,7 +56,20 @@ let deserializeQuery = (jsonString: string): option<query> => {
     | Some(obj) => {
       let getField = (fieldName: string) => Js.Dict.get(obj, fieldName)
       
-      let fromBlock = switch getField("fromBlock") {
+      // Parse query object
+      let queryJson = switch getField("query") {
+      | Some(value) => value
+      | None => Js.Json.null
+      }
+      
+      let queryObj = switch Js.Json.decodeObject(queryJson) {
+      | Some(queryObj) => queryObj
+      | None => Js.Dict.empty()
+      }
+      
+      let getQueryField = (fieldName: string) => Js.Dict.get(queryObj, fieldName)
+      
+      let fromBlock = switch getQueryField("fromBlock") {
       | Some(value) => switch Js.Json.decodeNumber(value) {
         | Some(num) => Float.toInt(num)
         | None => 0
@@ -52,7 +77,7 @@ let deserializeQuery = (jsonString: string): option<query> => {
       | None => 0
       }
       
-      let toBlock = switch getField("toBlock") {
+      let toBlock = switch getQueryField("toBlock") {
       | Some(value) => switch Js.Json.decodeNull(value) {
         | Some(_) => None
         | None => switch Js.Json.decodeNumber(value) {
@@ -63,7 +88,7 @@ let deserializeQuery = (jsonString: string): option<query> => {
       | None => None
       }
       
-      let maxNumBlocks = switch getField("maxNumBlocks") {
+      let maxNumBlocks = switch getQueryField("maxNumBlocks") {
       | Some(value) => switch Js.Json.decodeNull(value) {
         | Some(_) => None
         | None => switch Js.Json.decodeNumber(value) {
@@ -74,7 +99,7 @@ let deserializeQuery = (jsonString: string): option<query> => {
       | None => None
       }
       
-      let maxNumTransactions = switch getField("maxNumTransactions") {
+      let maxNumTransactions = switch getQueryField("maxNumTransactions") {
       | Some(value) => switch Js.Json.decodeNull(value) {
         | Some(_) => None
         | None => switch Js.Json.decodeNumber(value) {
@@ -85,7 +110,7 @@ let deserializeQuery = (jsonString: string): option<query> => {
       | None => None
       }
       
-      let maxNumLogs = switch getField("maxNumLogs") {
+      let maxNumLogs = switch getQueryField("maxNumLogs") {
       | Some(value) => switch Js.Json.decodeNull(value) {
         | Some(_) => None
         | None => switch Js.Json.decodeNumber(value) {
@@ -96,7 +121,7 @@ let deserializeQuery = (jsonString: string): option<query> => {
       | None => None
       }
       
-      Some({
+      let query = {
         fromBlock,
         toBlock,
         logs: None,
@@ -115,6 +140,23 @@ let deserializeQuery = (jsonString: string): option<query> => {
         maxNumLogs,
         maxNumTraces: None,
         joinMode: None,
+      }
+      
+      // Parse selectedChainId
+      let selectedChainId = switch getField("selectedChainId") {
+      | Some(value) => switch Js.Json.decodeNull(value) {
+        | Some(_) => None
+        | None => switch Js.Json.decodeNumber(value) {
+          | Some(num) => Some(Float.toInt(num))
+          | None => None
+          }
+        }
+      | None => None
+      }
+      
+      Some({
+        query,
+        selectedChainId,
       })
     }
     | None => None
@@ -124,35 +166,69 @@ let deserializeQuery = (jsonString: string): option<query> => {
   }
 }
 
-let encodeQueryToUrl = (query: query): string => {
-  let jsonString = serializeQuery(query)
+let encodeUrlStateToUrl = (state: urlState): string => {
+  let jsonString = serializeUrlState(state)
   Js.Global.encodeURIComponent(jsonString)
 }
 
-let decodeQueryFromUrl = (encodedString: string): option<query> => {
+let decodeUrlStateFromUrl = (encodedString: string): option<urlState> => {
   let decodedString = Js.Global.decodeURIComponent(encodedString)
-  deserializeQuery(decodedString)
+  deserializeUrlState(decodedString)
 }
 
-let getQueryFromUrl = (): option<query> => {
+let getUrlStateFromUrl = (): option<urlState> => {
   // Get the search string from window.location using proper bindings
   let locationObj = location(window)
   let searchStr = search(locationObj)
   // Simple URL parameter parsing without Js.Url
   if Js.String2.startsWith(searchStr, "?q=") {
     let encodedQuery = Js.String2.substring(searchStr, ~from=3, ~to_=Js.String2.length(searchStr))
-    decodeQueryFromUrl(encodedQuery)
+    decodeUrlStateFromUrl(encodedQuery)
   } else {
     None
   }
 }
 
-let updateUrlWithQuery = (query: query) => {
-  let encodedQuery = encodeQueryToUrl(query)
+let updateUrlWithState = (state: urlState) => {
+  let encodedState = encodeUrlStateToUrl(state)
   let locationObj = location(window)
   let originStr = origin(locationObj)
   let pathnameStr = pathname(locationObj)
-  let newUrl = originStr ++ pathnameStr ++ "?q=" ++ encodedQuery
+  let newUrl = originStr ++ pathnameStr ++ "?q=" ++ encodedState
   let historyObj = history(window)
   pushState(historyObj, null, "", newUrl)
+}
+
+// Backward compatibility functions for existing code
+let serializeQuery = (query: query): string => {
+  serializeUrlState({query, selectedChainId: None})
+}
+
+let deserializeQuery = (jsonString: string): option<query> => {
+  switch deserializeUrlState(jsonString) {
+  | Some(state) => Some(state.query)
+  | None => None
+  }
+}
+
+let encodeQueryToUrl = (query: query): string => {
+  encodeUrlStateToUrl({query, selectedChainId: None})
+}
+
+let decodeQueryFromUrl = (encodedString: string): option<query> => {
+  switch decodeUrlStateFromUrl(encodedString) {
+  | Some(state) => Some(state.query)
+  | None => None
+  }
+}
+
+let getQueryFromUrl = (): option<query> => {
+  switch getUrlStateFromUrl() {
+  | Some(state) => Some(state.query)
+  | None => None
+  }
+}
+
+let updateUrlWithQuery = (query: query) => {
+  updateUrlWithState({query, selectedChainId: None})
 } 
