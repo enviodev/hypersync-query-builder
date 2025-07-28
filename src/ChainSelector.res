@@ -177,14 +177,21 @@ let fetchChains = async () => {
 let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
   let (searchTerm, setSearchTerm) = React.useState(() => "")
   let (chains, setChains) = React.useState(() => defaultChains)
-  let (isExpanded, setIsExpanded) = React.useState(() => Option.isNone(selectedChainId))
+  let (isExpanded, setIsExpanded) =
+    React.useState(() => Option.isNone(selectedChainId))
   let (isLoading, setIsLoading) = React.useState(() => true)
+  let (focusedIndex, setFocusedIndex) = React.useState(() => 0)
 
   // Load chains on component mount
   React.useEffect0(() => {
     let fetchData = async () => {
       let fetchedChains = await fetchChains()
-      setChains(_ => fetchedChains)
+      let sorted = fetchedChains->Js.Array2.copy
+      Js.Array2.sortInPlaceWith(sorted, (a, b) =>
+        // ensure alphabetical order A->Z
+        Js.String.localeCompare(a.name, b.name)->Float.toInt
+      )->ignore
+      setChains(_ => sorted)
       setIsLoading(_ => false)
     }
     
@@ -192,10 +199,21 @@ let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
     None
   })
 
+  let isNumeric = str =>
+    switch Int.fromString(str) {
+    | Some(_) => true
+    | None => false
+    }
+
   let filteredChains = chains->Array.filter(chain => {
-    searchTerm === "" || 
-    String.includes(String.toLowerCase(chain.name), String.toLowerCase(searchTerm)) ||
-    String.includes(String.toLowerCase(chain.tier), String.toLowerCase(searchTerm))
+    if searchTerm === "" {
+      true
+    } else if isNumeric(searchTerm) {
+      String.includes(Int.toString(chain.chain_id), searchTerm)
+    } else {
+      String.includes(String.toLowerCase(chain.name), String.toLowerCase(searchTerm)) ||
+      String.includes(String.toLowerCase(chain.tier), String.toLowerCase(searchTerm))
+    }
   })
 
   let selectedChain = selectedChainId->Option.flatMap(chainId => 
@@ -211,67 +229,71 @@ let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
 
   // Handle selected chain click (expand/collapse toggle)
   let handleSelectedChainClick = () => {
-    setIsExpanded(prev => !prev)
+    setIsExpanded(prev => {
+      let next = !prev
+      if next {
+        setFocusedIndex(_ => 0)
+      }
+      next
+    })
   }
 
-  <div className="bg-white rounded-lg shadow p-6 mb-8">
-    <div className="flex items-center justify-between mb-4">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">
-          {"Chain Selection"->React.string}
-        </h3>
-        <p className="text-sm text-gray-500">
-          {"Select the blockchain network to query"->React.string}
-        </p>
-      </div>
-      {isLoading ? (
-        <div className="text-sm text-gray-500">
-          {"Loading chains..."->React.string}
+  <div className="relative mb-6">
+    <button
+      onClick={_ => handleSelectedChainClick()}
+      className="w-full flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
+      {switch selectedChain {
+      | Some(chain) =>
+        <div className="flex items-center space-x-2">
+          <span className="font-medium text-blue-900">{chain.name->React.string}</span>
+          <span className="text-sm text-blue-600">{Int.toString(chain.chain_id)->React.string}</span>
         </div>
-      ) : (
-        <div className="text-sm text-gray-500">
-          {`${Int.toString(Array.length(chains))} chains available`->React.string}
-        </div>
-      )}
-    </div>
+      | None => <span className="text-blue-900">{"Select a chain"->React.string}</span>
+      }}
+      <svg
+        className={`w-5 h-5 text-blue-500 transform transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
 
-    // Selected Chain Display
-    {switch selectedChain {
-    | Some(chain) => 
-      <button onClick={_ => handleSelectedChainClick()} className="w-full mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <div className="flex items-center justify-between">
-          <div className="text-left">
-            <div className="font-medium text-blue-900">{chain.name->React.string}</div>
-            <div className="text-sm text-blue-600">{`Chain ID: ${Int.toString(chain.chain_id)}`->React.string}</div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTierColor(chain.tier)}`}>{chain.tier->React.string}</span>
-            <svg className={`w-5 h-5 text-blue-500 transform transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
-      </button>
-    | None => React.null
-    }}
-
-    // Chain Selection List - Show when expanded or no chain selected
-    {(isExpanded || Option.isNone(selectedChainId)) ? (
-      <div>
-        <div className="mb-4">
+    {isExpanded ? (
+      <div className="absolute left-0 right-0 mt-2 z-10 bg-white border border-gray-200 rounded-md shadow-lg">
+        <div className="p-2">
           <input
             type_="text"
             placeholder="Search chains..."
+            autoFocus=true
             value={searchTerm}
             onChange={e => {
               let target = ReactEvent.Form.target(e)
               setSearchTerm(_ => target["value"])
+              setFocusedIndex(_ => 0)
             }}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onKeyDown={e => {
+              switch ReactEvent.Keyboard.key(e) {
+              | "ArrowDown" => {
+                  ReactEvent.Synthetic.preventDefault(e)
+                  setFocusedIndex(prev =>
+                    min(prev + 1, Array.length(filteredChains) - 1)
+                  )
+                }
+              | "ArrowUp" => {
+                  ReactEvent.Synthetic.preventDefault(e)
+                  setFocusedIndex(prev => max(prev - 1, 0))
+                }
+              | "Enter" => {
+                  ReactEvent.Synthetic.preventDefault(e)
+                  Belt.Array.get(filteredChains, focusedIndex)
+                  ->Option.forEach(chain => handleChainSelect(chain.chain_id))
+                }
+              | _ => ()
+              }
+            }}
+            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-
-        <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-md">
+        <div className="max-h-60 overflow-y-auto">
           {isLoading ? (
             <div className="px-4 py-8 text-center text-gray-500">
               <div className="inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin mb-2"></div>
@@ -282,45 +304,26 @@ let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
               <button
                 key={Int.toString(index)}
                 onClick={_ => handleChainSelect(chain.chain_id)}
-                className={`w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors ${
+                className={`w-full flex items-center justify-between px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors ${
                   selectedChainId === Some(chain.chain_id) ? "bg-blue-50" : ""
-                }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-lg">{getEcosystemIcon(chain.ecosystem)->React.string}</span>
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {chain.name->React.string}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {`Chain ID: ${Int.toString(chain.chain_id)} • ${String.toUpperCase(chain.ecosystem)}`->React.string}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTierColor(chain.tier)}`}>
-                      {chain.tier->React.string}
-                    </span>
-                    {switch chain.additional_features {
-                    | Some(features) when Array.length(features) > 0 => 
-                      <span className="text-xs text-gray-400">
-                        {`+${Int.toString(Array.length(features))}`->React.string}
-                      </span>
-                    | _ => React.null
-                    }}
-                  </div>
+                } ${focusedIndex === index ? "bg-gray-100" : ""}`}
+              >
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">{getEcosystemIcon(chain.ecosystem)->React.string}</span>
+                  <span className="font-medium text-gray-900">{chain.name->React.string}</span>
+                  <span className="text-sm text-gray-500">{Int.toString(chain.chain_id)->React.string}</span>
                 </div>
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTierColor(chain.tier)}`}>{chain.tier->React.string}</span>
               </button>
             )->React.array
           )}
         </div>
-        
         {!isLoading && Array.length(filteredChains) === 0 ? (
-          <div className="px-4 py-8 text-center text-gray-500">
+          <div className="px-4 py-4 text-center text-gray-500">
             {"No chains match your search"->React.string}
           </div>
         ) : React.null}
       </div>
     ) : React.null}
   </div>
-} 
+}
