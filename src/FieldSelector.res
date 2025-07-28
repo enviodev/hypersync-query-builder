@@ -1,4 +1,5 @@
 open QueryStructure
+open TagSelector
 
 // Convert field types to string representations for JSON
 let blockFieldToString = (field: blockField) => {
@@ -163,35 +164,9 @@ let logFieldOptions: array<(logField, string)> = [
 
 @react.component
 let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelection => unit) => {
-  let toggleBlockField = (field: blockField) => {
-    let currentFields = fieldSelection.block
-    let newFields = if Array.includes(currentFields, field) {
-      Array.filter(currentFields, f => f !== field)
-    } else {
-      Array.concat(currentFields, [field])
-    }
-    onFieldSelectionChange({...fieldSelection, block: newFields})
-  }
-
-  let toggleTransactionField = (field: transactionField) => {
-    let currentFields = fieldSelection.transaction
-    let newFields = if Array.includes(currentFields, field) {
-      Array.filter(currentFields, f => f !== field)
-    } else {
-      Array.concat(currentFields, [field])
-    }
-    onFieldSelectionChange({...fieldSelection, transaction: newFields})
-  }
-
-  let toggleLogField = (field: logField) => {
-    let currentFields = fieldSelection.log
-    let newFields = if Array.includes(currentFields, field) {
-      Array.filter(currentFields, f => f !== field)
-    } else {
-      Array.concat(currentFields, [field])
-    }
-    onFieldSelectionChange({...fieldSelection, log: newFields})
-  }
+  let updateBlockFields = newFields => onFieldSelectionChange({...fieldSelection, block: newFields})
+  let updateTransactionFields = newFields => onFieldSelectionChange({...fieldSelection, transaction: newFields})
+  let updateLogFields = newFields => onFieldSelectionChange({...fieldSelection, log: newFields})
 
   let selectAllBlockFields = () => {
     let allFields = Array.map(blockFieldOptions, ((field, _)) => field)
@@ -249,19 +224,13 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
             </button>
           </div>
         </div>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {Array.map(blockFieldOptions, ((field, label)) =>
-            <label key={label} className="flex items-center space-x-2 text-sm">
-              <input
-                type_="checkbox"
-                checked={Array.includes(fieldSelection.block, field)}
-                onChange={_ => toggleBlockField(field)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-gray-700">{label->React.string}</span>
-            </label>
-          )->React.array}
-        </div>
+        <TagSelector
+          title=""
+          placeholder="Add field..."
+          options={blockFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+          selectedValues={fieldSelection.block}
+          onSelectionChange={updateBlockFields}
+        />
         <div className="mt-3 pt-3 border-t border-gray-100">
           <div className="text-xs text-gray-500">
             {`${Int.toString(Array.length(fieldSelection.block))} selected`->React.string}
@@ -287,19 +256,13 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
             </button>
           </div>
         </div>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {Array.map(transactionFieldOptions, ((field, label)) =>
-            <label key={label} className="flex items-center space-x-2 text-sm">
-              <input
-                type_="checkbox"
-                checked={Array.includes(fieldSelection.transaction, field)}
-                onChange={_ => toggleTransactionField(field)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-gray-700">{label->React.string}</span>
-            </label>
-          )->React.array}
-        </div>
+        <TagSelector
+          title=""
+          placeholder="Add field..."
+          options={transactionFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+          selectedValues={fieldSelection.transaction}
+          onSelectionChange={updateTransactionFields}
+        />
         <div className="mt-3 pt-3 border-t border-gray-100">
           <div className="text-xs text-gray-500">
             {`${Int.toString(Array.length(fieldSelection.transaction))} selected`->React.string}
@@ -325,19 +288,13 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
             </button>
           </div>
         </div>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {Array.map(logFieldOptions, ((field, label)) =>
-            <label key={label} className="flex items-center space-x-2 text-sm">
-              <input
-                type_="checkbox"
-                checked={Array.includes(fieldSelection.log, field)}
-                onChange={_ => toggleLogField(field)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-gray-700">{label->React.string}</span>
-            </label>
-          )->React.array}
-        </div>
+        <TagSelector
+          title=""
+          placeholder="Add field..."
+          options={logFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+          selectedValues={fieldSelection.log}
+          onSelectionChange={updateLogFields}
+        />
         <div className="mt-3 pt-3 border-t border-gray-100">
           <div className="text-xs text-gray-500">
             {`${Int.toString(Array.length(fieldSelection.log))} selected`->React.string}

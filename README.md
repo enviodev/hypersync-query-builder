@@ -199,7 +199,7 @@ Component for configuring block filtering.
 
 ### FieldSelector
 
-Component for selecting which fields to return.
+Component for selecting which fields to return. Selected fields appear as tags and can be searched from a dropdown.
 
 ```jsx
 <FieldSelector
