@@ -2,28 +2,35 @@
 %%raw(`import './tailwind.css'`)
 
 open QueryStructure
+open UrlEncoder
 
 @react.component
 let make = () => {
   let (query, setQuery) = React.useState(() => {
-    fromBlock: 0,
-    toBlock: None,
-    logs: None,
-    transactions: None,
-    traces: None,
-    blocks: None,
-    includeAllBlocks: None,
-    fieldSelection: {
-      block: [],
-      transaction: [],
-      log: [],
-      trace: [],
-    },
-    maxNumBlocks: Some(10),
-    maxNumTransactions: Some(10),
-    maxNumLogs: Some(10),
-    maxNumTraces: None,
-    joinMode: None,
+    // Try to load query from URL first, fallback to default
+    switch UrlEncoder.getQueryFromUrl() {
+    | Some(urlQuery) => urlQuery
+    | None => {
+        fromBlock: 0,
+        toBlock: None,
+        logs: None,
+        transactions: None,
+        traces: None,
+        blocks: None,
+        includeAllBlocks: None,
+        fieldSelection: {
+          block: [],
+          transaction: [],
+          log: [],
+          trace: [],
+        },
+        maxNumBlocks: Some(10),
+        maxNumTransactions: Some(10),
+        maxNumLogs: Some(10),
+        maxNumTraces: None,
+        joinMode: None,
+      }
+    }
   })
 
   let (selectedChainId, setSelectedChainId) = React.useState(() => None)
@@ -34,6 +41,12 @@ let make = () => {
     | Some(prevKey) => if prevKey === key {None} else {Some(key)}
     | None => Some(key)
     })
+
+  // Update URL when query changes
+  React.useEffect1(() => {
+    UrlEncoder.updateUrlWithQuery(query)
+    None
+  }, [query])
 
   let updateFieldSelection = (newFieldSelection: fieldSelection) => {
     setQuery(prev => {...prev, fieldSelection: newFieldSelection})
