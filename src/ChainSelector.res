@@ -189,7 +189,7 @@ let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
       let sorted = fetchedChains->Js.Array2.copy
       Js.Array2.sortInPlaceWith(sorted, (a, b) =>
         // ensure alphabetical order A->Z
-        Js.String.localeCompare(a.name, b.name)->Float.toInt
+        Js.String.localeCompare(b.name, a.name)->Float.toInt
       )->ignore
       setChains(_ => sorted)
       setIsLoading(_ => false)
