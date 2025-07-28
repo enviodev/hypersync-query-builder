@@ -2,31 +2,45 @@
 %%raw(`import './tailwind.css'`)
 
 open QueryStructure
+open UrlEncoder
 
 @react.component
 let make = () => {
   let (query, setQuery) = React.useState(() => {
-    fromBlock: 0,
-    toBlock: None,
-    logs: None,
-    transactions: None,
-    traces: None,
-    blocks: None,
-    includeAllBlocks: None,
-    fieldSelection: {
-      block: [],
-      transaction: [],
-      log: [],
-      trace: [],
-    },
-    maxNumBlocks: Some(10),
-    maxNumTransactions: Some(10),
-    maxNumLogs: Some(10),
-    maxNumTraces: None,
-    joinMode: None,
+    // Try to load query from URL first, fallback to default
+    switch UrlEncoder.getUrlStateFromUrl() {
+    | Some(urlState) => urlState.query
+    | None => {
+        fromBlock: 0,
+        toBlock: None,
+        logs: None,
+        transactions: None,
+        traces: None,
+        blocks: None,
+        includeAllBlocks: None,
+        fieldSelection: {
+          block: [],
+          transaction: [],
+          log: [],
+          trace: [],
+        },
+        maxNumBlocks: Some(10),
+        maxNumTransactions: Some(10),
+        maxNumLogs: Some(10),
+        maxNumTraces: None,
+        joinMode: None,
+      }
+    }
   })
 
-  let (selectedChainId, setSelectedChainId) = React.useState(() => None)
+
+    let (selectedChainId, setSelectedChainId) = React.useState(() => {
+    // Try to load selectedChainId from URL first, fallback to None
+    switch UrlEncoder.getUrlStateFromUrl() {
+    | Some(urlState) => urlState.selectedChainId
+    | None => None
+    }
+  })
   let (expandedFilterKey, setExpandedFilterKey) = React.useState(() => None)
 
   let toggleFilter = key =>
@@ -34,6 +48,13 @@ let make = () => {
     | Some(prevKey) => if prevKey === key {None} else {Some(key)}
     | None => Some(key)
     })
+
+
+  // Update URL when query or selectedChainId changes
+  React.useEffect1(() => {
+    UrlEncoder.updateUrlWithState({query, selectedChainId})
+    None
+  }, [(query, selectedChainId)])
 
   let updateFieldSelection = (newFieldSelection: fieldSelection) => {
     setQuery(prev => {...prev, fieldSelection: newFieldSelection})
