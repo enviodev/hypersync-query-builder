@@ -6,5 +6,7 @@ let make: (
   ~filterState: transactionFilterState,
   ~onFilterChange: transactionFilterState => unit,
   ~onRemove: unit => unit,
-  ~filterIndex: int
-) => React.element 
+  ~filterIndex: int,
+  ~isExpanded: bool,
+  ~onToggleExpand: unit => unit
+) => React.element

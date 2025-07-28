@@ -3,8 +3,14 @@ open QueryStructure
 type transactionFilterState = QueryStructure.transactionSelection
 
 @react.component
-let make = (~filterState: transactionFilterState, ~onFilterChange, ~onRemove, ~filterIndex) => {
-  let (isExpanded, setIsExpanded) = React.useState(() => true) // Start expanded for new filters
+let make = (
+  ~filterState: transactionFilterState,
+  ~onFilterChange,
+  ~onRemove,
+  ~filterIndex,
+  ~isExpanded: bool,
+  ~onToggleExpand,
+) => {
   let (newFrom, setNewFrom) = React.useState(() => "")
   let (newTo, setNewTo) = React.useState(() => "")
   let (newSighash, setNewSighash) = React.useState(() => "")
@@ -265,7 +271,7 @@ let make = (~filterState: transactionFilterState, ~onFilterChange, ~onRemove, ~f
     Array.length(filterState.kind->Option.getOr([])) > 0 ||
     Array.length(filterState.contractAddress->Option.getOr([])) > 0
 
-  <div className="bg-white rounded-lg shadow">
+  <div className={`bg-white rounded-lg shadow transition-all ${isExpanded ? "w-full" : "w-64"}`}> 
     <div className="p-4 border-b border-gray-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -280,7 +286,7 @@ let make = (~filterState: transactionFilterState, ~onFilterChange, ~onRemove, ~f
         </div>
         <div className="flex items-center space-x-2">
           <button
-            onClick={_ => setIsExpanded(prev => !prev)}
+            onClick={_ => onToggleExpand()}
             className="inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             <svg 
               className={`w-4 h-4 transform transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}

@@ -27,12 +27,20 @@ let make = () => {
   })
 
   let (selectedChainId, setSelectedChainId) = React.useState(() => None)
+  let (expandedFilterKey, setExpandedFilterKey) = React.useState(() => None)
+
+  let toggleFilter = key =>
+    setExpandedFilterKey(prev => switch prev {
+    | Some(prevKey) => if prevKey === key {None} else {Some(key)}
+    | None => Some(key)
+    })
 
   let updateFieldSelection = (newFieldSelection: fieldSelection) => {
     setQuery(prev => {...prev, fieldSelection: newFieldSelection})
   }
 
   let addLogFilter = () => {
+    let newIndex = query.logs->Option.getOr([])->Array.length
     let newLogFilter: logSelection = {
       address: None,
       topics: None,
@@ -41,6 +49,7 @@ let make = () => {
       ...prev,
       logs: Some(Array.concat(prev.logs->Option.getOr([]), [newLogFilter])),
     })
+    setExpandedFilterKey(_ => Some(`log-${Int.toString(newIndex)}`))
   }
 
   let updateLogFilter = (index: int, newFilter: logSelection) => {
@@ -59,9 +68,12 @@ let make = () => {
       let updatedLogs = Belt.Array.keepWithIndex(currentLogs, (_, i) => i !== index)
       {...prev, logs: Array.length(updatedLogs) > 0 ? Some(updatedLogs) : None}
     })
+    let key = `log-${Int.toString(index)}`
+    setExpandedFilterKey(prev => if prev === Some(key) {None} else {prev})
   }
 
   let addTransactionFilter = () => {
+    let newIndex = query.transactions->Option.getOr([])->Array.length
     let newTransactionFilter: transactionSelection = {
       from_: None,
       to_: None,
@@ -75,6 +87,7 @@ let make = () => {
       ...prev,
       transactions: Some(Array.concat(prev.transactions->Option.getOr([]), [newTransactionFilter])),
     })
+    setExpandedFilterKey(_ => Some(`transaction-${Int.toString(newIndex)}`))
   }
 
   let updateTransactionFilter = (index: int, newFilter: transactionSelection) => {
@@ -93,9 +106,12 @@ let make = () => {
       let updatedTransactions = Belt.Array.keepWithIndex(currentTransactions, (_, i) => i !== index)
       {...prev, transactions: Array.length(updatedTransactions) > 0 ? Some(updatedTransactions) : None}
     })
+    let key = `transaction-${Int.toString(index)}`
+    setExpandedFilterKey(prev => if prev === Some(key) {None} else {prev})
   }
 
   let addBlockFilter = () => {
+    let newIndex = query.blocks->Option.getOr([])->Array.length
     let newBlockFilter: blockSelection = {
       hash: None,
       miner: None,
@@ -104,6 +120,7 @@ let make = () => {
       ...prev,
       blocks: Some(Array.concat(prev.blocks->Option.getOr([]), [newBlockFilter])),
     })
+    setExpandedFilterKey(_ => Some(`block-${Int.toString(newIndex)}`))
   }
 
   let updateBlockFilter = (index: int, newFilter: blockSelection) => {
@@ -122,6 +139,8 @@ let make = () => {
       let updatedBlocks = Belt.Array.keepWithIndex(currentBlocks, (_, i) => i !== index)
       {...prev, blocks: Array.length(updatedBlocks) > 0 ? Some(updatedBlocks) : None}
     })
+    let key = `block-${Int.toString(index)}`
+    setExpandedFilterKey(prev => if prev === Some(key) {None} else {prev})
   }
 
 
@@ -174,7 +193,7 @@ let make = () => {
         </div>
 
         // Filters
-        <div className="space-y-4 mb-8">
+        <div className="flex flex-wrap gap-4 mb-8">
           // Log Filters
           {Array.mapWithIndex(query.logs->Option.getOr([]), (logFilter, index) =>
             <LogFilter
@@ -183,6 +202,8 @@ let make = () => {
               onFilterChange={newFilter => updateLogFilter(index, newFilter)}
               onRemove={() => removeLogFilter(index)}
               filterIndex={index}
+              isExpanded={expandedFilterKey === Some(`log-${Int.toString(index)}`)}
+              onToggleExpand={() => toggleFilter(`log-${Int.toString(index)}`)}
             />
           )->React.array}
 
@@ -194,6 +215,8 @@ let make = () => {
               onFilterChange={newFilter => updateTransactionFilter(index, newFilter)}
               onRemove={() => removeTransactionFilter(index)}
               filterIndex={index}
+              isExpanded={expandedFilterKey === Some(`transaction-${Int.toString(index)}`)}
+              onToggleExpand={() => toggleFilter(`transaction-${Int.toString(index)}`)}
             />
           )->React.array}
 
@@ -205,6 +228,8 @@ let make = () => {
               onFilterChange={newFilter => updateBlockFilter(index, newFilter)}
               onRemove={() => removeBlockFilter(index)}
               filterIndex={index}
+              isExpanded={expandedFilterKey === Some(`block-${Int.toString(index)}`)}
+              onToggleExpand={() => toggleFilter(`block-${Int.toString(index)}`)}
             />
           )->React.array}
 
