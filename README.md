@@ -11,15 +11,28 @@ A React component library for building blockchain queries with HyperSync. This i
 - ⚙️ **Advanced Options**: Configure query limits, join modes, and more
 - 📋 **Query Export**: Generate ready-to-use cURL commands and JSON queries
 - 🚀 **Real-time Execution**: Execute queries directly from the UI
-- 💻 **TypeScript Support**: Full TypeScript definitions included
 
-## Installation
+## Use as standalone website
+
+```bash
+pnpm i
+pnpm dev
+```
+
+Other useful commands:
+- `pnpm res:build` - build the ReScript code
+- `pnpm res:clean` - clean the ReScript build
+- `pnpm res:dev` - watch for changes in the ReScript code and rebuild
+- `pnpm dev` - run the development server
+- `pnpm build:site` - build the site
+
+## Installation (as library)
 
 ```bash
 npm install hypersync-query-builder-component
 ```
 
-## Basic Usage
+## Basic Usage In React
 
 ```jsx
 import React from 'react';

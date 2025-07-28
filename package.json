@@ -39,13 +39,14 @@
     "res:build": "rescript",
     "res:clean": "rescript clean",
     "res:dev": "rescript watch",
-    "dev": "vite",
-    "build": "npm run res:build && vite build --config vite.config.lib.js",
+    "vite:dev": "vite",
+    "dev": "concurrently -k \"npm:res:dev\" \"npm:vite:dev\"",
+    "build:package": "npm run res:build && vite build --config vite.config.lib.js",
     "build:site": "npm run res:build && vite build",
     "build:dev": "vite build",
     "preview": "vite preview",
     "test": "rescript build && retest tests/**/*.res.mjs",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build:package"
   },
   "dependencies": {
     "@glennsl/rescript-fetch": "^0.2.3",
@@ -60,6 +61,7 @@
     "@tailwindcss/vite": "^4.0.3",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rescript": "^12.0.0-beta.2",
