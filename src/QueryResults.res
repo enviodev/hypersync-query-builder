@@ -347,9 +347,9 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     }
 
     let joinModePart = switch query.joinMode {
-    | Some(Default) => Some(`"join_mode": "default"`)
-    | Some(JoinAll) => Some(`"join_mode": "join_all"`)
-    | Some(JoinNothing) => Some(`"join_mode": "join_nothing"`)
+    | Some(Default) => Some(`"join_mode": "Default"`)
+    | Some(JoinAll) => Some(`"join_mode": "JoinAll"`)
+    | Some(JoinNothing) => Some(`"join_mode": "JoinNothing"`)
     | None => None
     }
 
