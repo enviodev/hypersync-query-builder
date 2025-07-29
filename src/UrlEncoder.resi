@@ -8,7 +8,7 @@ let updateUrlWithQuery: QueryStructure.query => unit
 // New functions for complete URL state including chain selection
 type urlState = {
   query: QueryStructure.query,
-  selectedChainId: option<int>,
+  selectedChainName: option<string>,
 }
 
 let serializeUrlState: urlState => string

@@ -33,14 +33,28 @@ let make = () => {
     }
   })
 
-  let (selectedChainId, setSelectedChainId) = React.useState(() => {
-    // Try to load selectedChainId from URL first, fallback to None
+  let (selectedChainName, setSelectedChainName) = React.useState(() => {
+    // Try to load selectedChainName from URL first, fallback to None
     switch UrlEncoder.getUrlStateFromUrl() {
-    | Some(urlState) => urlState.selectedChainId
+    | Some(urlState) => urlState.selectedChainName
     | None => None
     }
   })
   let (expandedFilterKey, setExpandedFilterKey) = React.useState(() => None)
+
+  // Helper function to check if selected chain supports traces
+  let selectedChainSupportsTraces = () => {
+    switch selectedChainName {
+    | Some(chainName) =>
+      // Find the selected chain in the default chains list
+      let selectedChain = ChainSelector.defaultChains->Array.find(chain => chain.name === chainName)
+      switch selectedChain {
+      | Some(chain) => ChainSelector.chainSupportsTraces(chain)
+      | None => false
+      }
+    | None => false
+    }
+  }
 
   let toggleFilter = key =>
     setExpandedFilterKey(prev =>
@@ -55,11 +69,36 @@ let make = () => {
       }
     )
 
-  // Update URL when query or selectedChainId changes
+  // Update URL when query or selectedChainName changes
   React.useEffect1(() => {
-    UrlEncoder.updateUrlWithState({query, selectedChainId})
+    UrlEncoder.updateUrlWithState({query, selectedChainName})
     None
-  }, [(query, selectedChainId)])
+  }, [(query, selectedChainName)])
+
+  // Clear trace-related data when a non-traces network is selected
+  React.useEffect1(() => {
+    switch selectedChainName {
+    | Some(chainName) =>
+      let selectedChain = ChainSelector.defaultChains->Array.find(chain => chain.name === chainName)
+      switch selectedChain {
+      | Some(chain) =>
+        if !ChainSelector.chainSupportsTraces(chain) {
+          // Clear trace filters and field selections when traces are not supported
+          setQuery(prev => {
+            ...prev,
+            traces: None,
+            fieldSelection: {
+              ...prev.fieldSelection,
+              trace: [],
+            },
+          })
+        }
+      | None => ()
+      }
+    | None => ()
+    }
+    None
+  }, [selectedChainName])
 
   let updateFieldSelection = (newFieldSelection: fieldSelection) => {
     setQuery(prev => {...prev, fieldSelection: newFieldSelection})
@@ -190,6 +229,53 @@ let make = () => {
     )
   }
 
+  let addTraceFilter = () => {
+    let newIndex = query.traces->Option.getOr([])->Array.length
+    let newTraceFilter: traceSelection = {
+      from_: None,
+      to_: None,
+      address: None,
+      callType: None,
+      rewardType: None,
+      kind: None,
+      sighash: None,
+    }
+    setQuery(prev => {
+      ...prev,
+      traces: Some(Array.concat(prev.traces->Option.getOr([]), [newTraceFilter])),
+    })
+    setExpandedFilterKey(_ => Some(`trace-${Int.toString(newIndex)}`))
+  }
+
+  let updateTraceFilter = (index: int, newFilter: traceSelection) => {
+    setQuery(prev => {
+      let currentTraces = prev.traces->Option.getOr([])
+      let updatedTraces = Array.mapWithIndex(currentTraces, (filter, i) =>
+        i === index ? newFilter : filter
+      )
+      {...prev, traces: Some(updatedTraces)}
+    })
+  }
+
+  let removeTraceFilter = (index: int) => {
+    setQuery(prev => {
+      let currentTraces = prev.traces->Option.getOr([])
+      let updatedTraces = Belt.Array.keepWithIndex(currentTraces, (_, i) => i !== index)
+      {
+        ...prev,
+        traces: Array.length(updatedTraces) > 0 ? Some(updatedTraces) : None,
+      }
+    })
+    let key = `trace-${Int.toString(index)}`
+    setExpandedFilterKey(prev =>
+      if prev === Some(key) {
+        None
+      } else {
+        prev
+      }
+    )
+  }
+
   <main className="flex-1 overflow-y-auto py-8">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
@@ -203,8 +289,8 @@ let make = () => {
 
       // Chain Selection
       <ChainSelector
-        selectedChainId={selectedChainId}
-        onChainSelect={chainId => setSelectedChainId(_ => Some(chainId))}
+        selectedChainName={selectedChainName}
+        onChainSelect={chainName => setSelectedChainName(_ => Some(chainName))}
       />
 
       // Add Filter Buttons
@@ -250,6 +336,21 @@ let make = () => {
             </svg>
             {"Add Block Filter"->React.string}
           </button>
+          {selectedChainSupportsTraces()
+            ? <button
+                onClick={_ => addTraceFilter()}
+                className="inline-flex items-center px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                {"Add Trace Filter"->React.string}
+              </button>
+            : React.null}
         </div>
       </div>
 
@@ -294,10 +395,26 @@ let make = () => {
           />
         )->React.array}
 
+        // Trace Filters
+        {selectedChainSupportsTraces()
+          ? Array.mapWithIndex(query.traces->Option.getOr([]), (traceFilter, index) =>
+              <TraceFilter
+                key={`trace-${Int.toString(index)}`}
+                filterState={traceFilter}
+                onFilterChange={newFilter => updateTraceFilter(index, newFilter)}
+                onRemove={() => removeTraceFilter(index)}
+                filterIndex={index}
+                isExpanded={expandedFilterKey === Some(`trace-${Int.toString(index)}`)}
+                onToggleExpand={() => toggleFilter(`trace-${Int.toString(index)}`)}
+              />
+            )->React.array
+          : React.null}
+
         // Empty state message
         {Array.length(query.logs->Option.getOr([])) === 0 &&
         Array.length(query.transactions->Option.getOr([])) === 0 &&
-        Array.length(query.blocks->Option.getOr([])) === 0
+        Array.length(query.blocks->Option.getOr([])) === 0 &&
+        (selectedChainSupportsTraces() ? Array.length(query.traces->Option.getOr([])) === 0 : true)
           ? <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <svg
@@ -325,14 +442,16 @@ let make = () => {
 
       // Field Selection
       <FieldSelector
-        fieldSelection={query.fieldSelection} onFieldSelectionChange={updateFieldSelection}
+        fieldSelection={query.fieldSelection} 
+        onFieldSelectionChange={updateFieldSelection}
+        tracesSupported={selectedChainSupportsTraces()}
       />
 
       // Advanced Options
       <AdvancedOptions query={query} onQueryChange={newQuery => setQuery(_ => newQuery)} />
 
       // Results
-      <QueryResults query={query} selectedChainId={selectedChainId} />
+      <QueryResults query={query} selectedChainName={selectedChainName} />
     </div>
   </main>
 }

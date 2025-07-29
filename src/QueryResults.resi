@@ -1,2 +1,2 @@
 @react.component
-let make: (~query: QueryStructure.query, ~selectedChainId: option<int>) => React.element
+let make: (~query: QueryStructure.query, ~selectedChainName: option<string>) => React.element
