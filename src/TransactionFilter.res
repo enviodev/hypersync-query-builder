@@ -134,7 +134,7 @@ let make = (
 
   let setStatus = () => {
     switch Int.fromString(newStatus) {
-    | Some(status) => 
+    | Some(status) =>
       onFilterChange({...filterState, status: Some(status)})
       setNewStatus(_ => "")
     | None => ()
@@ -147,7 +147,7 @@ let make = (
 
   let addKind = () => {
     switch Int.fromString(newKind) {
-    | Some(kind) => 
+    | Some(kind) =>
       onFilterChange({
         ...filterState,
         kind: Some(Array.concat(filterState.kind->Option.getOr([]), [kind])),
@@ -170,7 +170,9 @@ let make = (
     if newContractAddress !== "" && newContractAddress->String.startsWith("0x") {
       onFilterChange({
         ...filterState,
-        contractAddress: Some(Array.concat(filterState.contractAddress->Option.getOr([]), [newContractAddress])),
+        contractAddress: Some(
+          Array.concat(filterState.contractAddress->Option.getOr([]), [newContractAddress]),
+        ),
       })
       setNewContractAddress(_ => "")
     }
@@ -190,19 +192,24 @@ let make = (
   }
 
   let generateEnglishDescription = () => {
-    TransactionBooleanLogicGenerator.generateEnglishDescription((filterState :> TransactionBooleanLogicGenerator.transactionFilterState))
+    TransactionBooleanLogicGenerator.generateEnglishDescription(
+      (filterState :> TransactionBooleanLogicGenerator.transactionFilterState),
+    )
   }
 
   let generateBooleanHierarchy = () => {
-    TransactionBooleanLogicGenerator.generateBooleanHierarchy((filterState :> TransactionBooleanLogicGenerator.transactionFilterState))
+    TransactionBooleanLogicGenerator.generateBooleanHierarchy(
+      (filterState :> TransactionBooleanLogicGenerator.transactionFilterState),
+    )
   }
 
   let generateCodeBlock = () => {
     let {from_, to_, sighash, status, kind, contractAddress} = filterState
 
     let fromStr = switch from_ {
-    | Some(fromArray) when Array.length(fromArray) > 0 => {
-        let fromList = fromArray
+    | Some(fromArray) if Array.length(fromArray) > 0 => {
+        let fromList =
+          fromArray
           ->Array.map(addr => `    "${addr}"`)
           ->Array.join(",\n")
         `  "from": [\n${fromList}\n  ]`
@@ -211,8 +218,9 @@ let make = (
     }
 
     let toStr = switch to_ {
-    | Some(toArray) when Array.length(toArray) > 0 => {
-        let toList = toArray
+    | Some(toArray) if Array.length(toArray) > 0 => {
+        let toList =
+          toArray
           ->Array.map(addr => `    "${addr}"`)
           ->Array.join(",\n")
         `  "to": [\n${toList}\n  ]`
@@ -221,8 +229,9 @@ let make = (
     }
 
     let sighashStr = switch sighash {
-    | Some(sighashArray) when Array.length(sighashArray) > 0 => {
-        let sighashList = sighashArray
+    | Some(sighashArray) if Array.length(sighashArray) > 0 => {
+        let sighashList =
+          sighashArray
           ->Array.map(sig => `    "${sig}"`)
           ->Array.join(",\n")
         `  "sighash": [\n${sighashList}\n  ]`
@@ -236,8 +245,9 @@ let make = (
     }
 
     let kindStr = switch kind {
-    | Some(kindArray) when Array.length(kindArray) > 0 => {
-        let kindList = kindArray
+    | Some(kindArray) if Array.length(kindArray) > 0 => {
+        let kindList =
+          kindArray
           ->Array.map(k => `    ${Int.toString(k)}`)
           ->Array.join(",\n")
         `  "kind": [\n${kindList}\n  ]`
@@ -246,8 +256,9 @@ let make = (
     }
 
     let contractAddressStr = switch contractAddress {
-    | Some(contractArray) when Array.length(contractArray) > 0 => {
-        let contractList = contractArray
+    | Some(contractArray) if Array.length(contractArray) > 0 => {
+        let contractList =
+          contractArray
           ->Array.map(addr => `    "${addr}"`)
           ->Array.join(",\n")
         `  "contractAddress": [\n${contractList}\n  ]`
@@ -255,7 +266,10 @@ let make = (
     | _ => ""
     }
 
-    let parts = [fromStr, toStr, sighashStr, statusStr, kindStr, contractAddressStr]->Array.filterMap(str => str !== "" ? Some(str) : None)
+    let parts =
+      [fromStr, toStr, sighashStr, statusStr, kindStr, contractAddressStr]->Array.filterMap(str =>
+        str !== "" ? Some(str) : None
+      )
     if Array.length(parts) > 0 {
       `{\n${Array.join(parts, ",\n")}\n}`
     } else {
@@ -263,7 +277,7 @@ let make = (
     }
   }
 
-  let hasFilters = 
+  let hasFilters =
     Array.length(filterState.from_->Option.getOr([])) > 0 ||
     Array.length(filterState.to_->Option.getOr([])) > 0 ||
     Array.length(filterState.sighash->Option.getOr([])) > 0 ||
@@ -271,7 +285,7 @@ let make = (
     Array.length(filterState.kind->Option.getOr([])) > 0 ||
     Array.length(filterState.contractAddress->Option.getOr([])) > 0
 
-  <div className={`bg-white rounded-lg shadow transition-all ${isExpanded ? "w-full" : "w-64"}`}> 
+  <div className={`bg-white rounded-lg shadow transition-all ${isExpanded ? "w-full" : "w-64"}`}>
     <div className="p-4 border-b border-gray-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -279,7 +293,8 @@ let make = (
             {`Transaction Filter ${Int.toString(filterIndex + 1)}`->React.string}
           </h3>
           {hasFilters
-            ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            ? <span
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 {"Active"->React.string}
               </span>
             : React.null}
@@ -288,25 +303,34 @@ let make = (
           <button
             onClick={_ => onToggleExpand()}
             className="inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <svg 
-              className={`w-4 h-4 transform transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}
-              fill="none" 
-              stroke="currentColor" 
+            <svg
+              className={`w-4 h-4 transform transition-transform ${isExpanded
+                  ? "rotate-180"
+                  : "rotate-0"}`}
+              fill="none"
+              stroke="currentColor"
               viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
           <button
             onClick={_ => onRemove()}
             className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-100 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
             </svg>
           </button>
         </div>
       </div>
     </div>
-    
+
     {isExpanded
       ? <div className="p-6">
           <div className="mb-4 flex flex-wrap gap-2">
@@ -352,7 +376,11 @@ let make = (
                 onClick={_ => addFrom()}
                 disabled={String.length(newFrom) == 0 || !(newFrom->String.startsWith("0x"))}
                 className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                {(Array.length(filterState.from_->Option.getOr([])) > 0 ? "Add (via OR) From" : "Add From")->React.string}
+                {(
+                  Array.length(filterState.from_->Option.getOr([])) > 0
+                    ? "Add (via OR) From"
+                    : "Add From"
+                )->React.string}
               </button>
             </div>
             <div className="space-y-2">
@@ -391,7 +419,9 @@ let make = (
                 onClick={_ => addTo()}
                 disabled={String.length(newTo) == 0 || !(newTo->String.startsWith("0x"))}
                 className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                {(Array.length(filterState.to_->Option.getOr([])) > 0 ? "Add (via OR) To" : "Add To")->React.string}
+                {(
+                  Array.length(filterState.to_->Option.getOr([])) > 0 ? "Add (via OR) To" : "Add To"
+                )->React.string}
               </button>
             </div>
             <div className="space-y-2">
@@ -430,7 +460,11 @@ let make = (
                 onClick={_ => addSighash()}
                 disabled={String.length(newSighash) == 0 || !(newSighash->String.startsWith("0x"))}
                 className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                {(Array.length(filterState.sighash->Option.getOr([])) > 0 ? "Add (via OR) Sighash" : "Add Sighash")->React.string}
+                {(
+                  Array.length(filterState.sighash->Option.getOr([])) > 0
+                    ? "Add (via OR) Sighash"
+                    : "Add Sighash"
+                )->React.string}
               </button>
             </div>
             <div className="space-y-2">
@@ -475,19 +509,20 @@ let make = (
             {switch filterState.status {
             | Some(status) =>
               <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
-                <span className="text-sm font-mono text-gray-800"> 
-                  {`Status: ${Int.toString(status)} (${status === 1 ? "Success" : "Failed"})`->React.string} 
+                <span className="text-sm font-mono text-gray-800">
+                  {`Status: ${Int.toString(status)} (${status === 1
+                      ? "Success"
+                      : "Failed"})`->React.string}
                 </span>
                 <button
-                  onClick={_ => clearStatus()}
-                  className="text-red-600 hover:text-red-800 text-sm">
+                  onClick={_ => clearStatus()} className="text-red-600 hover:text-red-800 text-sm">
                   {"Clear"->React.string}
                 </button>
               </div>
             | None => React.null
             }}
           </div>
-          
+
           // Kind
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -508,7 +543,11 @@ let make = (
                 onClick={_ => addKind()}
                 disabled={String.length(newKind) == 0}
                 className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                {(Array.length(filterState.kind->Option.getOr([])) > 0 ? "Add (via OR) Kind" : "Add Kind")->React.string}
+                {(
+                  Array.length(filterState.kind->Option.getOr([])) > 0
+                    ? "Add (via OR) Kind"
+                    : "Add Kind"
+                )->React.string}
               </button>
             </div>
             <div className="space-y-2">
@@ -516,7 +555,9 @@ let make = (
                 <div
                   key={Int.toString(index)}
                   className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
-                  <span className="text-sm font-mono text-gray-800"> {Int.toString(kind)->React.string} </span>
+                  <span className="text-sm font-mono text-gray-800">
+                    {Int.toString(kind)->React.string}
+                  </span>
                   <button
                     onClick={_ => removeKind(index)}
                     className="text-red-600 hover:text-red-800 text-sm">
@@ -545,9 +586,14 @@ let make = (
               />
               <button
                 onClick={_ => addContractAddress()}
-                disabled={String.length(newContractAddress) == 0 || !(newContractAddress->String.startsWith("0x"))}
+                disabled={String.length(newContractAddress) == 0 ||
+                  !(newContractAddress->String.startsWith("0x"))}
                 className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                {(Array.length(filterState.contractAddress->Option.getOr([])) > 0 ? "Add (via OR) Contract" : "Add Contract")->React.string}
+                {(
+                  Array.length(filterState.contractAddress->Option.getOr([])) > 0
+                    ? "Add (via OR) Contract"
+                    : "Add Contract"
+                )->React.string}
               </button>
             </div>
             <div className="space-y-2">
@@ -572,16 +618,19 @@ let make = (
               {"English Description"->React.string}
             </label>
             <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
-              <p className="text-sm text-blue-800"> {generateEnglishDescription()->React.string} </p>
+              <p className="text-sm text-blue-800">
+                {generateEnglishDescription()->React.string}
+              </p>
             </div>
-            
+
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {"Boolean Logic Hierarchy"->React.string}
             </label>
-            <pre className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono mb-4 whitespace-pre overflow-x-auto">
+            <pre
+              className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono mb-4 whitespace-pre overflow-x-auto">
               {generateBooleanHierarchy()->React.string}
             </pre>
-            
+
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {"Generated Query Structure"->React.string}
             </label>
@@ -593,4 +642,4 @@ let make = (
         </div>
       : React.null}
   </div>
-} 
+}

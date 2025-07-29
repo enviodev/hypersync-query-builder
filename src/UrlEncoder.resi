@@ -16,4 +16,4 @@ let deserializeUrlState: string => option<urlState>
 let encodeUrlStateToUrl: urlState => string
 let decodeUrlStateFromUrl: string => option<urlState>
 let getUrlStateFromUrl: unit => option<urlState>
-let updateUrlWithState: urlState => unit 
+let updateUrlWithState: urlState => unit

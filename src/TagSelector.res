@@ -13,26 +13,21 @@ let make = (
   ~placeholder: string,
   ~title: string,
 ) => {
-let (searchTerm, setSearchTerm) = React.useState(() => "")
-let (isOpen, setIsOpen) = React.useState(() => false)
-let (highlightIndex, setHighlightIndex) = React.useState(() => 0)
+  let (searchTerm, setSearchTerm) = React.useState(() => "")
+  let (isOpen, setIsOpen) = React.useState(() => false)
+  let (highlightIndex, setHighlightIndex) = React.useState(() => 0)
 
-React.useEffect1(() => {
-  setHighlightIndex(_ => 0)
-  None
-}, [searchTerm]);
+  React.useEffect1(() => {
+    setHighlightIndex(_ => 0)
+    None
+  }, [searchTerm])
 
   let filteredOptions =
-    options
-    ->Array.filter(option =>
-        !Array.includes(selectedValues, option.value) &&
-        (searchTerm === "" ||
-         String.includes(
-           String.toLowerCase(option.label),
-           String.toLowerCase(searchTerm),
-         )
-        )
-      )
+    options->Array.filter(option =>
+      !Array.includes(selectedValues, option.value) &&
+      (searchTerm === "" ||
+        String.includes(String.toLowerCase(option.label), String.toLowerCase(searchTerm)))
+    )
 
   let labelFromValue = value =>
     options
@@ -55,26 +50,29 @@ React.useEffect1(() => {
 
   <div className="relative">
     <div className="mb-2">
-      <label className="text-sm font-medium text-gray-700">
-        {title->React.string}
-      </label>
+      <label className="text-sm font-medium text-gray-700"> {title->React.string} </label>
     </div>
     <div className="flex flex-wrap items-center gap-2 border border-gray-300 rounded-md p-2">
       {selectedValues
       ->Array.map(value =>
-          <span
-            key={labelFromValue(value)}
-            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            {labelFromValue(value)->React.string}
-            <button
-              onClick={_ => removeValue(value)}
-              className="ml-1 text-gray-500 hover:text-gray-700 focus:outline-none">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </span>
-        )
+        <span
+          key={labelFromValue(value)}
+          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          {labelFromValue(value)->React.string}
+          <button
+            onClick={_ => removeValue(value)}
+            className="ml-1 text-gray-500 hover:text-gray-700 focus:outline-none">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </span>
+      )
       ->React.array}
       <input
         value={searchTerm}
@@ -100,7 +98,7 @@ React.useEffect1(() => {
             }
           | "Enter" => {
               ReactEvent.Synthetic.preventDefault(e)
-              switch Array.get(filteredOptions, highlightIndex) {
+              switch filteredOptions[highlightIndex] {
               | Some(opt) => addValue(opt.value)
               | None => ()
               }
@@ -112,24 +110,23 @@ React.useEffect1(() => {
         className="flex-1 min-w-0 text-sm focus:outline-none"
       />
     </div>
-    {isOpen && Array.length(filteredOptions) > 0 ?
-      <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
-        {filteredOptions
-        ->Array.mapWithIndex((option, index) =>
+    {isOpen && Array.length(filteredOptions) > 0
+      ? <div
+          className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
+          {filteredOptions
+          ->Array.mapWithIndex((option, index) =>
             <button
               key={Int.toString(index)}
               onMouseDown={_ => addValue(option.value)}
               onMouseEnter={_ => setHighlightIndex(_ => index)}
-              className={
-                "w-full text-left px-3 py-2 hover:bg-gray-50 text-sm" ++
-                (index === highlightIndex ? " bg-gray-100" : "")
-              }>
+              className={"w-full text-left px-3 py-2 hover:bg-gray-50 text-sm" ++ (
+                index === highlightIndex ? " bg-gray-100" : ""
+              )}>
               {option.label->React.string}
             </button>
           )
-        ->React.array}
-      </div>
-    : React.null}
+          ->React.array}
+        </div>
+      : React.null}
   </div>
 }
-

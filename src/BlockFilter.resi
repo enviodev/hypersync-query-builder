@@ -8,5 +8,5 @@ let make: (
   ~onRemove: unit => unit,
   ~filterIndex: int,
   ~isExpanded: bool,
-  ~onToggleExpand: unit => unit
+  ~onToggleExpand: unit => unit,
 ) => React.element

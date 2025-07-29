@@ -11,4 +11,4 @@ let make: (
   ~onSelectionChange: array<'a> => unit,
   ~placeholder: string,
   ~title: string,
-) => React.element 
+) => React.element

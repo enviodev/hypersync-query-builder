@@ -66,18 +66,22 @@ let make = (
   }
 
   let generateEnglishDescription = () => {
-    BlockBooleanLogicGenerator.generateEnglishDescription((filterState :> BlockBooleanLogicGenerator.blockFilterState))
+    BlockBooleanLogicGenerator.generateEnglishDescription(
+      (filterState :> BlockBooleanLogicGenerator.blockFilterState),
+    )
   }
 
   let generateBooleanHierarchy = () => {
-    BlockBooleanLogicGenerator.generateBooleanHierarchy((filterState :> BlockBooleanLogicGenerator.blockFilterState))
+    BlockBooleanLogicGenerator.generateBooleanHierarchy(
+      (filterState :> BlockBooleanLogicGenerator.blockFilterState),
+    )
   }
 
   let generateCodeBlock = () => {
     let {hash, miner} = filterState
 
     let hashStr = switch hash {
-    | Some(hashArray) when Array.length(hashArray) > 0 => {
+    | Some(hashArray) if Array.length(hashArray) > 0 => {
         let hashList = Array.join(hashArray->Array.map(h => `    "${h}"`), ",\n")
         `  "hash": [\n${hashList}\n  ]`
       }
@@ -85,7 +89,7 @@ let make = (
     }
 
     let minerStr = switch miner {
-    | Some(minerArray) when Array.length(minerArray) > 0 => {
+    | Some(minerArray) if Array.length(minerArray) > 0 => {
         let minerList = Array.join(minerArray->Array.map(m => `    "${m}"`), ",\n")
         `  "miner": [\n${minerList}\n  ]`
       }
@@ -100,9 +104,11 @@ let make = (
     }
   }
 
-  let hasFilters = Array.length(filterState.hash->Option.getOr([])) > 0 || Array.length(filterState.miner->Option.getOr([])) > 0
+  let hasFilters =
+    Array.length(filterState.hash->Option.getOr([])) > 0 ||
+      Array.length(filterState.miner->Option.getOr([])) > 0
 
-  <div className={`bg-white rounded-lg shadow transition-all ${isExpanded ? "w-full" : "w-64"}`}> 
+  <div className={`bg-white rounded-lg shadow transition-all ${isExpanded ? "w-full" : "w-64"}`}>
     <div className="p-4 border-b border-gray-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -110,7 +116,8 @@ let make = (
             {`Block Filter ${Int.toString(filterIndex + 1)}`->React.string}
           </h3>
           {hasFilters
-            ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+            ? <span
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                 {"Active"->React.string}
               </span>
             : React.null}
@@ -119,25 +126,34 @@ let make = (
           <button
             onClick={_ => onToggleExpand()}
             className="inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <svg 
-              className={`w-4 h-4 transform transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}
-              fill="none" 
-              stroke="currentColor" 
+            <svg
+              className={`w-4 h-4 transform transition-transform ${isExpanded
+                  ? "rotate-180"
+                  : "rotate-0"}`}
+              fill="none"
+              stroke="currentColor"
               viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
           <button
             onClick={_ => onRemove()}
             className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-100 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
             </svg>
           </button>
         </div>
       </div>
     </div>
-    
+
     {isExpanded
       ? <div className="p-6">
           <div className="mb-4">
@@ -168,7 +184,11 @@ let make = (
                 onClick={_ => addHash()}
                 disabled={String.length(newHash) == 0 || !(newHash->String.startsWith("0x"))}
                 className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                {(Array.length(filterState.hash->Option.getOr([])) > 0 ? "Add (via OR) Hash" : "Add Hash")->React.string}
+                {(
+                  Array.length(filterState.hash->Option.getOr([])) > 0
+                    ? "Add (via OR) Hash"
+                    : "Add Hash"
+                )->React.string}
               </button>
             </div>
             <div className="space-y-2">
@@ -207,7 +227,11 @@ let make = (
                 onClick={_ => addMiner()}
                 disabled={String.length(newMiner) == 0 || !(newMiner->String.startsWith("0x"))}
                 className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                {(Array.length(filterState.miner->Option.getOr([])) > 0 ? "Add (via OR) Miner" : "Add Miner")->React.string}
+                {(
+                  Array.length(filterState.miner->Option.getOr([])) > 0
+                    ? "Add (via OR) Miner"
+                    : "Add Miner"
+                )->React.string}
               </button>
             </div>
             <div className="space-y-2">
@@ -232,16 +256,19 @@ let make = (
               {"English Description"->React.string}
             </label>
             <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
-              <p className="text-sm text-blue-800"> {generateEnglishDescription()->React.string} </p>
+              <p className="text-sm text-blue-800">
+                {generateEnglishDescription()->React.string}
+              </p>
             </div>
-            
+
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {"Boolean Logic Hierarchy"->React.string}
             </label>
-            <pre className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono mb-4 whitespace-pre overflow-x-auto">
+            <pre
+              className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono mb-4 whitespace-pre overflow-x-auto">
               {generateBooleanHierarchy()->React.string}
             </pre>
-            
+
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {"Generated Query Structure"->React.string}
             </label>
@@ -253,4 +280,4 @@ let make = (
         </div>
       : React.null}
   </div>
-} 
+}

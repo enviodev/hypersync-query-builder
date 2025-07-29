@@ -19,7 +19,7 @@ let isEmptyTransactionFilter = (filterState: QueryStructure.transactionSelection
   let kindArray = kind->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
   let authArray = authorizationList->Option.getOr([])
-  
+
   Array.length(fromArray) === 0 &&
   Array.length(toArray) === 0 &&
   Array.length(sighashArray) === 0 &&
@@ -42,9 +42,9 @@ let generateFilterDescription = (filterState: filterState) => {
   let {address, topics} = filterState
   let addressArray = address->Option.getOr([])
   let topicsArray = topics->Option.getOr([])
-  
+
   let parts = []
-  
+
   // Address condition
   if Array.length(addressArray) > 0 {
     let addressCondition = if Array.length(addressArray) === 1 {
@@ -55,7 +55,7 @@ let generateFilterDescription = (filterState: filterState) => {
     }
     parts->Array.push(addressCondition)->ignore
   }
-  
+
   // Topic conditions
   let topicConditions = []
   Array.forEachWithIndex(topicsArray, (topicArray, i) => {
@@ -69,12 +69,12 @@ let generateFilterDescription = (filterState: filterState) => {
       topicConditions->Array.push(condition)->ignore
     }
   })
-  
+
   if Array.length(topicConditions) > 0 {
     let topicCondition = Array.join(topicConditions, " AND ")
     parts->Array.push(topicCondition)->ignore
   }
-  
+
   Array.join(parts, " AND ")
 }
 
@@ -87,7 +87,7 @@ let generateTransactionFilterDescription = (filterState: QueryStructure.transact
   }
 }
 
-// Helper function to generate block filter description  
+// Helper function to generate block filter description
 let generateBlockFilterDescription = (filterState: QueryStructure.blockSelection) => {
   let description = BlockBooleanLogicGenerator.generateEnglishDescription(filterState)
   switch String.startsWith(description, "Match blocks where: ") {
@@ -99,13 +99,14 @@ let generateBlockFilterDescription = (filterState: QueryStructure.blockSelection
 let generateMultiFilterDescription = (filters: option<array<filterState>>) => {
   switch filters {
   | None => "selecting None"
-  | Some(filterArray) => 
+  | Some(filterArray) =>
     if Array.length(filterArray) === 0 {
       "selecting None"
     } else if Array.length(filterArray) === 1 && isEmptyFilter(Array.getUnsafe(filterArray, 0)) {
       "selecting ALL"
     } else {
-      let filterDescriptions = filterArray
+      let filterDescriptions =
+        filterArray
         ->Array.map(filter => {
           if isEmptyFilter(filter) {
             "ALL logs"
@@ -119,7 +120,7 @@ let generateMultiFilterDescription = (filters: option<array<filterState>>) => {
           }
         })
         ->Array.filter(desc => desc !== "")
-      
+
       if Array.length(filterDescriptions) === 0 {
         "selecting None"
       } else {
@@ -129,16 +130,21 @@ let generateMultiFilterDescription = (filters: option<array<filterState>>) => {
   }
 }
 
-let generateMultiTransactionFilterDescription = (filters: option<array<QueryStructure.transactionSelection>>) => {
+let generateMultiTransactionFilterDescription = (
+  filters: option<array<QueryStructure.transactionSelection>>,
+) => {
   switch filters {
   | None => "selecting None"
-  | Some(filterArray) => 
+  | Some(filterArray) =>
     if Array.length(filterArray) === 0 {
       "selecting None"
-    } else if Array.length(filterArray) === 1 && isEmptyTransactionFilter(Array.getUnsafe(filterArray, 0)) {
+    } else if (
+      Array.length(filterArray) === 1 && isEmptyTransactionFilter(Array.getUnsafe(filterArray, 0))
+    ) {
       "selecting ALL"
     } else {
-      let filterDescriptions = filterArray
+      let filterDescriptions =
+        filterArray
         ->Array.map(filter => {
           if isEmptyTransactionFilter(filter) {
             "ALL transactions"
@@ -152,7 +158,7 @@ let generateMultiTransactionFilterDescription = (filters: option<array<QueryStru
           }
         })
         ->Array.filter(desc => desc !== "")
-      
+
       if Array.length(filterDescriptions) === 0 {
         "selecting None"
       } else {
@@ -162,16 +168,21 @@ let generateMultiTransactionFilterDescription = (filters: option<array<QueryStru
   }
 }
 
-let generateMultiBlockFilterDescription = (filters: option<array<QueryStructure.blockSelection>>) => {
+let generateMultiBlockFilterDescription = (
+  filters: option<array<QueryStructure.blockSelection>>,
+) => {
   switch filters {
   | None => "selecting None"
-  | Some(filterArray) => 
+  | Some(filterArray) =>
     if Array.length(filterArray) === 0 {
       "selecting None"
-    } else if Array.length(filterArray) === 1 && isEmptyBlockFilter(Array.getUnsafe(filterArray, 0)) {
+    } else if (
+      Array.length(filterArray) === 1 && isEmptyBlockFilter(Array.getUnsafe(filterArray, 0))
+    ) {
       "selecting ALL"
     } else {
-      let filterDescriptions = filterArray
+      let filterDescriptions =
+        filterArray
         ->Array.map(filter => {
           if isEmptyBlockFilter(filter) {
             "ALL blocks"
@@ -185,7 +196,7 @@ let generateMultiBlockFilterDescription = (filters: option<array<QueryStructure.
           }
         })
         ->Array.filter(desc => desc !== "")
-      
+
       if Array.length(filterDescriptions) === 0 {
         "selecting None"
       } else {
@@ -199,12 +210,12 @@ let generateEnglishDescription = (filterState: filterState) => {
   let {address, topics} = filterState
   let addressArray = address->Option.getOr([])
   let topicsArray = topics->Option.getOr([])
-  
+
   if Array.length(addressArray) === 0 && Array.length(topicsArray) === 0 {
     "No filters applied - will match all logs"
   } else {
     let parts = []
-    
+
     // Address condition
     if Array.length(addressArray) > 0 {
       let addressCondition = if Array.length(addressArray) === 1 {
@@ -215,7 +226,7 @@ let generateEnglishDescription = (filterState: filterState) => {
       }
       parts->Array.push(addressCondition)->ignore
     }
-    
+
     // Topic conditions
     let topicConditions = []
     Array.forEachWithIndex(topicsArray, (topicArray, i) => {
@@ -229,12 +240,12 @@ let generateEnglishDescription = (filterState: filterState) => {
         topicConditions->Array.push(condition)->ignore
       }
     })
-    
+
     if Array.length(topicConditions) > 0 {
       let topicCondition = Array.join(topicConditions, " AND ")
       parts->Array.push(topicCondition)->ignore
     }
-    
+
     if Array.length(parts) > 0 {
       `Match logs where: ${Array.join(parts, " AND ")}`
     } else {
@@ -245,23 +256,23 @@ let generateEnglishDescription = (filterState: filterState) => {
 
 let generateBooleanHierarchy = (filterState: filterState) => {
   let {address, topics} = filterState
-  
+
   let addressArray = address->Option.getOr([])
   let topicsArray = topics->Option.getOr([])
-  
+
   if Array.length(addressArray) === 0 && Array.length(topicsArray) === 0 {
     "No filters"
   } else {
     let lines = []
-    
-    let hasMultipleConditions = 
-      (Array.length(addressArray) > 0) && 
-      (topicsArray->Array.some(topicArray => Array.length(topicArray) > 0))
-    
+
+    let hasMultipleConditions =
+      Array.length(addressArray) > 0 &&
+        topicsArray->Array.some(topicArray => Array.length(topicArray) > 0)
+
     if hasMultipleConditions {
       lines->Array.push("AND")->ignore
     }
-    
+
     // Address hierarchy
     if Array.length(addressArray) > 0 {
       let prefix = hasMultipleConditions ? "├── " : ""
@@ -273,24 +284,29 @@ let generateBooleanHierarchy = (filterState: filterState) => {
           let isLast = i === Array.length(addressArray) - 1
           let addrPrefix = if hasMultipleConditions {
             isLast ? "│   └── " : "│   ├── "
+          } else if isLast {
+            "└── "
           } else {
-            isLast ? "└── " : "├── "
+            "├── "
           }
           lines->Array.push(`${addrPrefix}${addr}`)->ignore
         })
       }
     }
-    
+
     // Topic hierarchy
-    let nonEmptyTopics = topicsArray->Array.filterMap(topicArray => Array.length(topicArray) > 0 ? Some(topicArray) : None)
+    let nonEmptyTopics =
+      topicsArray->Array.filterMap(topicArray =>
+        Array.length(topicArray) > 0 ? Some(topicArray) : None
+      )
     if Array.length(nonEmptyTopics) > 0 {
       let hasTopicConditions = Array.length(nonEmptyTopics) > 1
       let topicPrefix = hasMultipleConditions ? "└── " : ""
-      
+
       if hasTopicConditions {
         lines->Array.push(`${topicPrefix}AND (topics)`)->ignore
       }
-      
+
       let topicIndex = ref(0)
       Array.forEachWithIndex(topicsArray, (topicArray, i) => {
         if Array.length(topicArray) > 0 {
@@ -301,16 +317,18 @@ let generateBooleanHierarchy = (filterState: filterState) => {
             } else {
               "└── "
             }
+          } else if hasTopicConditions {
+            isLastTopic ? "└── " : "├── "
           } else {
-            if hasTopicConditions {
-              isLastTopic ? "└── " : "├── "
-            } else {
-              ""
-            }
+            ""
           }
-          
+
           if Array.length(topicArray) === 1 {
-            lines->Array.push(`${basePrefix}topic[${Int.toString(i)}] = ${Array.getUnsafe(topicArray, 0)}`)->ignore
+            lines
+            ->Array.push(
+              `${basePrefix}topic[${Int.toString(i)}] = ${Array.getUnsafe(topicArray, 0)}`,
+            )
+            ->ignore
           } else {
             lines->Array.push(`${basePrefix}OR (topic[${Int.toString(i)}])`)->ignore
             Array.forEachWithIndex(topicArray, (topic, j) => {
@@ -319,22 +337,28 @@ let generateBooleanHierarchy = (filterState: filterState) => {
                 if hasTopicConditions {
                   if isLastTopic {
                     isLastValue ? "        └── " : "        ├── "
+                  } else if isLastValue {
+                    "    │   └── "
                   } else {
-                    isLastValue ? "    │   └── " : "    │   ├── "
+                    "    │   ├── "
                   }
+                } else if isLastValue {
+                  "└── "
                 } else {
-                  isLastValue ? "└── " : "├── "
+                  "├── "
                 }
+              } else if hasTopicConditions {
+                if isLastTopic {
+                  isLastValue ? "    └── " : "    ├── "
+                } else if isLastValue {
+                  "│  └── "
+                } else {
+                  "│  ├── "
+                }
+              } else if isLastValue {
+                "└── "
               } else {
-                if hasTopicConditions {
-                  if isLastTopic {
-                    isLastValue ? "    └── " : "    ├── "
-                  } else {
-                    isLastValue ? "│  └── " : "│  ├── "
-                  }
-                } else {
-                  isLastValue ? "└── " : "├── "
-                }
+                "├── "
               }
               lines->Array.push(`${valuePrefix}${topic}`)->ignore
             })
@@ -343,15 +367,15 @@ let generateBooleanHierarchy = (filterState: filterState) => {
         }
       })
     }
-    
+
     Array.join(lines, "\n")
   }
-} 
+}
 
 let generateMultiBooleanHierarchy = (filters: option<array<filterState>>) => {
   switch filters {
   | None => "No filters"
-  | Some(filterArray) => 
+  | Some(filterArray) =>
     if Array.length(filterArray) === 0 {
       "No filters"
     } else if Array.length(filterArray) === 1 && isEmptyFilter(Array.getUnsafe(filterArray, 0)) {
@@ -359,7 +383,7 @@ let generateMultiBooleanHierarchy = (filters: option<array<filterState>>) => {
     } else {
       let nonEmptyFilters = filterArray->Array.filter(filter => !isEmptyFilter(filter))
       let hasEmptyFilter = filterArray->Array.some(isEmptyFilter)
-      
+
       if Array.length(nonEmptyFilters) === 0 && hasEmptyFilter {
         "All logs"
       } else if Array.length(nonEmptyFilters) === 1 && !hasEmptyFilter {
@@ -368,13 +392,15 @@ let generateMultiBooleanHierarchy = (filters: option<array<filterState>>) => {
       } else {
         let lines = []
         lines->Array.push("OR")->ignore
-        
-        let allFilters = hasEmptyFilter ? Array.concat(nonEmptyFilters, [{address: None, topics: None}]) : nonEmptyFilters
-        
+
+        let allFilters = hasEmptyFilter
+          ? Array.concat(nonEmptyFilters, [{address: None, topics: None}])
+          : nonEmptyFilters
+
         Array.forEachWithIndex(allFilters, (filter, i) => {
           let isLast = i === Array.length(allFilters) - 1
           let prefix = isLast ? "└── " : "├── "
-          
+
           if isEmptyFilter(filter) {
             lines->Array.push(`${prefix}All logs`)->ignore
           } else {
@@ -386,7 +412,11 @@ let generateMultiBooleanHierarchy = (filters: option<array<filterState>>) => {
                 if lineIndex === 0 {
                   lines->Array.push(`${prefix}${line}`)->ignore
                 } else {
-                  let indent = if isLast { "    " } else { "│   " }
+                  let indent = if isLast {
+                    "    "
+                  } else {
+                    "│   "
+                  }
                   lines->Array.push(`${indent}${line}`)->ignore
                 }
               })
@@ -396,40 +426,61 @@ let generateMultiBooleanHierarchy = (filters: option<array<filterState>>) => {
             }
           }
         })
-        
+
         Array.join(lines, "\n")
       }
     }
   }
-} 
+}
 
-let generateMultiTransactionBooleanHierarchy = (filters: option<array<QueryStructure.transactionSelection>>) => {
+let generateMultiTransactionBooleanHierarchy = (
+  filters: option<array<QueryStructure.transactionSelection>>,
+) => {
   switch filters {
   | None => "No filters"
-  | Some(filterArray) => 
+  | Some(filterArray) =>
     if Array.length(filterArray) === 0 {
       "No filters"
-    } else if Array.length(filterArray) === 1 && isEmptyTransactionFilter(Array.getUnsafe(filterArray, 0)) {
+    } else if (
+      Array.length(filterArray) === 1 && isEmptyTransactionFilter(Array.getUnsafe(filterArray, 0))
+    ) {
       "All transactions"
     } else {
       let nonEmptyFilters = filterArray->Array.filter(filter => !isEmptyTransactionFilter(filter))
       let hasEmptyFilter = filterArray->Array.some(isEmptyTransactionFilter)
-      
+
       if Array.length(nonEmptyFilters) === 0 && hasEmptyFilter {
         "All transactions"
       } else if Array.length(nonEmptyFilters) === 1 && !hasEmptyFilter {
         // Single non-empty filter, no OR needed
-        TransactionBooleanLogicGenerator.generateBooleanHierarchy(Array.getUnsafe(nonEmptyFilters, 0))
+        TransactionBooleanLogicGenerator.generateBooleanHierarchy(
+          Array.getUnsafe(nonEmptyFilters, 0),
+        )
       } else {
         let lines = []
         lines->Array.push("OR")->ignore
-        
-        let allFilters = hasEmptyFilter ? Array.concat(nonEmptyFilters, [{from_: None, to_: None, sighash: None, status: None, kind: None, contractAddress: None, authorizationList: None}]) : nonEmptyFilters
-        
+
+        let allFilters = hasEmptyFilter
+          ? Array.concat(
+              nonEmptyFilters,
+              [
+                {
+                  from_: None,
+                  to_: None,
+                  sighash: None,
+                  status: None,
+                  kind: None,
+                  contractAddress: None,
+                  authorizationList: None,
+                },
+              ],
+            )
+          : nonEmptyFilters
+
         Array.forEachWithIndex(allFilters, (filter, i) => {
           let isLast = i === Array.length(allFilters) - 1
           let prefix = isLast ? "└── " : "├── "
-          
+
           if isEmptyTransactionFilter(filter) {
             lines->Array.push(`${prefix}All transactions`)->ignore
           } else {
@@ -441,7 +492,11 @@ let generateMultiTransactionBooleanHierarchy = (filters: option<array<QueryStruc
                 if lineIndex === 0 {
                   lines->Array.push(`${prefix}${line}`)->ignore
                 } else {
-                  let indent = if isLast { "    " } else { "│   " }
+                  let indent = if isLast {
+                    "    "
+                  } else {
+                    "│   "
+                  }
                   lines->Array.push(`${indent}${line}`)->ignore
                 }
               })
@@ -451,25 +506,29 @@ let generateMultiTransactionBooleanHierarchy = (filters: option<array<QueryStruc
             }
           }
         })
-        
+
         Array.join(lines, "\n")
       }
     }
   }
 }
 
-let generateMultiBlockBooleanHierarchy = (filters: option<array<QueryStructure.blockSelection>>) => {
+let generateMultiBlockBooleanHierarchy = (
+  filters: option<array<QueryStructure.blockSelection>>,
+) => {
   switch filters {
   | None => "No filters"
-  | Some(filterArray) => 
+  | Some(filterArray) =>
     if Array.length(filterArray) === 0 {
       "No filters"
-    } else if Array.length(filterArray) === 1 && isEmptyBlockFilter(Array.getUnsafe(filterArray, 0)) {
+    } else if (
+      Array.length(filterArray) === 1 && isEmptyBlockFilter(Array.getUnsafe(filterArray, 0))
+    ) {
       "All blocks"
     } else {
       let nonEmptyFilters = filterArray->Array.filter(filter => !isEmptyBlockFilter(filter))
       let hasEmptyFilter = filterArray->Array.some(isEmptyBlockFilter)
-      
+
       if Array.length(nonEmptyFilters) === 0 && hasEmptyFilter {
         "All blocks"
       } else if Array.length(nonEmptyFilters) === 1 && !hasEmptyFilter {
@@ -478,13 +537,15 @@ let generateMultiBlockBooleanHierarchy = (filters: option<array<QueryStructure.b
       } else {
         let lines = []
         lines->Array.push("OR")->ignore
-        
-        let allFilters = hasEmptyFilter ? Array.concat(nonEmptyFilters, [{hash: None, miner: None}]) : nonEmptyFilters
-        
+
+        let allFilters = hasEmptyFilter
+          ? Array.concat(nonEmptyFilters, [{hash: None, miner: None}])
+          : nonEmptyFilters
+
         Array.forEachWithIndex(allFilters, (filter, i) => {
           let isLast = i === Array.length(allFilters) - 1
           let prefix = isLast ? "└── " : "├── "
-          
+
           if isEmptyBlockFilter(filter) {
             lines->Array.push(`${prefix}All blocks`)->ignore
           } else {
@@ -496,7 +557,11 @@ let generateMultiBlockBooleanHierarchy = (filters: option<array<QueryStructure.b
                 if lineIndex === 0 {
                   lines->Array.push(`${prefix}${line}`)->ignore
                 } else {
-                  let indent = if isLast { "    " } else { "│   " }
+                  let indent = if isLast {
+                    "    "
+                  } else {
+                    "│   "
+                  }
                   lines->Array.push(`${indent}${line}`)->ignore
                 }
               })
@@ -506,9 +571,9 @@ let generateMultiBlockBooleanHierarchy = (filters: option<array<QueryStructure.b
             }
           }
         })
-        
+
         Array.join(lines, "\n")
       }
     }
   }
-} 
+}

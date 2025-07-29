@@ -1,2 +1,2 @@
 @react.component
-let make: (~query: QueryStructure.query) => React.element 
+let make: (~query: QueryStructure.query) => React.element

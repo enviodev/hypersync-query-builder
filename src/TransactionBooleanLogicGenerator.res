@@ -8,8 +8,8 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
   let kindArray = kind->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
   let authArray = authorizationList->Option.getOr([])
-  
-  let hasAnyFilter = 
+
+  let hasAnyFilter =
     Array.length(fromArray) > 0 ||
     Array.length(toArray) > 0 ||
     Array.length(sighashArray) > 0 ||
@@ -17,12 +17,12 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
     Array.length(kindArray) > 0 ||
     Array.length(contractAddressArray) > 0 ||
     Array.length(authArray) > 0
-  
+
   if !hasAnyFilter {
     "No filters applied - will match all transactions"
   } else {
     let parts = []
-    
+
     // From condition
     if Array.length(fromArray) > 0 {
       let fromCondition = if Array.length(fromArray) === 1 {
@@ -33,7 +33,7 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
       }
       parts->Array.push(fromCondition)->ignore
     }
-    
+
     // To condition
     if Array.length(toArray) > 0 {
       let toCondition = if Array.length(toArray) === 1 {
@@ -44,7 +44,7 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
       }
       parts->Array.push(toCondition)->ignore
     }
-    
+
     // Sighash condition
     if Array.length(sighashArray) > 0 {
       let sighashCondition = if Array.length(sighashArray) === 1 {
@@ -55,15 +55,15 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
       }
       parts->Array.push(sighashCondition)->ignore
     }
-    
+
     // Status condition
     switch status {
-    | Some(s) => 
+    | Some(s) =>
       let statusText = s === 1 ? "successful" : "failed"
       parts->Array.push(`the transaction is ${statusText}`)->ignore
     | None => ()
     }
-    
+
     // Kind condition
     if Array.length(kindArray) > 0 {
       let kindCondition = if Array.length(kindArray) === 1 {
@@ -72,8 +72,11 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
         let kindList = switch Array.length(kindArray) {
         | 0 => ""
         | 1 => Int.toString(Array.getUnsafe(kindArray, 0))
-        | 2 => Int.toString(Array.getUnsafe(kindArray, 0)) ++ " OR " ++ Int.toString(Array.getUnsafe(kindArray, 1))
-        | _ => 
+        | 2 =>
+          Int.toString(Array.getUnsafe(kindArray, 0)) ++
+          " OR " ++
+          Int.toString(Array.getUnsafe(kindArray, 1))
+        | _ =>
           let first = Int.toString(Array.getUnsafe(kindArray, 0))
           let second = Int.toString(Array.getUnsafe(kindArray, 1))
           let rest = Array.sliceToEnd(kindArray, ~start=2)
@@ -84,7 +87,7 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
       }
       parts->Array.push(kindCondition)->ignore
     }
-    
+
     // Contract address condition
     if Array.length(contractAddressArray) > 0 {
       let contractCondition = if Array.length(contractAddressArray) === 1 {
@@ -95,7 +98,7 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
       }
       parts->Array.push(contractCondition)->ignore
     }
-    
+
     // Authorization list condition
     if Array.length(authArray) > 0 {
       let authCondition = if Array.length(authArray) === 1 {
@@ -105,7 +108,7 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
       }
       parts->Array.push(authCondition)->ignore
     }
-    
+
     if Array.length(parts) > 0 {
       `Match transactions where: ${Array.join(parts, " AND ")}`
     } else {
@@ -122,8 +125,8 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
   let kindArray = kind->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
   let authArray = authorizationList->Option.getOr([])
-  
-  let hasAnyFilter = 
+
+  let hasAnyFilter =
     Array.length(fromArray) > 0 ||
     Array.length(toArray) > 0 ||
     Array.length(sighashArray) > 0 ||
@@ -131,34 +134,48 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     Array.length(kindArray) > 0 ||
     Array.length(contractAddressArray) > 0 ||
     Array.length(authArray) > 0
-  
+
   if !hasAnyFilter {
     "No filters"
   } else {
     let lines = []
-    
+
     let conditions = []
-    if Array.length(fromArray) > 0 { conditions->Array.push("from")->ignore }
-    if Array.length(toArray) > 0 { conditions->Array.push("to")->ignore }
-    if Array.length(sighashArray) > 0 { conditions->Array.push("sighash")->ignore }
-    if Option.isSome(status) { conditions->Array.push("status")->ignore }
-    if Array.length(kindArray) > 0 { conditions->Array.push("kind")->ignore }
-    if Array.length(contractAddressArray) > 0 { conditions->Array.push("contractAddress")->ignore }
-    if Array.length(authArray) > 0 { conditions->Array.push("authorizationList")->ignore }
-    
+    if Array.length(fromArray) > 0 {
+      conditions->Array.push("from")->ignore
+    }
+    if Array.length(toArray) > 0 {
+      conditions->Array.push("to")->ignore
+    }
+    if Array.length(sighashArray) > 0 {
+      conditions->Array.push("sighash")->ignore
+    }
+    if Option.isSome(status) {
+      conditions->Array.push("status")->ignore
+    }
+    if Array.length(kindArray) > 0 {
+      conditions->Array.push("kind")->ignore
+    }
+    if Array.length(contractAddressArray) > 0 {
+      conditions->Array.push("contractAddress")->ignore
+    }
+    if Array.length(authArray) > 0 {
+      conditions->Array.push("authorizationList")->ignore
+    }
+
     let hasMultipleConditions = Array.length(conditions) > 1
-    
+
     if hasMultipleConditions {
       lines->Array.push("AND")->ignore
     }
-    
+
     let conditionIndex = ref(0)
-    
+
     // From addresses
     if Array.length(fromArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
-      let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
-      
+      let prefix = hasMultipleConditions ? isLast ? "└── " : "├── " : ""
+
       if Array.length(fromArray) === 1 {
         lines->Array.push(`${prefix}from = ${Array.getUnsafe(fromArray, 0)}`)->ignore
       } else {
@@ -168,23 +185,27 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
           let addrPrefix = if hasMultipleConditions {
             if isLast {
               isLastAddr ? "    └── " : "    ├── "
+            } else if isLastAddr {
+              "│   └── "
             } else {
-              isLastAddr ? "│   └── " : "│   ├── "
+              "│   ├── "
             }
+          } else if isLastAddr {
+            "└── "
           } else {
-            isLastAddr ? "└── " : "├── "
+            "├── "
           }
           lines->Array.push(`${addrPrefix}${addr}`)->ignore
         })
       }
       conditionIndex := conditionIndex.contents + 1
     }
-    
+
     // To addresses
     if Array.length(toArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
-      let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
-      
+      let prefix = hasMultipleConditions ? isLast ? "└── " : "├── " : ""
+
       if Array.length(toArray) === 1 {
         lines->Array.push(`${prefix}to = ${Array.getUnsafe(toArray, 0)}`)->ignore
       } else {
@@ -194,23 +215,27 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
           let addrPrefix = if hasMultipleConditions {
             if isLast {
               isLastAddr ? "    └── " : "    ├── "
+            } else if isLastAddr {
+              "│   └── "
             } else {
-              isLastAddr ? "│   └── " : "│   ├── "
+              "│   ├── "
             }
+          } else if isLastAddr {
+            "└── "
           } else {
-            isLastAddr ? "└── " : "├── "
+            "├── "
           }
           lines->Array.push(`${addrPrefix}${addr}`)->ignore
         })
       }
       conditionIndex := conditionIndex.contents + 1
     }
-    
+
     // Sighash
     if Array.length(sighashArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
-      let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
-      
+      let prefix = hasMultipleConditions ? isLast ? "└── " : "├── " : ""
+
       if Array.length(sighashArray) === 1 {
         lines->Array.push(`${prefix}sighash = ${Array.getUnsafe(sighashArray, 0)}`)->ignore
       } else {
@@ -220,34 +245,38 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
           let sigPrefix = if hasMultipleConditions {
             if isLast {
               isLastSig ? "    └── " : "    ├── "
+            } else if isLastSig {
+              "│   └── "
             } else {
-              isLastSig ? "│   └── " : "│   ├── "
+              "│   ├── "
             }
+          } else if isLastSig {
+            "└── "
           } else {
-            isLastSig ? "└── " : "├── "
+            "├── "
           }
           lines->Array.push(`${sigPrefix}${sig}`)->ignore
         })
       }
       conditionIndex := conditionIndex.contents + 1
     }
-    
+
     // Status
     switch status {
-    | Some(s) => 
+    | Some(s) =>
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
-      let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
+      let prefix = hasMultipleConditions ? isLast ? "└── " : "├── " : ""
       let statusText = s === 1 ? "success" : "failed"
       lines->Array.push(`${prefix}status = ${Int.toString(s)} (${statusText})`)->ignore
       conditionIndex := conditionIndex.contents + 1
     | None => ()
     }
-    
+
     // Kind
     if Array.length(kindArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
-      let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
-      
+      let prefix = hasMultipleConditions ? isLast ? "└── " : "├── " : ""
+
       if Array.length(kindArray) === 1 {
         lines->Array.push(`${prefix}kind = ${Int.toString(Array.getUnsafe(kindArray, 0))}`)->ignore
       } else {
@@ -257,25 +286,31 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
           let kindPrefix = if hasMultipleConditions {
             if isLast {
               isLastKind ? "    └── " : "    ├── "
+            } else if isLastKind {
+              "│   └── "
             } else {
-              isLastKind ? "│   └── " : "│   ├── "
+              "│   ├── "
             }
+          } else if isLastKind {
+            "└── "
           } else {
-            isLastKind ? "└── " : "├── "
+            "├── "
           }
           lines->Array.push(`${kindPrefix}${Int.toString(k)}`)->ignore
         })
       }
       conditionIndex := conditionIndex.contents + 1
     }
-    
+
     // Contract Address
     if Array.length(contractAddressArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
-      let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
-      
+      let prefix = hasMultipleConditions ? isLast ? "└── " : "├── " : ""
+
       if Array.length(contractAddressArray) === 1 {
-        lines->Array.push(`${prefix}contractAddress = ${Array.getUnsafe(contractAddressArray, 0)}`)->ignore
+        lines
+        ->Array.push(`${prefix}contractAddress = ${Array.getUnsafe(contractAddressArray, 0)}`)
+        ->ignore
       } else {
         lines->Array.push(`${prefix}OR (contractAddress)`)->ignore
         Array.forEachWithIndex(contractAddressArray, (addr, i) => {
@@ -283,11 +318,15 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
           let addrPrefix = if hasMultipleConditions {
             if isLast {
               isLastAddr ? "    └── " : "    ├── "
+            } else if isLastAddr {
+              "│   └── "
             } else {
-              isLastAddr ? "│   └── " : "│   ├── "
+              "│   ├── "
             }
+          } else if isLastAddr {
+            "└── "
           } else {
-            isLastAddr ? "└── " : "├── "
+            "├── "
           }
           lines->Array.push(`${addrPrefix}${addr}`)->ignore
         })
@@ -298,16 +337,24 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     // Authorization List
     if Array.length(authArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
-      let prefix = hasMultipleConditions ? (isLast ? "└── " : "├── ") : ""
-      
+      let prefix = hasMultipleConditions ? isLast ? "└── " : "├── " : ""
+
       if Array.length(authArray) === 1 {
-        lines->Array.push(`${prefix}authorizationList has ${Int.toString(Array.length(authArray))} authorization`)->ignore
+        lines
+        ->Array.push(
+          `${prefix}authorizationList has ${Int.toString(Array.length(authArray))} authorization`,
+        )
+        ->ignore
       } else {
-        lines->Array.push(`${prefix}authorizationList has ${Int.toString(Array.length(authArray))} authorizations`)->ignore
+        lines
+        ->Array.push(
+          `${prefix}authorizationList has ${Int.toString(Array.length(authArray))} authorizations`,
+        )
+        ->ignore
       }
       conditionIndex := conditionIndex.contents + 1
     }
-    
+
     Array.join(lines, "\n")
   }
-} 
+}
