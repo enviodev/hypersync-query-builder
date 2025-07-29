@@ -54,48 +54,22 @@ let blockFieldOptions = Array.map(QueryStructure.allBlockFields, field => (
   snakeToTitle(blockFieldToSnakeCaseString(field)),
 ))
 
-let transactionFieldOptions: array<(transactionField, string)> = [
-  (BlockHash, "Block Hash"),
-  (BlockNumber, "Block Number"),
-  (From, "From"),
-  (To, "To"),
-  (Hash, "Hash"),
-  (Input, "Input"),
-  (Value, "Value"),
-  (Gas, "Gas"),
-  (GasPrice, "Gas Price"),
-  (Nonce, "Nonce"),
-  (TransactionIndex, "Transaction Index"),
-  (Status, "Status"),
-  (CumulativeGasUsed, "Cumulative Gas Used"),
-  (EffectiveGasPrice, "Effective Gas Price"),
-  (GasUsed, "Gas Used"),
-  (ContractAddress, "Contract Address"),
-  (V, "V"),
-  (R, "R"),
-  (S, "S"),
-  (YParity, "Y Parity"),
-  (MaxPriorityFeePerGas, "Max Priority Fee Per Gas"),
-  (MaxFeePerGas, "Max Fee Per Gas"),
-  (ChainId, "Chain ID"),
-  (AccessList, "Access List"),
-  (AuthorizationList, "Authorization List"),
-]
+let transactionFieldOptions = Array.map(QueryStructure.allTransactionFields, field => (
+  field,
+  snakeToTitle(transactionFieldToSnakeCaseString(field)),
+))
 
-let logFieldOptions: array<(logField, string)> = [
-  (Address, "Address"),
-  (Data, "Data"),
-  (Topic0, "Topic 0"),
-  (Topic1, "Topic 1"),
-  (Topic2, "Topic 2"),
-  (Topic3, "Topic 3"),
-  (BlockHash, "Block Hash"),
-  (BlockNumber, "Block Number"),
-  (TransactionHash, "Transaction Hash"),
-  (TransactionIndex, "Transaction Index"),
-  (LogIndex, "Log Index"),
-  (Removed, "Removed"),
-]
+let logFieldOptions = Array.map(QueryStructure.allLogFields, field => (
+  field,
+  snakeToTitle(logFieldToSnakeCaseString(field)),
+))
+
+// Will use once traces is added in the future.
+let _traceFieldOptions = Array.map(QueryStructure.allTraceFields, field => (
+  field,
+  snakeToTitle(traceFieldToSnakeCaseString(field)),
+))
+
 
 @react.component
 let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelection => unit) => {

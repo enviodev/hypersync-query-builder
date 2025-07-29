@@ -33,7 +33,7 @@ let make = (
     options
     ->Array.find(option => option.value === value)
     ->Option.map(o => o.label)
-    ->Option.getWithDefault("")
+    ->Option.getOr("")
 
   let addValue = value => {
     if !Array.includes(selectedValues, value) {

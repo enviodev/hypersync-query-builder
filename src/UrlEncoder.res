@@ -37,65 +37,18 @@ let serializeTransactionField = (field: transactionField): string =>
 
 let deserializeTransactionField = (str: string): option<transactionField> => {
   let snake = FieldSelector.camelToSnake(str)
-  let all: array<transactionField> = [
-    BlockHash,
-    BlockNumber,
-    From,
-    Gas,
-    GasPrice,
-    Hash,
-    Input,
-    Nonce,
-    To,
-    TransactionIndex,
-    Value,
-    V,
-    R,
-    S,
-    YParity,
-    MaxPriorityFeePerGas,
-    MaxFeePerGas,
-    ChainId,
-    AccessList,
-    AuthorizationList,
-    MaxFeePerBlobGas,
-    BlobVersionedHashes,
-    CumulativeGasUsed,
-    EffectiveGasPrice,
-    GasUsed,
-    ContractAddress,
-    LogsBloom,
-    Kind,
-    Root,
-    Status,
-    L1Fee,
-    L1GasPrice,
-    L1GasUsed,
-    L1FeeScalar,
-    GasUsedForL1,
-  ]
-  Array.find(all, f => FieldSelector.transactionFieldToSnakeCaseString(f) == snake)
+  Array.find(QueryStructure.allTransactionFields, f =>
+    FieldSelector.transactionFieldToSnakeCaseString(f) == snake
+  )
 }
 
 let serializeLogField = (field: logField): string => FieldSelector.logFieldToCamelCaseString(field)
 
 let deserializeLogField = (str: string): option<logField> => {
   let snake = FieldSelector.camelToSnake(str)
-  let all: array<logField> = [
-    Removed,
-    LogIndex,
-    TransactionIndex,
-    TransactionHash,
-    BlockHash,
-    BlockNumber,
-    Address,
-    Data,
-    Topic0,
-    Topic1,
-    Topic2,
-    Topic3,
-  ]
-  Array.find(all, f => FieldSelector.logFieldToSnakeCaseString(f) == snake)
+  Array.find(QueryStructure.allLogFields, f =>
+    FieldSelector.logFieldToSnakeCaseString(f) == snake
+  )
 }
 
 let serializeTraceField = (field: traceField): string =>
@@ -103,30 +56,9 @@ let serializeTraceField = (field: traceField): string =>
 
 let deserializeTraceField = (str: string): option<traceField> => {
   let snake = FieldSelector.camelToSnake(str)
-  let all: array<traceField> = [
-    From,
-    To,
-    CallType,
-    Gas,
-    Input,
-    Init,
-    Value,
-    Author,
-    RewardType,
-    BlockHash,
-    BlockNumber,
-    Address,
-    Code,
-    GasUsed,
-    Output,
-    Subtraces,
-    TraceAddress,
-    TransactionHash,
-    TransactionPosition,
-    Kind,
-    Trace_Error,
-  ]
-  Array.find(all, f => FieldSelector.traceFieldToSnakeCaseString(f) == snake)
+  Array.find(QueryStructure.allTraceFields, f =>
+    FieldSelector.traceFieldToSnakeCaseString(f) == snake
+  )
 }
 
 let serializeUrlState = (state: urlState): string => {
