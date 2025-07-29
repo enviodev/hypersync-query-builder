@@ -14,10 +14,10 @@ open QueryStructure
 @get external history: 'a => 'b = "history"
 @send external pushState: ('a, 'b, string, string) => unit = "pushState"
 
-// Type for the complete state that includes both query and selectedChainId
+// Type for the complete state that includes both query and selectedChainName
 type urlState = {
   query: query,
-  selectedChainId: option<int>,
+  selectedChainName: option<string>,
 }
 
 // Helper functions to serialize/deserialize field enums
@@ -268,9 +268,9 @@ let serializeUrlState = (state: urlState): string => {
         ),
       ),
       (
-        "selectedChainId",
-        switch state.selectedChainId {
-        | Some(value) => Js.Json.number(Int.toFloat(value))
+        "selectedChainName",
+        switch state.selectedChainName {
+        | Some(value) => Js.Json.string(value)
         | None => Js.Json.null
         },
       ),
@@ -753,14 +753,14 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
             joinMode,
           }
 
-          // Parse selectedChainId
-          let selectedChainId = switch getField("selectedChainId") {
+          // Parse selectedChainName
+          let selectedChainName = switch getField("selectedChainName") {
           | Some(value) =>
             switch Js.Json.decodeNull(value) {
             | Some(_) => None
             | None =>
-              switch Js.Json.decodeNumber(value) {
-              | Some(num) => Some(Float.toInt(num))
+              switch Js.Json.decodeString(value) {
+              | Some(name) => Some(name)
               | None => None
               }
             }
@@ -769,7 +769,7 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
 
           Some({
             query,
-            selectedChainId,
+            selectedChainName,
           })
         }
       | None => None
@@ -832,7 +832,7 @@ let updateUrlWithState = (state: urlState) => {
 
 // Backward compatibility functions for existing code
 let serializeQuery = (query: query): string => {
-  serializeUrlState({query, selectedChainId: None})
+  serializeUrlState({query, selectedChainName: None})
 }
 
 let deserializeQuery = (jsonString: string): option<query> => {
@@ -843,7 +843,7 @@ let deserializeQuery = (jsonString: string): option<query> => {
 }
 
 let encodeQueryToUrl = (query: query): string => {
-  encodeUrlStateToUrl({query, selectedChainId: None})
+  encodeUrlStateToUrl({query, selectedChainName: None})
 }
 
 let decodeQueryFromUrl = (encodedString: string): option<query> => {
@@ -861,5 +861,5 @@ let getQueryFromUrl = (): option<query> => {
 }
 
 let updateUrlWithQuery = (query: query) => {
-  updateUrlWithState({query, selectedChainId: None})
+  updateUrlWithState({query, selectedChainName: None})
 }

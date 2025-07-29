@@ -64,19 +64,19 @@ let logFieldOptions = Array.map(QueryStructure.allLogFields, field => (
   snakeToTitle(logFieldToSnakeCaseString(field)),
 ))
 
-// Will use once traces is added in the future.
-let _traceFieldOptions = Array.map(QueryStructure.allTraceFields, field => (
+let traceFieldOptions = Array.map(QueryStructure.allTraceFields, field => (
   field,
   snakeToTitle(traceFieldToSnakeCaseString(field)),
 ))
 
 
 @react.component
-let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelection => unit) => {
+let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelection => unit, ~tracesSupported: bool) => {
   let updateBlockFields = newFields => onFieldSelectionChange({...fieldSelection, block: newFields})
   let updateTransactionFields = newFields =>
     onFieldSelectionChange({...fieldSelection, transaction: newFields})
   let updateLogFields = newFields => onFieldSelectionChange({...fieldSelection, log: newFields})
+  let updateTraceFields = newFields => onFieldSelectionChange({...fieldSelection, trace: newFields})
 
   let selectAllBlockFields = () => {
     let allFields = Array.map(blockFieldOptions, ((field, _)) => field)
@@ -105,6 +105,15 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
     onFieldSelectionChange({...fieldSelection, log: []})
   }
 
+  let selectAllTraceFields = () => {
+    let allFields = Array.map(traceFieldOptions, ((field, _)) => field)
+    onFieldSelectionChange({...fieldSelection, trace: allFields})
+  }
+
+  let clearAllTraceFields = () => {
+    onFieldSelectionChange({...fieldSelection, trace: []})
+  }
+
   <div className="bg-white rounded-lg shadow p-6 mb-8">
     <div className="mb-6">
       <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -115,7 +124,7 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
       </p>
     </div>
 
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className={`grid grid-cols-1 lg:grid-cols-2 ${tracesSupported ? "xl:grid-cols-4" : "xl:grid-cols-3"} gap-6`}>
       // Block Fields
       <div className="border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
@@ -211,6 +220,40 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
           </div>
         </div>
       </div>
+
+      // Trace Fields
+      {tracesSupported
+        ? <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-medium text-gray-900"> {"Trace Fields"->React.string} </h4>
+              <div className="flex space-x-2">
+                <button
+                  onClick={_ => selectAllTraceFields()}
+                  className="text-xs text-blue-600 hover:text-blue-700">
+                  {"All"->React.string}
+                </button>
+                <span className="text-xs text-gray-300"> {"|"->React.string} </span>
+                <button
+                  onClick={_ => clearAllTraceFields()}
+                  className="text-xs text-red-600 hover:text-red-700">
+                  {"Clear"->React.string}
+                </button>
+              </div>
+            </div>
+            <TagSelector
+              title=""
+              placeholder="Add field..."
+              options={traceFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+              selectedValues={fieldSelection.trace}
+              onSelectionChange={updateTraceFields}
+            />
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="text-xs text-gray-500">
+                {`${Int.toString(Array.length(fieldSelection.trace))} selected`->React.string}
+              </div>
+            </div>
+          </div>
+        : React.null}
     </div>
   </div>
 }

@@ -25,7 +25,7 @@ let sampleQuery: query = {
 
 let sampleState: urlState = {
   query: sampleQuery,
-  selectedChainId: Some(1),
+  selectedChainName: Some("eth"),
 }
 
 test("encode and decode url state", () => {

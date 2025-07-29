@@ -37,6 +37,26 @@ let isEmptyBlockFilter = (filterState: QueryStructure.blockSelection) => {
   Array.length(hashArray) === 0 && Array.length(minerArray) === 0
 }
 
+// Helper function to check if a trace filter is empty
+let isEmptyTraceFilter = (filterState: QueryStructure.traceSelection) => {
+  let {from_, to_, address, callType, rewardType, kind, sighash} = filterState
+  let fromArray = from_->Option.getOr([])
+  let toArray = to_->Option.getOr([])
+  let addressArray = address->Option.getOr([])
+  let callTypeArray = callType->Option.getOr([])
+  let rewardTypeArray = rewardType->Option.getOr([])
+  let kindArray = kind->Option.getOr([])
+  let sighashArray = sighash->Option.getOr([])
+
+  Array.length(fromArray) === 0 &&
+  Array.length(toArray) === 0 &&
+  Array.length(addressArray) === 0 &&
+  Array.length(callTypeArray) === 0 &&
+  Array.length(rewardTypeArray) === 0 &&
+  Array.length(kindArray) === 0 &&
+  Array.length(sighashArray) === 0
+}
+
 // Helper function to generate a clean filter description (without "Match logs where:" prefix)
 let generateFilterDescription = (filterState: filterState) => {
   let {address, topics} = filterState
@@ -92,6 +112,15 @@ let generateBlockFilterDescription = (filterState: QueryStructure.blockSelection
   let description = BlockBooleanLogicGenerator.generateEnglishDescription(filterState)
   switch String.startsWith(description, "Match blocks where: ") {
   | true => String.sliceToEnd(description, ~start=20) // Remove "Match blocks where: " prefix
+  | false => description
+  }
+}
+
+// Helper function to generate trace filter description
+let generateTraceFilterDescription = (filterState: QueryStructure.traceSelection) => {
+  let description = TraceBooleanLogicGenerator.generateEnglishDescription(filterState)
+  switch String.startsWith(description, "Match traces where: ") {
+  | true => String.sliceToEnd(description, ~start=20) // Remove "Match traces where: " prefix
   | false => description
   }
 }
@@ -201,6 +230,44 @@ let generateMultiBlockFilterDescription = (
         "selecting None"
       } else {
         `Match blocks where: ${Array.join(filterDescriptions, " OR ")}`
+      }
+    }
+  }
+}
+
+let generateMultiTraceFilterDescription = (
+  filters: option<array<QueryStructure.traceSelection>>,
+) => {
+  switch filters {
+  | None => "selecting None"
+  | Some(filterArray) =>
+    if Array.length(filterArray) === 0 {
+      "selecting None"
+    } else if (
+      Array.length(filterArray) === 1 && isEmptyTraceFilter(Array.getUnsafe(filterArray, 0))
+    ) {
+      "selecting ALL"
+    } else {
+      let filterDescriptions =
+        filterArray
+        ->Array.map(filter => {
+          if isEmptyTraceFilter(filter) {
+            "ALL traces"
+          } else {
+            let description = generateTraceFilterDescription(filter)
+            if String.includes(description, " AND ") {
+              `(${description})`
+            } else {
+              description
+            }
+          }
+        })
+        ->Array.filter(desc => desc !== "")
+
+      if Array.length(filterDescriptions) === 0 {
+        "selecting None"
+      } else {
+        `Match traces where: ${Array.join(filterDescriptions, " OR ")}`
       }
     }
   }
@@ -550,6 +617,71 @@ let generateMultiBlockBooleanHierarchy = (
             lines->Array.push(`${prefix}All blocks`)->ignore
           } else {
             let filterHierarchy = BlockBooleanLogicGenerator.generateBooleanHierarchy(filter)
+            if String.includes(filterHierarchy, "\n") {
+              // Multi-line hierarchy needs proper indentation
+              let hierarchyLines = String.split(filterHierarchy, "\n")
+              Array.forEachWithIndex(hierarchyLines, (line, lineIndex) => {
+                if lineIndex === 0 {
+                  lines->Array.push(`${prefix}${line}`)->ignore
+                } else {
+                  let indent = if isLast {
+                    "    "
+                  } else {
+                    "│   "
+                  }
+                  lines->Array.push(`${indent}${line}`)->ignore
+                }
+              })
+            } else {
+              // Single line hierarchy
+              lines->Array.push(`${prefix}${filterHierarchy}`)->ignore
+            }
+          }
+        })
+
+        Array.join(lines, "\n")
+      }
+    }
+  }
+}
+
+let generateMultiTraceBooleanHierarchy = (
+  filters: option<array<QueryStructure.traceSelection>>,
+) => {
+  switch filters {
+  | None => "No filters"
+  | Some(filterArray) =>
+    if Array.length(filterArray) === 0 {
+      "No filters"
+    } else if (
+      Array.length(filterArray) === 1 && isEmptyTraceFilter(Array.getUnsafe(filterArray, 0))
+    ) {
+      "All traces"
+    } else {
+      let nonEmptyFilters = filterArray->Array.filter(filter => !isEmptyTraceFilter(filter))
+      let hasEmptyFilter = filterArray->Array.some(isEmptyTraceFilter)
+
+      if Array.length(nonEmptyFilters) === 0 && hasEmptyFilter {
+        "All traces"
+      } else if Array.length(nonEmptyFilters) === 1 && !hasEmptyFilter {
+        // Single non-empty filter, no OR needed
+        TraceBooleanLogicGenerator.generateBooleanHierarchy(Array.getUnsafe(nonEmptyFilters, 0))
+      } else {
+        let lines = []
+        lines->Array.push("OR")->ignore
+
+        let allFilters = hasEmptyFilter
+          ? Array.concat(nonEmptyFilters, [{from_: None, to_: None, address: None, callType: None, rewardType: None, kind: None, sighash: None}])
+          : nonEmptyFilters
+
+        Array.forEachWithIndex(allFilters, (filter, i) => {
+          let isLast = i === Array.length(allFilters) - 1
+          let prefix = isLast ? "└── " : "├── "
+
+          if isEmptyTraceFilter(filter) {
+            lines->Array.push(`${prefix}All traces`)->ignore
+          } else {
+            let filterHierarchy = TraceBooleanLogicGenerator.generateBooleanHierarchy(filter)
             if String.includes(filterHierarchy, "\n") {
               // Multi-line hierarchy needs proper indentation
               let hierarchyLines = String.split(filterHierarchy, "\n")

@@ -258,6 +258,14 @@ let getEcosystemIcon = (ecosystem: string) => {
   }
 }
 
+// Helper function to check if a chain supports traces
+let chainSupportsTraces = (chain: chain) => {
+  switch chain.additional_features {
+  | Some(features) => Array.includes(features, "TRACES")
+  | None => false
+  }
+}
+
 // Function to fetch chains from API
 // Unfortunately this function gets CORS errors so we are not using it properly.
 let fetchChains = async () => {
@@ -340,10 +348,10 @@ let fetchChains = async () => {
 }
 
 @react.component
-let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
+let make = (~selectedChainName: option<string>, ~onChainSelect: string => unit) => {
   let (searchTerm, setSearchTerm) = React.useState(() => "")
   let (chains, setChains) = React.useState(() => defaultChains)
-  let (isExpanded, setIsExpanded) = React.useState(() => Option.isNone(selectedChainId))
+  let (isExpanded, setIsExpanded) = React.useState(() => Option.isNone(selectedChainName))
   let (isLoading, setIsLoading) = React.useState(() => true)
   let (focusedIndex, setFocusedIndex) = React.useState(() => 0)
 
@@ -382,13 +390,13 @@ let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
   })
 
   let selectedChain =
-    selectedChainId->Option.flatMap(chainId =>
-      chains->Array.find(chain => chain.chain_id === chainId)
+    selectedChainName->Option.flatMap(chainName =>
+      chains->Array.find(chain => chain.name === chainName)
     )
 
   // Handle selection logic
-  let handleChainSelect = (chainId: int) => {
-    onChainSelect(chainId)
+  let handleChainSelect = (chainName: string) => {
+    onChainSelect(chainName)
     setIsExpanded(_ => false) // Collapse after selection
     setSearchTerm(_ => "") // Clear search
   }
@@ -456,7 +464,7 @@ let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
                 | "Enter" => {
                     ReactEvent.Synthetic.preventDefault(e)
                     Belt.Array.get(filteredChains, focusedIndex)->Option.forEach(chain =>
-                      handleChainSelect(chain.chain_id)
+                      handleChainSelect(chain.name)
                     )
                   }
                 | _ => ()
@@ -476,9 +484,9 @@ let make = (~selectedChainId: option<int>, ~onChainSelect: int => unit) => {
               : Array.mapWithIndex(filteredChains, (chain, index) =>
                   <button
                     key={Int.toString(index)}
-                    onClick={_ => handleChainSelect(chain.chain_id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors ${selectedChainId ===
-                        Some(chain.chain_id)
+                    onClick={_ => handleChainSelect(chain.name)}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors ${selectedChainName ===
+                        Some(chain.name)
                         ? "bg-blue-50"
                         : ""} ${focusedIndex === index ? "bg-gray-100" : ""}`}>
                     <div className="flex items-center space-x-2">

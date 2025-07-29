@@ -1,10 +1,10 @@
 open QueryStructure
 open BooleanLogicGenerator
 
-type subTab = Logs | Transactions | Blocks
+type subTab = Logs | Transactions | Blocks | Traces
 
 @react.component
-let make = (~query: query) => {
+let make = (~query: query, ~tracesSupported: bool) => {
   let (activeSubTab, setActiveSubTab) = React.useState(() => Logs)
 
   // Check if any filters exist for each type
@@ -20,6 +20,11 @@ let make = (~query: query) => {
 
   let hasBlockFilters = switch query.blocks {
   | Some(blocks) => Array.length(blocks) > 0
+  | None => false
+  }
+
+  let hasTraceFilters = switch query.traces {
+  | Some(traces) => Array.length(traces) > 0
   | None => false
   }
 
@@ -72,6 +77,23 @@ let make = (~query: query) => {
               : React.null}
           </div>
         </button>
+        {tracesSupported
+          ? <button
+              onClick={_ => setActiveSubTab(_ => Traces)}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${activeSubTab === Traces
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+              <div className="flex items-center space-x-2">
+                <span> {"Traces"->React.string} </span>
+                {hasTraceFilters
+                  ? <span
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                      {Int.toString(query.traces->Option.getOr([])->Array.length)->React.string}
+                    </span>
+                  : React.null}
+              </div>
+            </button>
+          : React.null}
       </nav>
     </div>
 
@@ -257,6 +279,89 @@ let make = (~query: query) => {
                 </p>
               </div>}
         </div>
+
+      | Traces =>
+        tracesSupported
+          ? <div>
+              <div className="mb-4">
+                <h4 className="text-lg font-medium text-gray-900 mb-2">
+                  {"Trace Filters Boolean Logic"->React.string}
+                </h4>
+                <p className="text-sm text-gray-600">
+                  {"Boolean hierarchy for trace filtering. Multiple filters are combined with OR logic."->React.string}
+                </p>
+              </div>
+
+              {hasTraceFilters
+                ? <div className="space-y-6">
+                    // English Description
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {"English Description"->React.string}
+                      </label>
+                      <div className="bg-orange-50 border border-orange-200 rounded-md p-4">
+                        <p className="text-sm text-orange-800">
+                          {generateMultiTraceFilterDescription(query.traces)->React.string}
+                        </p>
+                      </div>
+                    </div>
+
+                    // Boolean Hierarchy
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {"Boolean Logic Hierarchy"->React.string}
+                      </label>
+                      <pre
+                        className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto">
+                        {generateMultiTraceBooleanHierarchy(query.traces)->React.string}
+                      </pre>
+                    </div>
+                  </div>
+                : <div className="text-center py-12">
+                    <div className="text-gray-400 mb-4">
+                      <svg
+                        className="w-12 h-12 mx-auto"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-500 mb-2">
+                      {"No Trace Filters"->React.string}
+                    </h4>
+                    <p className="text-gray-400">
+                      {"Add trace filters to see the boolean logic visualization"->React.string}
+                    </p>
+                  </div>}
+            </div>
+          : <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <svg
+                  className="w-12 h-12 mx-auto"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h4 className="text-lg font-medium text-gray-500 mb-2">
+                {"Traces Not Supported"->React.string}
+              </h4>
+              <p className="text-gray-400">
+                {"The selected chain does not support trace queries"->React.string}
+              </p>
+            </div>
       }}
     </div>
   </div>

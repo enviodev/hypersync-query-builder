@@ -4,11 +4,44 @@ open Fetch
 type activeTab = QueryJson | QueryLogic | Results
 
 @react.component
-let make = (~query: query, ~selectedChainId: option<int>) => {
+let make = (~query: query, ~selectedChainName: option<string>) => {
   let (activeTab, setActiveTab) = React.useState(() => QueryJson)
   let (isExecuting, setIsExecuting) = React.useState(() => false)
   let (queryResult, setQueryResult) = React.useState(() => None)
   let (queryError, setQueryError) = React.useState(() => None)
+
+  // Helper function to check if selected chain supports traces
+  let selectedChainSupportsTraces = () => {
+    switch selectedChainName {
+    | Some(chainName) =>
+      // Find the selected chain in the default chains list
+      let selectedChain = ChainSelector.defaultChains->Array.find(chain => chain.name === chainName)
+      switch selectedChain {
+      | Some(chain) => ChainSelector.chainSupportsTraces(chain)
+      | None => false
+      }
+    | None => false
+    }
+  }
+
+  // Helper function to generate the correct URL for the selected chain
+  let generateChainUrl = () => {
+    switch selectedChainName {
+    | Some(chainName) =>
+      let selectedChain = ChainSelector.defaultChains->Array.find(chain => chain.name === chainName)
+      switch selectedChain {
+      | Some(chain) =>
+        let baseUrl = `https://${Int.toString(chain.chain_id)}.hypersync.xyz/query`
+        if ChainSelector.chainSupportsTraces(chain) {
+          `https://${Int.toString(chain.chain_id)}-traces.hypersync.xyz/query`
+        } else {
+          baseUrl
+        }
+      | None => ""
+      }
+    | None => ""
+    }
+  }
 
   let serializeLogFilter = (logFilter: logSelection) => {
     let addressJson = switch logFilter.address {
@@ -131,6 +164,69 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
     `{${content}}`
   }
 
+  let serializeTraceFilter = (traceFilter: traceSelection) => {
+    let fromJson = switch traceFilter.from_ {
+    | Some(froms) if Array.length(froms) > 0 =>
+      let fromsStr = Array.map(froms, addr => `"${addr}"`)->Array.join(", ")
+      Some(`"from": [${fromsStr}]`)
+    | _ => None
+    }
+
+    let toJson = switch traceFilter.to_ {
+    | Some(tos) if Array.length(tos) > 0 =>
+      let tosStr = Array.map(tos, addr => `"${addr}"`)->Array.join(", ")
+      Some(`"to": [${tosStr}]`)
+    | _ => None
+    }
+
+    let addressJson = switch traceFilter.address {
+    | Some(addresses) if Array.length(addresses) > 0 =>
+      let addressesStr = Array.map(addresses, addr => `"${addr}"`)->Array.join(", ")
+      Some(`"address": [${addressesStr}]`)
+    | _ => None
+    }
+
+    let callTypeJson = switch traceFilter.callType {
+    | Some(callTypes) if Array.length(callTypes) > 0 =>
+      let callTypesStr = Array.map(callTypes, callType => `"${callType}"`)->Array.join(", ")
+      Some(`"call_type": [${callTypesStr}]`)
+    | _ => None
+    }
+
+    let rewardTypeJson = switch traceFilter.rewardType {
+    | Some(rewardTypes) if Array.length(rewardTypes) > 0 =>
+      let rewardTypesStr = Array.map(rewardTypes, rewardType => `"${rewardType}"`)->Array.join(", ")
+      Some(`"reward_type": [${rewardTypesStr}]`)
+    | _ => None
+    }
+
+    let kindJson = switch traceFilter.kind {
+    | Some(kinds) if Array.length(kinds) > 0 =>
+      let kindsStr = Array.map(kinds, kind => `"${kind}"`)->Array.join(", ")
+      Some(`"kind": [${kindsStr}]`)
+    | _ => None
+    }
+
+    let sighashJson = switch traceFilter.sighash {
+    | Some(sighashes) if Array.length(sighashes) > 0 =>
+      let sighashesStr = Array.map(sighashes, sighash => `"${sighash}"`)->Array.join(", ")
+      Some(`"sighash": [${sighashesStr}]`)
+    | _ => None
+    }
+
+    let allParts = [
+      fromJson,
+      toJson,
+      addressJson,
+      callTypeJson,
+      rewardTypeJson,
+      kindJson,
+      sighashJson,
+    ]->Array.filterMap(x => x)
+    let content = Array.join(allParts, ", ")
+    `{${content}}`
+  }
+
   let serializeFieldSelection = (fieldSelection: fieldSelection) => {
     let blockFields = Array.map(fieldSelection.block, FieldSelector.blockFieldToSnakeCaseString)
     let transactionFields = Array.map(
@@ -138,16 +234,27 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
       FieldSelector.transactionFieldToSnakeCaseString,
     )
     let logFields = Array.map(fieldSelection.log, FieldSelector.logFieldToSnakeCaseString)
+    let traceFields = Array.map(fieldSelection.trace, FieldSelector.traceFieldToSnakeCaseString)
 
     let blockFieldsStr = Array.map(blockFields, field => `"${field}"`)->Array.join(", ")
     let transactionFieldsStr = Array.map(transactionFields, field => `"${field}"`)->Array.join(", ")
     let logFieldsStr = Array.map(logFields, field => `"${field}"`)->Array.join(", ")
+    let traceFieldsStr = Array.map(traceFields, field => `"${field}"`)->Array.join(", ")
 
-    `"field_selection": {
+    if selectedChainSupportsTraces() {
+      `"field_selection": {
+    "block": [${blockFieldsStr}],
+    "transaction": [${transactionFieldsStr}],
+    "log": [${logFieldsStr}],
+    "trace": [${traceFieldsStr}]
+  }`
+    } else {
+      `"field_selection": {
     "block": [${blockFieldsStr}],
     "transaction": [${transactionFieldsStr}],
     "log": [${logFieldsStr}]
   }`
+    }
   }
 
   let serializeQuery = (query: query) => {
@@ -192,6 +299,21 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
     | _ => None
     }
 
+    let tracesPart = if selectedChainSupportsTraces() {
+      switch query.traces {
+      | Some(traces) if Array.length(traces) > 0 =>
+        let tracesStr = Array.map(traces, serializeTraceFilter)->Array.join(",\n    ")
+        Some(
+          `"traces": [
+    ${tracesStr}
+  ]`,
+        )
+      | _ => None
+      }
+    } else {
+      None
+    }
+
     let includeAllBlocksPart = switch query.includeAllBlocks {
     | Some(true) => Some(`"include_all_blocks": true`)
     | Some(false) => Some(`"include_all_blocks": false`)
@@ -215,9 +337,13 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
     | None => None
     }
 
-    let maxNumTracesPart = switch query.maxNumTraces {
-    | Some(max) => Some(`"max_num_traces": ${Int.toString(max)}`)
-    | None => None
+    let maxNumTracesPart = if selectedChainSupportsTraces() {
+      switch query.maxNumTraces {
+      | Some(max) => Some(`"max_num_traces": ${Int.toString(max)}`)
+      | None => None
+      }
+    } else {
+      None
     }
 
     let joinModePart = switch query.joinMode {
@@ -234,6 +360,7 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
         logsPart,
         transactionsPart,
         blocksPart,
+        tracesPart,
         includeAllBlocksPart,
         Some(fieldSelectionPart),
         maxNumBlocksPart,
@@ -250,15 +377,15 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
   }
 
   let executeQuery = async () => {
-    switch selectedChainId {
-    | Some(chainId) => {
+    switch selectedChainName {
+    | Some(_) => {
         setActiveTab(_ => Results) // Switch to Results tab when query starts
         setIsExecuting(_ => true)
         setQueryError(_ => None)
         setQueryResult(_ => None)
 
         try {
-          let url = `https://${Int.toString(chainId)}.hypersync.xyz/query`
+          let url = generateChainUrl()
           let body = serializeQuery(query)
 
           let response = await fetch(
@@ -301,8 +428,8 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
     }
   }
 
-  let generateCurlCommand = (query: query, chainId: int) => {
-    let url = `https://${Int.toString(chainId)}.hypersync.xyz/query`
+  let generateCurlCommand = (query: query) => {
+    let url = generateChainUrl()
     let body = serializeQuery(query)
     let escapedBody = String.replaceAll(body, "\"", "\\\"")
 
@@ -312,9 +439,9 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
   }
 
   let copyCurlToClipboard = () => {
-    switch selectedChainId {
-    | Some(chainId) => {
-        let curlCommand = generateCurlCommand(query, chainId)
+    switch selectedChainName {
+    | Some(_) => {
+        let curlCommand = generateCurlCommand(query)
         // Use the Clipboard API
         let copyToClipboard: string => unit = %raw(`(curlCommand) => {
           navigator.clipboard.writeText(curlCommand).then(() => {
@@ -335,12 +462,12 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
       <p className="text-sm text-gray-500">
         {"View your query structure and results"->React.string}
       </p>
-      {switch selectedChainId {
-      | Some(chainId) =>
+      {switch selectedChainName {
+      | Some(_) =>
         <div className="mt-2">
           <span
             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            {`Query URL: https://${Int.toString(chainId)}.hypersync.xyz/query`->React.string}
+            {`Query URL: ${generateChainUrl()}`->React.string}
           </span>
         </div>
       | None => React.null
@@ -383,7 +510,7 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
             <h4 className="text-sm font-medium text-gray-900">
               {"Query Structure"->React.string}
             </h4>
-            {switch selectedChainId {
+            {switch selectedChainName {
             | Some(_) =>
               <div className="flex space-x-2">
                 <button
@@ -407,7 +534,7 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
           </pre>
         </div>
 
-      | QueryLogic => <QueryLogic query={query} />
+      | QueryLogic => <QueryLogic query={query} tracesSupported={selectedChainSupportsTraces()} />
 
       | Results =>
         <div>
@@ -491,7 +618,7 @@ let make = (~query: query, ~selectedChainId: option<int>) => {
               <p className="text-gray-400">
                 {"Execute query to see results here..."->React.string}
               </p>
-              {switch selectedChainId {
+              {switch selectedChainName {
               | Some(_) =>
                 <div className="mt-4 flex justify-center space-x-2">
                   <button

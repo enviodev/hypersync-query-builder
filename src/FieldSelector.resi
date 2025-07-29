@@ -18,4 +18,5 @@ let traceFieldToDisplayString: QueryStructure.traceField => string
 let make: (
   ~fieldSelection: QueryStructure.fieldSelection,
   ~onFieldSelectionChange: QueryStructure.fieldSelection => unit,
+  ~tracesSupported: bool,
 ) => React.element
