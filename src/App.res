@@ -391,10 +391,9 @@ let make = () => {
   }
 
   <main className="flex-1 overflow-hidden bg-slate-50">
-    <div className="h-full flex flex-col lg:flex-row bg-white">
+    <div className="h-full flex flex-col lg:flex-row lg:gap-8">
       // Left Column - Query Builder
-      <div
-        className="w-full lg:w-1/2 border-r-0 lg:border-r border-b lg:border-b-0 border-slate-200 overflow-y-auto bg-white">
+      <div className="w-full lg:w-1/2 overflow-y-auto">
         <div className="p-6 lg:p-8">
           <div className="mb-8 flex items-center justify-between">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
@@ -409,7 +408,7 @@ let make = () => {
 
           <div className="space-y-6">
             // Section 1: Configuration
-            <div className="bg-slate-50 rounded-xl p-6 border-l-4 border-slate-600">
+            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
               <div className="flex items-center mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-slate-900">
@@ -457,12 +456,12 @@ let make = () => {
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={_ => applyPresetErc20Transfers()}
-                    className="inline-flex items-center px-3 py-1.5 bg-slate-700 text-white text-xs font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                     {"ERC20 Transfers (logs)"->React.string}
                   </button>
                   <button
                     onClick={_ => applyPresetFailedTransactions()}
-                    className="inline-flex items-center px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
+                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                     {"Failed Transactions"->React.string}
                   </button>
                 </div>
@@ -470,7 +469,7 @@ let make = () => {
             </div>
 
             // Section 2: Filters
-            <div className="bg-slate-50 rounded-xl p-6 border-l-4 border-slate-600">
+            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
               <div className="flex items-center mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-slate-900">
@@ -524,7 +523,7 @@ let make = () => {
                 <div className="flex flex-wrap gap-3">
                   <button
                     onClick={_ => addLogFilter()}
-                    className="inline-flex items-center px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                    className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                     <svg
                       className="w-4 h-4 mr-2"
                       fill="none"
@@ -541,7 +540,7 @@ let make = () => {
                   </button>
                   <button
                     onClick={_ => addTransactionFilter()}
-                    className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
+                    className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                     <svg
                       className="w-4 h-4 mr-2"
                       fill="none"
@@ -558,7 +557,7 @@ let make = () => {
                   </button>
                   <button
                     onClick={_ => addBlockFilter()}
-                    className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+                    className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                     <svg
                       className="w-4 h-4 mr-2"
                       fill="none"
@@ -576,7 +575,7 @@ let make = () => {
                   {selectedChainSupportsTraces()
                     ? <button
                         onClick={_ => addTraceFilter()}
-                        className="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors">
+                        className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                         <svg
                           className="w-4 h-4 mr-2"
                           fill="none"
@@ -693,7 +692,7 @@ let make = () => {
             </div>
 
             // Section 3: Field Selection
-            <div className="bg-slate-50 rounded-xl p-6 border-l-4 border-slate-600">
+            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
               <div className="flex items-center mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-slate-900">
@@ -731,7 +730,7 @@ let make = () => {
       </div>
 
       // Right Column - Results
-      <div className="w-full lg:w-1/2 overflow-y-auto bg-slate-50">
+      <div className="w-full lg:w-1/2 overflow-y-auto">
         <div className="p-6 lg:p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">

@@ -517,30 +517,31 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     </div>
 
     // Tab Navigation
-    <div className="border-b border-slate-200 mb-6">
+    <div
+      className="border-b border-slate-200 sticky top-[56px] bg-white/80 backdrop-blur z-10 -mx-6 px-6 mb-6">
       <nav className="flex space-x-8">
         <button
           onClick={_ => setActiveTab(_ => QueryJson)}
-          className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
+          className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
               QueryJson
-              ? "border-slate-500 text-slate-700"
-              : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"}`}>
+              ? "border-slate-900 text-slate-900"
+              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}>
           {"Query JSON"->React.string}
         </button>
         <button
           onClick={_ => setActiveTab(_ => QueryLogic)}
-          className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
+          className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
               QueryLogic
-              ? "border-slate-500 text-slate-700"
-              : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"}`}>
+              ? "border-slate-900 text-slate-900"
+              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}>
           {"Query Logic"->React.string}
         </button>
         <button
           onClick={_ => setActiveTab(_ => Results)}
-          className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
+          className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
               Results
-              ? "border-slate-500 text-slate-700"
-              : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"}`}>
+              ? "border-slate-900 text-slate-900"
+              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}>
           {"Results"->React.string}
         </button>
       </nav>
