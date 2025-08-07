@@ -214,15 +214,16 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     | _ => None
     }
 
-    let allParts = [
-      fromJson,
-      toJson,
-      addressJson,
-      callTypeJson,
-      rewardTypeJson,
-      kindJson,
-      sighashJson,
-    ]->Array.filterMap(x => x)
+    let allParts =
+      [
+        fromJson,
+        toJson,
+        addressJson,
+        callTypeJson,
+        rewardTypeJson,
+        kindJson,
+        sighashJson,
+      ]->Array.filterMap(x => x)
     let content = Array.join(allParts, ", ")
     `{${content}}`
   }
@@ -456,17 +457,17 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     }
   }
 
-  <div className="bg-white rounded-lg shadow p-6">
+  <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
     <div className="mb-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-2"> {"Results"->React.string} </h3>
-      <p className="text-sm text-gray-500">
+      <h3 className="text-lg font-medium text-slate-900 mb-2"> {"Results"->React.string} </h3>
+      <p className="text-sm text-slate-600">
         {"View your query structure and results"->React.string}
       </p>
       {switch selectedChainName {
       | Some(_) =>
-        <div className="mt-2">
+        <div className="mt-3">
           <span
-            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
             {`Query URL: ${generateChainUrl()}`->React.string}
           </span>
         </div>
@@ -475,27 +476,30 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     </div>
 
     // Tab Navigation
-    <div className="border-b border-gray-200 mb-6">
+    <div className="border-b border-slate-200 mb-6">
       <nav className="flex space-x-8">
         <button
           onClick={_ => setActiveTab(_ => QueryJson)}
-          className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === QueryJson
-              ? "border-blue-500 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+          className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
+              QueryJson
+              ? "border-slate-500 text-slate-700"
+              : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"}`}>
           {"Query JSON"->React.string}
         </button>
         <button
           onClick={_ => setActiveTab(_ => QueryLogic)}
-          className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === QueryLogic
-              ? "border-blue-500 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+          className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
+              QueryLogic
+              ? "border-slate-500 text-slate-700"
+              : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"}`}>
           {"Query Logic"->React.string}
         </button>
         <button
           onClick={_ => setActiveTab(_ => Results)}
-          className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === Results
-              ? "border-blue-500 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+          className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
+              Results
+              ? "border-slate-500 text-slate-700"
+              : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"}`}>
           {"Results"->React.string}
         </button>
       </nav>
@@ -507,7 +511,7 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
       | QueryJson =>
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-medium text-gray-900">
+            <h4 className="text-sm font-medium text-slate-900">
               {"Query Structure"->React.string}
             </h4>
             {switch selectedChainName {
@@ -515,13 +519,13 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
               <div className="flex space-x-2">
                 <button
                   onClick={_ => copyCurlToClipboard()}
-                  className="px-3 py-1 bg-gray-600 text-white text-xs font-medium rounded hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                  className="px-3 py-1 bg-slate-600 text-white text-xs font-medium rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                   {"Copy cURL"->React.string}
                 </button>
                 <button
                   onClick={_ => executeQuery()->ignore}
                   disabled={isExecuting}
-                  className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+                  className="px-3 py-1 bg-slate-700 text-white text-xs font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 transition-colors">
                   {(isExecuting ? "Executing..." : "Execute Query")->React.string}
                 </button>
               </div>
@@ -529,7 +533,7 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
             }}
           </div>
           <pre
-            className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono overflow-x-auto whitespace-pre">
+            className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre">
             {serializeQuery(query)->React.string}
           </pre>
         </div>
@@ -570,12 +574,12 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                   {"Query Results"->React.string}
                 </h4>
                 <span
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
                   {"Success"->React.string}
                 </span>
               </div>
               <pre
-                className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono overflow-x-auto whitespace-pre max-h-96">
+                className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre max-h-96">
                 {result->React.string}
               </pre>
             </div>
@@ -591,14 +595,14 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                   {"Error"->React.string}
                 </span>
               </div>
-              <div className="bg-red-50 border border-red-200 rounded-md p-4 text-sm text-red-700">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
                 {error->React.string}
               </div>
             </div>
 
           | (None, None, false) =>
             <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
+              <div className="text-slate-400 mb-4">
                 <svg
                   className="w-12 h-12 mx-auto"
                   fill="none"
@@ -612,10 +616,10 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                   />
                 </svg>
               </div>
-              <h4 className="text-lg font-medium text-gray-500 mb-2">
+              <h4 className="text-lg font-medium text-slate-600 mb-2">
                 {"Query Results"->React.string}
               </h4>
-              <p className="text-gray-400">
+              <p className="text-slate-500">
                 {"Execute query to see results here..."->React.string}
               </p>
               {switch selectedChainName {
@@ -623,12 +627,12 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                 <div className="mt-4 flex justify-center space-x-2">
                   <button
                     onClick={_ => copyCurlToClipboard()}
-                    className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                    className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                     {"Copy cURL"->React.string}
                   </button>
                   <button
                     onClick={_ => executeQuery()->ignore}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                     {"Execute Query"->React.string}
                   </button>
                 </div>

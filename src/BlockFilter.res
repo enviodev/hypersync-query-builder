@@ -108,16 +108,19 @@ let make = (
     Array.length(filterState.hash->Option.getOr([])) > 0 ||
       Array.length(filterState.miner->Option.getOr([])) > 0
 
-  <div className={`bg-white rounded-lg shadow transition-all ${isExpanded ? "w-full" : "w-64"}`}>
-    <div className="p-4 border-b border-gray-200">
+  <div
+    className={`bg-white rounded-xl border border-slate-200 shadow-sm transition-all ${isExpanded
+        ? "w-full"
+        : "w-64"}`}>
+    <div className="p-4 border-b border-slate-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-lg font-medium text-slate-900">
             {`Block Filter ${Int.toString(filterIndex + 1)}`->React.string}
           </h3>
           {hasFilters
             ? <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
                 {"Active"->React.string}
               </span>
             : React.null}

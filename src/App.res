@@ -276,17 +276,17 @@ let make = () => {
     )
   }
 
-  <main className="flex-1 overflow-hidden">
-    <div className="h-full flex flex-col lg:flex-row">
+  <main className="flex-1 overflow-hidden bg-slate-50">
+    <div className="h-full flex flex-col lg:flex-row bg-white">
       // Left Column - Query Builder
       <div
-        className="w-full lg:w-1/2 border-r-0 lg:border-r border-b lg:border-b-0 border-gray-200 overflow-y-auto">
-        <div className="p-4 lg:p-6">
+        className="w-full lg:w-1/2 border-r-0 lg:border-r border-b lg:border-b-0 border-slate-200 overflow-y-auto bg-white">
+        <div className="p-6 lg:p-8">
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">
               {"Create Your Query"->React.string}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-slate-600">
               {"Select a chain, configure your filters, and choose fields for your blockchain query."->React.string}
             </p>
           </div>
@@ -299,13 +299,13 @@ let make = () => {
 
           // Add Filter Buttons
           <div className="mb-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <h3 className="text-lg font-medium text-slate-900 mb-4">
               {"Add Filters"->React.string}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={_ => addLogFilter()}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="inline-flex items-center px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
@@ -318,7 +318,7 @@ let make = () => {
               </button>
               <button
                 onClick={_ => addTransactionFilter()}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
@@ -331,7 +331,7 @@ let make = () => {
               </button>
               <button
                 onClick={_ => addBlockFilter()}
-                className="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
@@ -345,7 +345,7 @@ let make = () => {
               {selectedChainSupportsTraces()
                 ? <button
                     onClick={_ => addTraceFilter()}
-                    className="inline-flex items-center px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    className="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors">
                     <svg
                       className="w-4 h-4 mr-2"
                       fill="none"
@@ -429,7 +429,7 @@ let make = () => {
                 : true
             )
               ? <div className="text-center py-12">
-                  <div className="text-gray-400 mb-4">
+                  <div className="text-slate-400 mb-4">
                     <svg
                       className="w-12 h-12 mx-auto"
                       fill="none"
@@ -443,10 +443,10 @@ let make = () => {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-500 mb-2">
+                  <h3 className="text-lg font-medium text-slate-600 mb-2">
                     {"No filters added yet"->React.string}
                   </h3>
-                  <p className="text-gray-400">
+                  <p className="text-slate-500">
                     {"Click one of the buttons above to add your first filter"->React.string}
                   </p>
                 </div>
@@ -466,13 +466,13 @@ let make = () => {
       </div>
 
       // Right Column - Results
-      <div className="w-full lg:w-1/2 overflow-y-auto">
-        <div className="p-4 lg:p-6">
+      <div className="w-full lg:w-1/2 overflow-y-auto bg-slate-50">
+        <div className="p-6 lg:p-8">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">
               {"Query Results"->React.string}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-slate-600">
               {"View your generated query, execute it, and see the results."->React.string}
             </p>
           </div>
