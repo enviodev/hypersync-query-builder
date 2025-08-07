@@ -2,6 +2,7 @@ open QueryStructure
 open Fetch
 
 type activeTab = QueryJson | QueryLogic | Results
+type resultsView = Raw | Table
 
 @react.component
 let make = (~query: query, ~selectedChainName: option<string>) => {
@@ -9,6 +10,8 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
   let (isExecuting, setIsExecuting) = React.useState(() => false)
   let (queryResult, setQueryResult) = React.useState(() => None)
   let (queryError, setQueryError) = React.useState(() => None)
+  let (resultsView, setResultsView) = React.useState(() => Raw)
+  let (queryResultJson, setQueryResultJson) = React.useState(() => None)
 
   // Helper function to check if selected chain supports traces
   let selectedChainSupportsTraces = () => {
@@ -384,6 +387,7 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
         setIsExecuting(_ => true)
         setQueryError(_ => None)
         setQueryResult(_ => None)
+        setQueryResultJson(_ => None)
 
         try {
           let url = generateChainUrl()
@@ -407,6 +411,7 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
             try {
               let resultText = Js.Json.stringifyWithSpace(resultJson, 2)
               setQueryResult(_ => Some(resultText))
+              setQueryResultJson(_ => Some(resultJson))
             } catch {
             | e =>
               Console.log(e)
@@ -496,6 +501,98 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
       URL.revokeObjectURL(url);
     }`)
     triggerDownload(jsonText)
+  }
+
+  // ---- Table helpers (JS interop) ----
+  // Pick an array from common response shapes
+  let pickFirstArrayDataset: Js.Json.t => array<Js.Json.t> = %raw(`(data) => {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') {
+      const preferred = ['rows','data','results','logs','transactions','blocks','traces','items'];
+      for (const k of preferred) { if (Array.isArray(data[k])) return data[k]; }
+      for (const k in data) { if (Array.isArray(data[k])) return data[k]; }
+    }
+    return [];
+  }`)
+
+  // Flatten nested objects; stringify arrays
+  let flattenRows: array<Js.Json.t> => array<Js.Dict.t<string>> = %raw(`(rows) => {
+    const flattenObject = (obj, prefix) => {
+      const out = {};
+      const stack = [[obj, prefix]];
+      while (stack.length) {
+        const [cur, pre] = stack.pop();
+        if (cur && typeof cur === 'object' && !Array.isArray(cur)) {
+          for (const k in cur) {
+            if (!Object.prototype.hasOwnProperty.call(cur, k)) continue;
+            const v = cur[k];
+            const nk = pre ? pre + '.' + k : k;
+            if (v && typeof v === 'object' && !Array.isArray(v)) stack.push([v, nk]);
+            else if (Array.isArray(v)) out[nk] = JSON.stringify(v);
+            else out[nk] = v == null ? '' : String(v);
+          }
+        } else {
+          out[pre || 'value'] = cur == null ? '' : String(cur);
+        }
+      }
+      return out;
+    };
+    return rows.map(r => flattenObject(r, ''));
+  }`)
+
+  // Detect columns from first N rows
+  let detectColumns: array<Js.Dict.t<string>> => array<string> = %raw(`(flatRows) => {
+    const cols = new Set();
+    for (let i = 0; i < flatRows.length && i < 200; i++) {
+      const r = flatRows[i];
+      for (const k in r) cols.add(k);
+    }
+    return Array.from(cols).sort();
+  }`)
+
+  // Build CSV from flattened rows
+  let rowsToCsv: array<Js.Dict.t<string>> => string = %raw(`(flatRows) => {
+    const cols = (() => {
+      const s = new Set();
+      for (let i = 0; i < flatRows.length && i < 200; i++) { for (const k in flatRows[i]) s.add(k); }
+      return Array.from(s).sort();
+    })();
+    const esc = (v) => {
+      if (v == null) return '';
+      const s = String(v);
+      if (s.includes('"') || s.includes(',') || s.includes('\n')) return '"' + s.replaceAll('"','""') + '"';
+      return s;
+    };
+    const lines = [cols.join(',')];
+    for (let i = 0; i < flatRows.length && i < 1000; i++) {
+      const r = flatRows[i];
+      lines.push(cols.map(c => esc(r[c])).join(','));
+    }
+    return lines.join('\n');
+  }`)
+
+  let copyCsvToClipboard = (csvText: string) => {
+    let copyToClipboard: string => unit = %raw(`(text) => {
+      navigator.clipboard.writeText(text).catch(err => {
+        console.error('Failed to copy CSV: ', err);
+      })
+    }`)
+    copyToClipboard(csvText)
+  }
+
+  let downloadCsv = (csvText: string) => {
+    let triggerDownload: string => unit = %raw(`(text) => {
+      const blob = new Blob([text], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'hypersync-results.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }`)
+    triggerDownload(csvText)
   }
 
   <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -630,15 +727,92 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                 <h4 className="text-sm font-medium text-gray-900">
                   {"Query Results"->React.string}
                 </h4>
-                <span
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                  {"Success"->React.string}
-                </span>
+                <div className="flex items-center">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 mr-3">
+                    {"Success"->React.string}
+                  </span>
+                  <div className="inline-flex items-center">
+                    <button
+                      onClick={_ => setResultsView(_ => Raw)}
+                      className={`px-3 py-1 text-xs font-medium rounded-l-lg border border-slate-200 ${resultsView === Raw ? "bg-slate-800 text-white" : "bg-white text-slate-700 hover:bg-slate-50"}`}>
+                      {"Raw"->React.string}
+                    </button>
+                    <button
+                      onClick={_ => setResultsView(_ => Table)}
+                      className={`px-3 py-1 text-xs font-medium rounded-r-lg border border-slate-200 border-l-0 ${resultsView === Table ? "bg-slate-800 text-white" : "bg-white text-slate-700 hover:bg-slate-50"}`}>
+                      {"Table"->React.string}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <pre
-                className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre max-h-96">
-                {result->React.string}
-              </pre>
+              {switch resultsView {
+              | Raw =>
+                <pre className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre max-h-96">
+                  {result->React.string}
+                </pre>
+              | Table =>
+                switch queryResultJson {
+                | Some(json) =>
+                  {
+                    let rowsJson = pickFirstArrayDataset(json)
+                    if Array.length(rowsJson) == 0 {
+                      <div className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                        {"No tabular rows detected in response"->React.string}
+                      </div>
+                    } else {
+                      let flatRows = flattenRows(rowsJson)
+                      let columns = detectColumns(flatRows)
+                      let csvText = rowsToCsv(flatRows)
+                      <div>
+                        <div className="mb-2 flex items-center">
+                          <button
+                            onClick={_ => copyCsvToClipboard(csvText)}
+                            className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors mr-2">
+                            {"Copy CSV"->React.string}
+                          </button>
+                          <button
+                            onClick={_ => downloadCsv(csvText)}
+                            className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                            {"Download CSV"->React.string}
+                          </button>
+                          <span className="ml-3 text-xs text-slate-500">
+                            {`Showing ${Int.toString(Array.length(flatRows))} rows`->React.string}
+                          </span>
+                        </div>
+                        <div className="overflow-auto max-h-96 rounded-xl border border-slate-200">
+                          <table className="min-w-full border border-slate-200 rounded-xl overflow-hidden">
+                            <thead>
+                              <tr>
+                                {columns->Array.map(col =>
+                                  <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-slate-700 sticky top-[104px] bg-white border-b">
+                                    {col->React.string}
+                                  </th>
+                                )->React.array}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {flatRows
+                               ->Array.map(r => {
+                                 <tr className="bg-white">
+                                   {columns->Array.map(col => {
+                                     let v = Js.Dict.get(r, col)->Belt.Option.getWithDefault("")
+                                     <td key={col} className="px-3 py-2 text-xs text-slate-800 align-top border-b"> {v->React.string} </td>
+                                   })->React.array}
+                                 </tr>
+                               })
+                               ->React.array}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    }
+                  }
+                | None =>
+                  <div className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    {"No tabular rows detected in response"->React.string}
+                  </div>
+                }
+              }}
             </div>
 
           | (None, Some(error), false) =>
