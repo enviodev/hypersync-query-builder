@@ -332,7 +332,15 @@ let make = () => {
                     {"Add Filters"->React.string}
                   </h3>
                   <p className="text-sm text-slate-600">
-                    {"Define what data you want to retrieve (logs, transactions, blocks)"->React.string}
+                    {"Define what data you want to retrieve: "->React.string}
+                    <span className="font-medium"> {"logs"->React.string} </span>
+                    {", "->React.string}
+                    <span className="font-medium"> {"transactions"->React.string} </span>
+                    {", "->React.string}
+                    <span className="font-medium"> {"blocks"->React.string} </span>
+                    <span className="text-xs text-slate-500">
+                      {" (traces available on select networks - reach out to team if interested)"->React.string}
+                    </span>
                   </p>
                 </div>
                 {Array.length(query.logs->Option.getOr([])) > 0 ||
