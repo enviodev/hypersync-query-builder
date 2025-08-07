@@ -285,24 +285,24 @@ let make = (
     Array.length(filterState.kind->Option.getOr([])) > 0 ||
     Array.length(filterState.contractAddress->Option.getOr([])) > 0
 
-  <div className={`bg-white rounded-lg shadow transition-all ${isExpanded ? "w-full" : "w-64"}`}>
-    <div className="p-4 border-b border-gray-200">
+  <div className="bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
+    <div className="p-4 border-b border-slate-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-lg font-medium text-slate-900">
             {`Transaction Filter ${Int.toString(filterIndex + 1)}`->React.string}
           </h3>
           {hasFilters
             ? <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
                 {"Active"->React.string}
               </span>
             : React.null}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
           <button
             onClick={_ => onToggleExpand()}
-            className="inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            className="inline-flex items-center p-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
             <svg
               className={`w-4 h-4 transform transition-transform ${isExpanded
                   ? "rotate-180"
@@ -317,7 +317,7 @@ let make = (
           </button>
           <button
             onClick={_ => onRemove()}
-            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-100 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -333,20 +333,20 @@ let make = (
 
     {isExpanded
       ? <div className="p-6">
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-6 flex flex-wrap gap-2">
             <button
               onClick={_ => setEip7702Example()}
-              className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
               {"EIP-7702 Transactions"->React.string}
             </button>
             <button
               onClick={_ => setFailedTransactionsExample()}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+              className="px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-lg hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-colors">
               {"Failed Transactions"->React.string}
             </button>
             <button
               onClick={_ => setTransferCallExample()}
-              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+              className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
               {"Transfer EOA Calls"->React.string}
             </button>
             <button
