@@ -287,65 +287,94 @@ let make = () => {
               {"Create Your Query"->React.string}
             </h2>
             <p className="text-slate-600">
-              {"Select a chain, configure your filters, and choose fields for your blockchain query."->React.string}
+              {"Configure your blockchain query with these simple steps"->React.string}
             </p>
           </div>
 
-          // Chain Selection
-          <ChainSelector
-            selectedChainName={selectedChainName}
-            onChainSelect={chainName => setSelectedChainName(_ => Some(chainName))}
-          />
+          <div className="space-y-6">
+            // Section 1: Configuration
+            <div className="bg-slate-50 rounded-xl p-6 border-l-4 border-slate-600">
+              <div className="flex items-center mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {"Choose Your Config"->React.string}
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    {"Select your blockchain network and configure query settings"->React.string}
+                  </p>
+                </div>
+                {switch selectedChainName {
+                | Some(chainName) =>
+                  <div className="ml-auto">
+                    <span
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                      {chainName->React.string}
+                    </span>
+                  </div>
+                | None => React.null
+                }}
+              </div>
 
-          // Add Filter Buttons
-          <div className="mb-8">
-            <h3 className="text-lg font-medium text-slate-900 mb-4">
-              {"Add Filters"->React.string}
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                onClick={_ => addLogFilter()}
-                className="inline-flex items-center px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                {"Add Log Filter"->React.string}
-              </button>
-              <button
-                onClick={_ => addTransactionFilter()}
-                className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                {"Add Transaction Filter"->React.string}
-              </button>
-              <button
-                onClick={_ => addBlockFilter()}
-                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                {"Add Block Filter"->React.string}
-              </button>
-              {selectedChainSupportsTraces()
-                ? <button
-                    onClick={_ => addTraceFilter()}
-                    className="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors">
+              // Chain Selection
+              <div className="mb-6">
+                <ChainSelector
+                  selectedChainName={selectedChainName}
+                  onChainSelect={chainName => setSelectedChainName(_ => Some(chainName))}
+                />
+              </div>
+
+              // Advanced Options
+              <AdvancedOptions query={query} onQueryChange={newQuery => setQuery(_ => newQuery)} />
+            </div>
+
+            // Section 2: Filters
+            <div className="bg-slate-50 rounded-xl p-6 border-l-4 border-slate-600">
+              <div className="flex items-center mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {"Add Filters"->React.string}
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    {"Define what data you want to retrieve (logs, transactions, blocks)"->React.string}
+                  </p>
+                </div>
+                {Array.length(query.logs->Option.getOr([])) > 0 ||
+                Array.length(query.transactions->Option.getOr([])) > 0 ||
+                Array.length(query.blocks->Option.getOr([])) > 0 || (
+                  selectedChainSupportsTraces()
+                    ? Array.length(query.traces->Option.getOr([])) > 0
+                    : false
+                )
+                  ? <div className="ml-auto">
+                      <span
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                        {`${Int.toString(
+                            Array.length(query.logs->Option.getOr([])) +
+                            Array.length(query.transactions->Option.getOr([])) +
+                            Array.length(query.blocks->Option.getOr([])) + (
+                              selectedChainSupportsTraces()
+                                ? Array.length(query.traces->Option.getOr([]))
+                                : 0
+                            ),
+                          )} filter${Array.length(query.logs->Option.getOr([])) +
+                          Array.length(query.transactions->Option.getOr([])) +
+                          Array.length(query.blocks->Option.getOr([])) + (
+                            selectedChainSupportsTraces()
+                              ? Array.length(query.traces->Option.getOr([]))
+                              : 0
+                          ) === 1
+                            ? ""
+                            : "s"}`->React.string}
+                      </span>
+                    </div>
+                  : React.null}
+              </div>
+
+              <div className="mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    onClick={_ => addLogFilter()}
+                    className="inline-flex items-center px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                     <svg
                       className="w-4 h-4 mr-2"
                       fill="none"
@@ -358,110 +387,193 @@ let make = () => {
                         d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                       />
                     </svg>
-                    {"Add Trace Filter"->React.string}
+                    {"Add Log Filter"->React.string}
                   </button>
-                : React.null}
-            </div>
-          </div>
-
-          // Filters
-          <div className="space-y-4 mb-8">
-            // Log Filters
-            {Array.mapWithIndex(query.logs->Option.getOr([]), (logFilter, index) =>
-              <LogFilter
-                key={`log-${Int.toString(index)}`}
-                filterState={logFilter}
-                onFilterChange={newFilter => updateLogFilter(index, newFilter)}
-                onRemove={() => removeLogFilter(index)}
-                filterIndex={index}
-                isExpanded={expandedFilterKey === Some(`log-${Int.toString(index)}`)}
-                onToggleExpand={() => toggleFilter(`log-${Int.toString(index)}`)}
-              />
-            )->React.array}
-
-            // Transaction Filters
-            {Array.mapWithIndex(query.transactions->Option.getOr([]), (transactionFilter, index) =>
-              <TransactionFilter
-                key={`transaction-${Int.toString(index)}`}
-                filterState={transactionFilter}
-                onFilterChange={newFilter => updateTransactionFilter(index, newFilter)}
-                onRemove={() => removeTransactionFilter(index)}
-                filterIndex={index}
-                isExpanded={expandedFilterKey === Some(`transaction-${Int.toString(index)}`)}
-                onToggleExpand={() => toggleFilter(`transaction-${Int.toString(index)}`)}
-              />
-            )->React.array}
-
-            // Block Filters
-            {Array.mapWithIndex(query.blocks->Option.getOr([]), (blockFilter, index) =>
-              <BlockFilter
-                key={`block-${Int.toString(index)}`}
-                filterState={blockFilter}
-                onFilterChange={newFilter => updateBlockFilter(index, newFilter)}
-                onRemove={() => removeBlockFilter(index)}
-                filterIndex={index}
-                isExpanded={expandedFilterKey === Some(`block-${Int.toString(index)}`)}
-                onToggleExpand={() => toggleFilter(`block-${Int.toString(index)}`)}
-              />
-            )->React.array}
-
-            // Trace Filters
-            {selectedChainSupportsTraces()
-              ? Array.mapWithIndex(query.traces->Option.getOr([]), (traceFilter, index) =>
-                  <TraceFilter
-                    key={`trace-${Int.toString(index)}`}
-                    filterState={traceFilter}
-                    onFilterChange={newFilter => updateTraceFilter(index, newFilter)}
-                    onRemove={() => removeTraceFilter(index)}
-                    filterIndex={index}
-                    isExpanded={expandedFilterKey === Some(`trace-${Int.toString(index)}`)}
-                    onToggleExpand={() => toggleFilter(`trace-${Int.toString(index)}`)}
-                  />
-                )->React.array
-              : React.null}
-
-            // Empty state message
-            {Array.length(query.logs->Option.getOr([])) === 0 &&
-            Array.length(query.transactions->Option.getOr([])) === 0 &&
-            Array.length(query.blocks->Option.getOr([])) === 0 && (
-              selectedChainSupportsTraces()
-                ? Array.length(query.traces->Option.getOr([])) === 0
-                : true
-            )
-              ? <div className="text-center py-12">
-                  <div className="text-slate-400 mb-4">
+                  <button
+                    onClick={_ => addTransactionFilter()}
+                    className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
                     <svg
-                      className="w-12 h-12 mx-auto"
+                      className="w-4 h-4 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth="1"
-                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                        strokeWidth="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                       />
                     </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-slate-600 mb-2">
-                    {"No filters added yet"->React.string}
+                    {"Add Transaction Filter"->React.string}
+                  </button>
+                  <button
+                    onClick={_ => addBlockFilter()}
+                    className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                    {"Add Block Filter"->React.string}
+                  </button>
+                  {selectedChainSupportsTraces()
+                    ? <button
+                        onClick={_ => addTraceFilter()}
+                        className="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors">
+                        <svg
+                          className="w-4 h-4 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                        {"Add Trace Filter"->React.string}
+                      </button>
+                    : React.null}
+                </div>
+
+                // Active Filters Display
+                <div className="space-y-4">
+                  // Log Filters
+                  {Array.mapWithIndex(query.logs->Option.getOr([]), (logFilter, index) =>
+                    <LogFilter
+                      key={`log-${Int.toString(index)}`}
+                      filterState={logFilter}
+                      onFilterChange={newFilter => updateLogFilter(index, newFilter)}
+                      onRemove={() => removeLogFilter(index)}
+                      filterIndex={index}
+                      isExpanded={expandedFilterKey === Some(`log-${Int.toString(index)}`)}
+                      onToggleExpand={() => toggleFilter(`log-${Int.toString(index)}`)}
+                    />
+                  )->React.array}
+
+                  // Transaction Filters
+                  {Array.mapWithIndex(query.transactions->Option.getOr([]), (
+                    transactionFilter,
+                    index,
+                  ) =>
+                    <TransactionFilter
+                      key={`transaction-${Int.toString(index)}`}
+                      filterState={transactionFilter}
+                      onFilterChange={newFilter => updateTransactionFilter(index, newFilter)}
+                      onRemove={() => removeTransactionFilter(index)}
+                      filterIndex={index}
+                      isExpanded={expandedFilterKey === Some(`transaction-${Int.toString(index)}`)}
+                      onToggleExpand={() => toggleFilter(`transaction-${Int.toString(index)}`)}
+                    />
+                  )->React.array}
+
+                  // Block Filters
+                  {Array.mapWithIndex(query.blocks->Option.getOr([]), (blockFilter, index) =>
+                    <BlockFilter
+                      key={`block-${Int.toString(index)}`}
+                      filterState={blockFilter}
+                      onFilterChange={newFilter => updateBlockFilter(index, newFilter)}
+                      onRemove={() => removeBlockFilter(index)}
+                      filterIndex={index}
+                      isExpanded={expandedFilterKey === Some(`block-${Int.toString(index)}`)}
+                      onToggleExpand={() => toggleFilter(`block-${Int.toString(index)}`)}
+                    />
+                  )->React.array}
+
+                  // Trace Filters
+                  {selectedChainSupportsTraces()
+                    ? Array.mapWithIndex(query.traces->Option.getOr([]), (traceFilter, index) =>
+                        <TraceFilter
+                          key={`trace-${Int.toString(index)}`}
+                          filterState={traceFilter}
+                          onFilterChange={newFilter => updateTraceFilter(index, newFilter)}
+                          onRemove={() => removeTraceFilter(index)}
+                          filterIndex={index}
+                          isExpanded={expandedFilterKey === Some(`trace-${Int.toString(index)}`)}
+                          onToggleExpand={() => toggleFilter(`trace-${Int.toString(index)}`)}
+                        />
+                      )->React.array
+                    : React.null}
+
+                  // Empty state message
+                  {Array.length(query.logs->Option.getOr([])) === 0 &&
+                  Array.length(query.transactions->Option.getOr([])) === 0 &&
+                  Array.length(query.blocks->Option.getOr([])) === 0 && (
+                    selectedChainSupportsTraces()
+                      ? Array.length(query.traces->Option.getOr([])) === 0
+                      : true
+                  )
+                    ? <div
+                        className="text-center py-8 border-2 border-dashed border-slate-300 rounded-lg">
+                        <div className="text-slate-400 mb-3">
+                          <svg
+                            className="w-8 h-8 mx-auto"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="1"
+                              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                            />
+                          </svg>
+                        </div>
+                        <h4 className="text-sm font-medium text-slate-600 mb-1">
+                          {"No filters added yet"->React.string}
+                        </h4>
+                        <p className="text-xs text-slate-500">
+                          {"Click a button above to add your first filter"->React.string}
+                        </p>
+                      </div>
+                    : React.null}
+                </div>
+              </div>
+            </div>
+
+            // Section 3: Field Selection
+            <div className="bg-slate-50 rounded-xl p-6 border-l-4 border-slate-600">
+              <div className="flex items-center mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {"Select Fields"->React.string}
                   </h3>
-                  <p className="text-slate-500">
-                    {"Click one of the buttons above to add your first filter"->React.string}
+                  <p className="text-sm text-slate-600">
+                    {"Choose which data fields to include in your query response"->React.string}
                   </p>
                 </div>
-              : React.null}
+                {Array.length(query.fieldSelection.block) > 0 ||
+                Array.length(query.fieldSelection.transaction) > 0 ||
+                Array.length(query.fieldSelection.log) > 0 ||
+                Array.length(query.fieldSelection.trace) > 0
+                  ? <div className="ml-auto">
+                      <span
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                        {`${Int.toString(
+                            Array.length(query.fieldSelection.block) +
+                            Array.length(query.fieldSelection.transaction) +
+                            Array.length(query.fieldSelection.log) +
+                            Array.length(query.fieldSelection.trace),
+                          )} fields`->React.string}
+                      </span>
+                    </div>
+                  : React.null}
+              </div>
+              <FieldSelector
+                fieldSelection={query.fieldSelection}
+                onFieldSelectionChange={updateFieldSelection}
+                tracesSupported={selectedChainSupportsTraces()}
+              />
+            </div>
           </div>
-
-          // Field Selection
-          <FieldSelector
-            fieldSelection={query.fieldSelection}
-            onFieldSelectionChange={updateFieldSelection}
-            tracesSupported={selectedChainSupportsTraces()}
-          />
-
-          // Advanced Options
-          <AdvancedOptions query={query} onQueryChange={newQuery => setQuery(_ => newQuery)} />
         </div>
       </div>
 
