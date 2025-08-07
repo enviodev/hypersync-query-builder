@@ -69,6 +69,120 @@ let make = () => {
       }
     )
 
+  let resetBuilder = () => {
+    setSelectedChainName(_ => None)
+    setExpandedFilterKey(_ => None)
+    setQuery(_ => {
+      fromBlock: 0,
+      toBlock: None,
+      logs: None,
+      transactions: None,
+      traces: None,
+      blocks: None,
+      includeAllBlocks: None,
+      fieldSelection: {
+        block: [],
+        transaction: [],
+        log: [],
+        trace: [],
+      },
+      maxNumBlocks: Some(10),
+      maxNumTransactions: Some(10),
+      maxNumLogs: Some(10),
+      maxNumTraces: None,
+      joinMode: None,
+    })
+  }
+
+  // Quick-start templates
+  let applyPresetErc20Transfers = () => {
+    // ERC20 Transfer event signature
+    let transferTopic0 = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+    let preset: query = {
+      ...query,
+      logs: Some([{address: None, topics: Some([[transferTopic0]])}]),
+      transactions: None,
+      blocks: None,
+      traces: None,
+      fieldSelection: {
+        block: [],
+        transaction: [
+          // transactionField
+          BlockHash,
+          From,
+          To,
+          Value,
+          Status,
+        ],
+        log: [
+          // logField
+          Address,
+          Topic0,
+          Topic1,
+          Topic2,
+          Topic3,
+          TransactionHash,
+          BlockNumber,
+        ],
+        trace: [],
+      },
+      maxNumBlocks: None,
+      maxNumTransactions: None,
+      maxNumLogs: Some(100),
+      maxNumTraces: None,
+      joinMode: query.joinMode,
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("log-0"))
+    // Select a sensible default network if none selected
+    setSelectedChainName(prev =>
+      switch prev {
+      | Some(_) => prev
+      | None => Some("eth")
+      }
+    )
+  }
+
+  let applyPresetFailedTransactions = () => {
+    let preset: query = {
+      ...query,
+      logs: None,
+      transactions: Some([
+        {
+          from_: None,
+          to_: None,
+          sighash: None,
+          status: Some(0),
+          kind: None,
+          contractAddress: None,
+          authorizationList: None,
+        },
+      ]),
+      traces: None,
+      blocks: None,
+      fieldSelection: {
+        block: [],
+        transaction: [Hash, From, To, Value, GasUsed, Status],
+        log: [],
+        trace: [],
+      },
+      maxNumBlocks: None,
+      maxNumTransactions: Some(100),
+      maxNumLogs: None,
+      maxNumTraces: None,
+      joinMode: query.joinMode,
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("transaction-0"))
+    // Select a sensible default network if none selected
+    setSelectedChainName(prev =>
+      switch prev {
+      | Some(_) => prev
+      | None => Some("eth")
+      }
+    )
+  }
+
   // Update URL when query or selectedChainName changes
   React.useEffect1(() => {
     UrlEncoder.updateUrlWithState({query, selectedChainName})
@@ -282,10 +396,15 @@ let make = () => {
       <div
         className="w-full lg:w-1/2 border-r-0 lg:border-r border-b lg:border-b-0 border-slate-200 overflow-y-auto bg-white">
         <div className="p-6 lg:p-8">
-          <div className="mb-8">
+          <div className="mb-8 flex items-center justify-between">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
               {"Create Your Query"->React.string}
             </h2>
+            <button
+              onClick={_ => resetBuilder()}
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors">
+              {"Reset"->React.string}
+            </button>
           </div>
 
           <div className="space-y-6">
@@ -322,6 +441,32 @@ let make = () => {
 
               // Advanced Options
               <AdvancedOptions query={query} onQueryChange={newQuery => setQuery(_ => newQuery)} />
+
+              // Quick Start Templates
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-900">
+                      {"Quick start"->React.string}
+                    </h4>
+                    <p className="text-xs text-slate-600">
+                      {"Start from a popular template"->React.string}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={_ => applyPresetErc20Transfers()}
+                    className="inline-flex items-center px-3 py-1.5 bg-slate-700 text-white text-xs font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                    {"ERC20 Transfers (logs)"->React.string}
+                  </button>
+                  <button
+                    onClick={_ => applyPresetFailedTransactions()}
+                    className="inline-flex items-center px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
+                    {"Failed Transactions"->React.string}
+                  </button>
+                </div>
+              </div>
             </div>
 
             // Section 2: Filters

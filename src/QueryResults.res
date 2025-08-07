@@ -457,6 +457,47 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     }
   }
 
+  let copyJsonToClipboard = () => {
+    let jsonText = serializeQuery(query)
+    let copyToClipboard: string => unit = %raw(`(text) => {
+      navigator.clipboard.writeText(text).then(() => {
+        console.log('JSON copied to clipboard');
+      }).catch(err => {
+        console.error('Failed to copy JSON: ', err);
+      })
+    }`)
+    copyToClipboard(jsonText)
+  }
+
+  let copyShareLinkToClipboard = () => {
+    let getHref: unit => string = %raw(`() => window.location.href`)
+    let href = getHref()
+    let copyToClipboard: string => unit = %raw(`(text) => {
+      navigator.clipboard.writeText(text).then(() => {
+        console.log('Share link copied');
+      }).catch(err => {
+        console.error('Failed to copy link: ', err);
+      })
+    }`)
+    copyToClipboard(href)
+  }
+
+  let downloadJson = () => {
+    let jsonText = serializeQuery(query)
+    let triggerDownload: string => unit = %raw(`(text) => {
+      const blob = new Blob([text], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'hypersync-query.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }`)
+    triggerDownload(jsonText)
+  }
+
   <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
     <div className="mb-6">
       <h3 className="text-lg font-medium text-slate-900 mb-2"> {"Results"->React.string} </h3>
@@ -521,6 +562,21 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                   onClick={_ => copyCurlToClipboard()}
                   className="px-3 py-1 bg-slate-600 text-white text-xs font-medium rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                   {"Copy cURL"->React.string}
+                </button>
+                <button
+                  onClick={_ => copyJsonToClipboard()}
+                  className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                  {"Copy JSON"->React.string}
+                </button>
+                <button
+                  onClick={_ => downloadJson()}
+                  className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                  {"Download"->React.string}
+                </button>
+                <button
+                  onClick={_ => copyShareLinkToClipboard()}
+                  className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                  {"Share link"->React.string}
                 </button>
                 <button
                   onClick={_ => executeQuery()->ignore}
