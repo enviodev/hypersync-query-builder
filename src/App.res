@@ -286,9 +286,6 @@ let make = () => {
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
               {"Create Your Query"->React.string}
             </h2>
-            <p className="text-slate-600">
-              {"Configure your blockchain query with these simple steps"->React.string}
-            </p>
           </div>
 
           <div className="space-y-6">
