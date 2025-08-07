@@ -454,9 +454,6 @@ let make = () => {
                   : false
               )
                 ? <div className="mt-6">
-                    <h4 className="text-sm font-medium text-slate-700 mb-4">
-                      {"Active Filters"->React.string}
-                    </h4>
                     <div className="grid gap-4">
                       // Log Filters
                       {Array.mapWithIndex(query.logs->Option.getOr([]), (logFilter, index) =>
