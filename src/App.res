@@ -370,8 +370,8 @@ let make = () => {
                   : React.null}
               </div>
 
-              <div className="mb-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="mb-6">
+                <div className="flex flex-wrap gap-3">
                   <button
                     onClick={_ => addLogFilter()}
                     className="inline-flex items-center px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
@@ -443,100 +443,106 @@ let make = () => {
                       </button>
                     : React.null}
                 </div>
-
-                // Active Filters Display
-                <div className="space-y-4">
-                  // Log Filters
-                  {Array.mapWithIndex(query.logs->Option.getOr([]), (logFilter, index) =>
-                    <LogFilter
-                      key={`log-${Int.toString(index)}`}
-                      filterState={logFilter}
-                      onFilterChange={newFilter => updateLogFilter(index, newFilter)}
-                      onRemove={() => removeLogFilter(index)}
-                      filterIndex={index}
-                      isExpanded={expandedFilterKey === Some(`log-${Int.toString(index)}`)}
-                      onToggleExpand={() => toggleFilter(`log-${Int.toString(index)}`)}
-                    />
-                  )->React.array}
-
-                  // Transaction Filters
-                  {Array.mapWithIndex(query.transactions->Option.getOr([]), (
-                    transactionFilter,
-                    index,
-                  ) =>
-                    <TransactionFilter
-                      key={`transaction-${Int.toString(index)}`}
-                      filterState={transactionFilter}
-                      onFilterChange={newFilter => updateTransactionFilter(index, newFilter)}
-                      onRemove={() => removeTransactionFilter(index)}
-                      filterIndex={index}
-                      isExpanded={expandedFilterKey === Some(`transaction-${Int.toString(index)}`)}
-                      onToggleExpand={() => toggleFilter(`transaction-${Int.toString(index)}`)}
-                    />
-                  )->React.array}
-
-                  // Block Filters
-                  {Array.mapWithIndex(query.blocks->Option.getOr([]), (blockFilter, index) =>
-                    <BlockFilter
-                      key={`block-${Int.toString(index)}`}
-                      filterState={blockFilter}
-                      onFilterChange={newFilter => updateBlockFilter(index, newFilter)}
-                      onRemove={() => removeBlockFilter(index)}
-                      filterIndex={index}
-                      isExpanded={expandedFilterKey === Some(`block-${Int.toString(index)}`)}
-                      onToggleExpand={() => toggleFilter(`block-${Int.toString(index)}`)}
-                    />
-                  )->React.array}
-
-                  // Trace Filters
-                  {selectedChainSupportsTraces()
-                    ? Array.mapWithIndex(query.traces->Option.getOr([]), (traceFilter, index) =>
-                        <TraceFilter
-                          key={`trace-${Int.toString(index)}`}
-                          filterState={traceFilter}
-                          onFilterChange={newFilter => updateTraceFilter(index, newFilter)}
-                          onRemove={() => removeTraceFilter(index)}
-                          filterIndex={index}
-                          isExpanded={expandedFilterKey === Some(`trace-${Int.toString(index)}`)}
-                          onToggleExpand={() => toggleFilter(`trace-${Int.toString(index)}`)}
-                        />
-                      )->React.array
-                    : React.null}
-
-                  // Empty state message
-                  {Array.length(query.logs->Option.getOr([])) === 0 &&
-                  Array.length(query.transactions->Option.getOr([])) === 0 &&
-                  Array.length(query.blocks->Option.getOr([])) === 0 && (
-                    selectedChainSupportsTraces()
-                      ? Array.length(query.traces->Option.getOr([])) === 0
-                      : true
-                  )
-                    ? <div
-                        className="text-center py-8 border-2 border-dashed border-slate-300 rounded-lg">
-                        <div className="text-slate-400 mb-3">
-                          <svg
-                            className="w-8 h-8 mx-auto"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="1"
-                              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                            />
-                          </svg>
-                        </div>
-                        <h4 className="text-sm font-medium text-slate-600 mb-1">
-                          {"No filters added yet"->React.string}
-                        </h4>
-                        <p className="text-xs text-slate-500">
-                          {"Click a button above to add your first filter"->React.string}
-                        </p>
-                      </div>
-                    : React.null}
-                </div>
               </div>
+
+              // Active Filters Display
+              {Array.length(query.logs->Option.getOr([])) > 0 ||
+              Array.length(query.transactions->Option.getOr([])) > 0 ||
+              Array.length(query.blocks->Option.getOr([])) > 0 || (
+                selectedChainSupportsTraces()
+                  ? Array.length(query.traces->Option.getOr([])) > 0
+                  : false
+              )
+                ? <div className="mt-6">
+                    <h4 className="text-sm font-medium text-slate-700 mb-4">
+                      {"Active Filters"->React.string}
+                    </h4>
+                    <div className="grid gap-4">
+                      // Log Filters
+                      {Array.mapWithIndex(query.logs->Option.getOr([]), (logFilter, index) =>
+                        <LogFilter
+                          key={`log-${Int.toString(index)}`}
+                          filterState={logFilter}
+                          onFilterChange={newFilter => updateLogFilter(index, newFilter)}
+                          onRemove={() => removeLogFilter(index)}
+                          filterIndex={index}
+                          isExpanded={expandedFilterKey === Some(`log-${Int.toString(index)}`)}
+                          onToggleExpand={() => toggleFilter(`log-${Int.toString(index)}`)}
+                        />
+                      )->React.array}
+
+                      // Transaction Filters
+                      {Array.mapWithIndex(query.transactions->Option.getOr([]), (
+                        transactionFilter,
+                        index,
+                      ) =>
+                        <TransactionFilter
+                          key={`transaction-${Int.toString(index)}`}
+                          filterState={transactionFilter}
+                          onFilterChange={newFilter => updateTransactionFilter(index, newFilter)}
+                          onRemove={() => removeTransactionFilter(index)}
+                          filterIndex={index}
+                          isExpanded={expandedFilterKey ===
+                            Some(`transaction-${Int.toString(index)}`)}
+                          onToggleExpand={() => toggleFilter(`transaction-${Int.toString(index)}`)}
+                        />
+                      )->React.array}
+
+                      // Block Filters
+                      {Array.mapWithIndex(query.blocks->Option.getOr([]), (blockFilter, index) =>
+                        <BlockFilter
+                          key={`block-${Int.toString(index)}`}
+                          filterState={blockFilter}
+                          onFilterChange={newFilter => updateBlockFilter(index, newFilter)}
+                          onRemove={() => removeBlockFilter(index)}
+                          filterIndex={index}
+                          isExpanded={expandedFilterKey === Some(`block-${Int.toString(index)}`)}
+                          onToggleExpand={() => toggleFilter(`block-${Int.toString(index)}`)}
+                        />
+                      )->React.array}
+
+                      // Trace Filters
+                      {selectedChainSupportsTraces()
+                        ? Array.mapWithIndex(query.traces->Option.getOr([]), (traceFilter, index) =>
+                            <TraceFilter
+                              key={`trace-${Int.toString(index)}`}
+                              filterState={traceFilter}
+                              onFilterChange={newFilter => updateTraceFilter(index, newFilter)}
+                              onRemove={() => removeTraceFilter(index)}
+                              filterIndex={index}
+                              isExpanded={expandedFilterKey ===
+                                Some(`trace-${Int.toString(index)}`)}
+                              onToggleExpand={() => toggleFilter(`trace-${Int.toString(index)}`)}
+                            />
+                          )->React.array
+                        : React.null}
+                    </div>
+                  </div>
+                : <div className="mt-6">
+                    <div
+                      className="text-center py-8 border-2 border-dashed border-slate-300 rounded-lg">
+                      <div className="text-slate-400 mb-3">
+                        <svg
+                          className="w-8 h-8 mx-auto"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1"
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                          />
+                        </svg>
+                      </div>
+                      <h4 className="text-sm font-medium text-slate-600 mb-1">
+                        {"No filters added yet"->React.string}
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        {"Click a button above to add your first filter"->React.string}
+                      </p>
+                    </div>
+                  </div>}
             </div>
 
             // Section 3: Field Selection

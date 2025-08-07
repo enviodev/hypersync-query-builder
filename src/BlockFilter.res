@@ -108,10 +108,7 @@ let make = (
     Array.length(filterState.hash->Option.getOr([])) > 0 ||
       Array.length(filterState.miner->Option.getOr([])) > 0
 
-  <div
-    className={`bg-white rounded-xl border border-slate-200 shadow-sm transition-all ${isExpanded
-        ? "w-full"
-        : "w-64"}`}>
+  <div className="bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
     <div className="p-4 border-b border-slate-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
