@@ -723,17 +723,14 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
       <div className={`text-xs ${indent} font-mono text-slate-800`}>
         {`${label}: ${Js.Float.toString(n)}`->React.string}
       </div>
-    | _ =>
-      switch Js.Json.decodeBoolean(node) {
-      | Some(b) =>
-        <div className={`text-xs ${indent} font-mono text-slate-800`}>
-          {`${label}: ${b ? "true" : "false"}`->React.string}
-        </div>
-      | None =>
-        <div className={`text-xs ${indent} font-mono text-slate-500`}>
-          {`${label}: null`->React.string}
-        </div>
-      }
+    | JSONTrue =>
+      <div className={`text-xs ${indent} font-mono text-slate-800`}>
+        {`${label}: true`->React.string}
+      </div>
+    | JSONFalse =>
+      <div className={`text-xs ${indent} font-mono text-slate-800`}>
+        {`${label}: false`->React.string}
+      </div>
     | JSONNull =>
       <div className={`text-xs ${indent} font-mono text-slate-500`}>
         {`${label}: null`->React.string}
@@ -1058,7 +1055,8 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                 </div>
               </div>
               {switch resultsView {
-              | Raw => switch rawMode {
+              | Raw =>
+                switch rawMode {
                 | Plain =>
                   <div>
                     <div className="mb-2">
