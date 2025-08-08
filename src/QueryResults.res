@@ -598,7 +598,7 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     }`)
 
   // Truncate long values moderately in the middle for readability
-  let truncateMiddle: string => string = %raw(`(s) => {
+  let _truncateMiddle: string => string = %raw(`(s) => {
     if (typeof s !== 'string') return String(s ?? '');
     const max = 24;
     if (s.length <= max) return s;
@@ -690,30 +690,18 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     return (Math.round(b/104857.6)/10) + ' MB';
   }`)
 
-  // Column width suggestion based on name (wider to avoid spill; horizontal scroll acceptable)
-  let widthForColumn = (name: string): string => {
-    open Js.String2
-    if (
-      includes(name, "hash") ||
-      name === "address" ||
-      startsWith(name, "topic") ||
-      includes(name, "root") ||
-      name === "data" ||
-      name === "extra_data" ||
-      name === "logs_bloom" ||
-      name === "mix_hash"
-    ) {
-      "36ch"
-    } else if (
-      includes(name, "block") ||
-      includes(name, "number") ||
-      includes(name, "gas") ||
-      name === "log_index" ||
-      name === "transaction_index"
-    ) {
-      "12ch"
+  // Fixed column width for all columns to prevent overlap
+  let fixedColumnWidth = "200px" // Fixed width that guarantees no overlap
+
+  // Improved truncation for very long values
+  let smartTruncate = (text: string, maxLength: int): string => {
+    if String.length(text) <= maxLength {
+      text
     } else {
-      "18ch"
+      let half = maxLength / 2 - 2
+      let start = Js.String2.substring(text, ~from=0, ~to_=half)
+      let end = Js.String2.substringToEnd(text, ~from=String.length(text) - half)
+      start ++ "..." ++ end
     }
   }
 
@@ -959,11 +947,6 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                   {"Copy JSON"->React.string}
                 </button>
                 <button
-                  onClick={_ => copyResultsJson()}
-                  className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
-                  {"Copy Results JSON"->React.string}
-                </button>
-                <button
                   onClick={_ => downloadJson()}
                   className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
                   {"Download"->React.string}
@@ -971,7 +954,7 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                 <button
                   onClick={_ => copyShareLinkToClipboard()}
                   className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
-                  {"Share link"->React.string}
+                  {"Share Query Link"->React.string}
                 </button>
                 <button
                   onClick={_ => executeQuery()->ignore}
@@ -1044,6 +1027,11 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                     </span>
                   | _ => React.null
                   }}
+                  <button
+                    onClick={_ => copyResultsJson()}
+                    className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors mr-2">
+                    {"Copy Results JSON"->React.string}
+                  </button>
                   <div className="inline-flex items-center">
                     <button
                       onClick={_ => setResultsView(_ => Raw)}
@@ -1171,39 +1159,45 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                               )} rows`->React.string}
                           </span>
                         </div>
-                        <div className="overflow-auto max-h-96 rounded-xl border border-slate-200">
-                          <table className="min-w-max w-full table-fixed">
+                        <div
+                          className="overflow-x-auto max-h-96 rounded-xl border border-slate-200">
+                          <table className="w-full table-fixed border-collapse">
                             <thead>
                               <tr>
                                 {columns
                                 ->Array.map(col =>
                                   <th
                                     key={col}
-                                    className="px-3 py-2 text-left text-xs font-semibold text-slate-700 sticky top-0 z-10 bg-white border-b whitespace-nowrap"
-                                    style={{minWidth: widthForColumn(col)}}>
-                                    <button
-                                      className="inline-flex items-center gap-1 hover:underline max-w-[14rem] truncate"
-                                      onClick={_ =>
-                                        setSortColumn(prev =>
-                                          if prev === Some(col) {
-                                            setSortAscending(prevAsc => !prevAsc)
-                                            Some(col)
-                                          } else {
-                                            setSortAscending(_ => true)
-                                            Some(col)
-                                          }
-                                        )}>
-                                      {col->React.string}
-                                      {switch sortColumn {
-                                      | Some(active) if active === col =>
-                                        <span className="text-slate-400">
-                                          {sortAscending
-                                            ? "↑"->React.string
-                                            : "↓"->React.string}
+                                    className="px-3 py-2 text-left text-xs font-semibold text-slate-700 sticky top-0 z-10 bg-white border-b border-slate-200"
+                                    style={{width: fixedColumnWidth, maxWidth: fixedColumnWidth}}>
+                                    <div className="flex items-center justify-between">
+                                      <button
+                                        className="inline-flex items-center gap-1 hover:underline truncate flex-1 text-left"
+                                        onClick={_ =>
+                                          setSortColumn(prev =>
+                                            if prev === Some(col) {
+                                              setSortAscending(prevAsc => !prevAsc)
+                                              Some(col)
+                                            } else {
+                                              setSortAscending(_ => true)
+                                              Some(col)
+                                            }
+                                          )}
+                                        title={col}>
+                                        <span className="truncate">
+                                          {smartTruncate(col, 20)->React.string}
                                         </span>
-                                      | _ => React.null
-                                      }}
-                                    </button>
+                                        {switch sortColumn {
+                                        | Some(active) if active === col =>
+                                          <span className="text-slate-400 ml-1">
+                                            {sortAscending
+                                              ? "↑"->React.string
+                                              : "↓"->React.string}
+                                          </span>
+                                        | _ => React.null
+                                        }}
+                                      </button>
+                                    </div>
                                   </th>
                                 )
                                 ->React.array}
@@ -1211,34 +1205,46 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                             </thead>
                             <tbody>
                               {displayedRows
-                              ->Array.map(r => {
-                                <tr className="odd:bg-slate-50 hover:bg-slate-50">
+                              ->Array.mapWithIndex((r, i) =>
+                                <tr
+                                  key={Int.toString(i)}
+                                  className={mod(i, 2) == 1 ? "bg-slate-50" : "bg-white"}>
                                   {columns
                                   ->Array.map(col => {
                                     let v = Js.Dict.get(r, col)->Belt.Option.getWithDefault("")
                                     <td
                                       key={col}
-                                      className="px-3 py-2 text-xs text-slate-800 align-top border-b font-mono whitespace-nowrap"
-                                      style={{maxWidth: widthForColumn(col)}}>
-                                      <span
-                                        className="inline-flex items-center gap-1 overflow-hidden">
-                                        <span className="block truncate">
-                                          {truncateMiddle(v)->React.string}
+                                      className="px-3 py-2 text-xs text-slate-800 border-b border-slate-200 font-mono"
+                                      style={{width: fixedColumnWidth, maxWidth: fixedColumnWidth}}>
+                                      <div className="flex items-center gap-2 overflow-hidden">
+                                        <span className="truncate flex-1 cursor-default" title={v}>
+                                          {smartTruncate(v, 25)->React.string}
                                         </span>
-                                        {String.length(v) > 12
+                                        {String.length(v) > 25
                                           ? <button
-                                              title="Copy"
+                                              title={`Copy: ${v}`}
                                               onClick={_ => copyText(v)}
-                                              className="text-slate-400 hover:text-slate-700 ml-1 shrink-0">
-                                              {"⧉"->React.string}
+                                              className="text-slate-400 hover:text-slate-700 shrink-0 px-1 py-0.5 rounded hover:bg-slate-200 transition-colors">
+                                              <svg
+                                                className="w-3 h-3"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                  strokeWidth="2"
+                                                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                                />
+                                              </svg>
                                             </button>
                                           : React.null}
-                                      </span>
+                                      </div>
                                     </td>
                                   })
                                   ->React.array}
                                 </tr>
-                              })
+                              )
                               ->React.array}
                             </tbody>
                           </table>
