@@ -690,20 +690,30 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     return (Math.round(b/104857.6)/10) + ' MB';
   }`)
 
-  // Column width suggestion based on name
+  // Column width suggestion based on name (wider to avoid spill; horizontal scroll acceptable)
   let widthForColumn = (name: string): string => {
     open Js.String2
-    if includes(name, "hash") || name === "address" || startsWith(name, "topic") {
-      "22ch"
+    if (
+      includes(name, "hash") ||
+      name === "address" ||
+      startsWith(name, "topic") ||
+      includes(name, "root") ||
+      name === "data" ||
+      name === "extra_data" ||
+      name === "logs_bloom" ||
+      name === "mix_hash"
+    ) {
+      "36ch"
     } else if (
       includes(name, "block") ||
+      includes(name, "number") ||
       includes(name, "gas") ||
       name === "log_index" ||
       name === "transaction_index"
     ) {
-      "10ch"
+      "12ch"
     } else {
-      "14ch"
+      "18ch"
     }
   }
 
@@ -1169,9 +1179,10 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                                 ->Array.map(col =>
                                   <th
                                     key={col}
-                                    className="px-3 py-2 text-left text-xs font-semibold text-slate-700 sticky top-0 z-10 bg-white border-b whitespace-nowrap">
+                                    className="px-3 py-2 text-left text-xs font-semibold text-slate-700 sticky top-0 z-10 bg-white border-b whitespace-nowrap"
+                                    style={{minWidth: widthForColumn(col)}}>
                                     <button
-                                      className="inline-flex items-center gap-1 hover:underline max-w-[10rem] truncate"
+                                      className="inline-flex items-center gap-1 hover:underline max-w-[14rem] truncate"
                                       onClick={_ =>
                                         setSortColumn(prev =>
                                           if prev === Some(col) {
@@ -1207,12 +1218,11 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                                     let v = Js.Dict.get(r, col)->Belt.Option.getWithDefault("")
                                     <td
                                       key={col}
-                                      className="px-3 py-2 text-xs text-slate-800 align-top border-b font-mono whitespace-nowrap">
+                                      className="px-3 py-2 text-xs text-slate-800 align-top border-b font-mono whitespace-nowrap"
+                                      style={{maxWidth: widthForColumn(col)}}>
                                       <span
                                         className="inline-flex items-center gap-1 overflow-hidden">
-                                        <span
-                                          className="block truncate"
-                                          style={{maxWidth: widthForColumn(col)}}>
+                                        <span className="block truncate">
                                           {truncateMiddle(v)->React.string}
                                         </span>
                                         {String.length(v) > 12
