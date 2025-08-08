@@ -6,11 +6,11 @@ ReactDOM.querySelector("#root")
 ->ReactDOM.Client.Root.render(
   <React.StrictMode>
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200">
+      <header className="bg-white/80 backdrop-blur border-b border-slate-200 sticky top-0 z-10">
         <div className="px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center">
-              <h1 className="text-lg font-medium text-slate-900">
+              <h1 className="text-lg font-semibold tracking-tight text-slate-900">
                 {"HyperSync Query Builder"->React.string}
               </h1>
             </div>
@@ -19,7 +19,7 @@ ReactDOM.querySelector("#root")
                 href="https://docs.envio.dev/docs/HyperSync/overview"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200">
+                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200">
                 <svg
                   className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -35,7 +35,7 @@ ReactDOM.querySelector("#root")
                 href="https://envio.dev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200">
+                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200">
                 <svg
                   className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -52,7 +52,7 @@ ReactDOM.querySelector("#root")
         </div>
       </header>
       <App />
-      <footer className="bg-slate-50 border-t border-slate-200">
+      <footer className="bg-white border-t border-slate-200">
         <div className="px-6 lg:px-8 py-3">
           <div className="flex items-center justify-center text-xs text-slate-500">
             <span>
