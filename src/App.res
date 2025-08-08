@@ -289,7 +289,7 @@ let make = () => {
 
   // https://docs.envio.dev/docs/HyperSync/hypersync-curl-examples#get-all-transactions-for-an-address
   let applyPresetAddressTransactions = () => {
-    let defaultAddr = "0xdb255746609baadd67ef44fc15b5e1d04befbca7"
+    let defaultAddr = "0x1e037f97d730Cc881e77F01E409D828b0bb14de0"
     let addr = if (
       quickStartAddress->String.startsWith("0x") && String.length(quickStartAddress) === 42
     ) {
@@ -628,7 +628,7 @@ let make = () => {
                   />
                   <span className="text-[11px] text-slate-500">
                     {if String.length(quickStartAddress) == 0 {
-                      "If empty, examples are used: transfers 0x1e037f97d730Cc881e77F01E409D828b0bb14de0 · txns 0xdb255746609baadd67ef44fc15b5e1d04befbca7"
+                      "Using a random example address: 0x1e03…4de0"
                     } else {
                       "Using your address for address-based presets"
                     }->React.string}
