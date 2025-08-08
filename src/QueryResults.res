@@ -3,6 +3,7 @@ open Fetch
 
 type activeTab = QueryJson | QueryLogic | Results
 type resultsView = Raw | Table
+type rawMode = Plain | Interactive
 
 @react.component
 let make = (~query: query, ~selectedChainName: option<string>) => {
@@ -11,6 +12,7 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
   let (queryResult, setQueryResult) = React.useState(() => None)
   let (queryError, setQueryError) = React.useState(() => None)
   let (resultsView, setResultsView) = React.useState(() => Raw)
+  let (rawMode, setRawMode) = React.useState(() => Plain)
   let (queryResultJson, setQueryResultJson) = React.useState(() => None)
   let (sortColumn, setSortColumn) = React.useState(() => None)
   let (sortAscending, setSortAscending) = React.useState(() => true)
@@ -531,6 +533,19 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     triggerDownload(jsonText)
   }
 
+  // Copy full results JSON
+  let copyResultsJson = () => {
+    switch queryResult {
+    | Some(result) => {
+        let copyToClipboard: string => unit = %raw(`(text) => {
+          navigator.clipboard.writeText(text).catch(() => {})
+        }`)
+        copyToClipboard(result)
+      }
+    | None => ()
+    }
+  }
+
   // ---- Table helpers (analysis, sorting, formatting) ----
   // Determine column data types from sample rows
   let analyzeColumns: array<Js.Dict.t<string>> => Js.Dict.t<string> = %raw(`(flatRows) => {
@@ -674,6 +689,84 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     if (b < 1024*1024) return (Math.round(b/102.4)/10) + ' KB';
     return (Math.round(b/104857.6)/10) + ' MB';
   }`)
+
+  // Column width suggestion based on name
+  let widthForColumn = (name: string): string => {
+    open Js.String2
+    if includes(name, "hash") || name === "address" || startsWith(name, "topic") {
+      "22ch"
+    } else if (
+      includes(name, "block") ||
+      includes(name, "gas") ||
+      name === "log_index" ||
+      name === "transaction_index"
+    ) {
+      "10ch"
+    } else {
+      "14ch"
+    }
+  }
+
+  // Collapsible JSON renderer using <details/summary>
+  let rec renderJsonNode = (label: string, node: Js.Json.t, depth: int): React.element => {
+    let indent = if depth > 0 {
+      "ml-4"
+    } else {
+      ""
+    }
+    switch Js.Json.classify(node) {
+    | JSONString(s) =>
+      <div className={`text-xs ${indent} font-mono text-slate-800`}>
+        {`${label}: "${s}"`->React.string}
+      </div>
+    | JSONNumber(n) =>
+      <div className={`text-xs ${indent} font-mono text-slate-800`}>
+        {`${label}: ${Js.Float.toString(n)}`->React.string}
+      </div>
+    | _ =>
+      switch Js.Json.decodeBoolean(node) {
+      | Some(b) =>
+        <div className={`text-xs ${indent} font-mono text-slate-800`}>
+          {`${label}: ${b ? "true" : "false"}`->React.string}
+        </div>
+      | None =>
+        <div className={`text-xs ${indent} font-mono text-slate-500`}>
+          {`${label}: null`->React.string}
+        </div>
+      }
+    | JSONNull =>
+      <div className={`text-xs ${indent} font-mono text-slate-500`}>
+        {`${label}: null`->React.string}
+      </div>
+    | JSONArray(arr) =>
+      <details className={`text-xs ${indent}`} open_={depth < 1}>
+        <summary className="cursor-pointer font-mono text-slate-700">
+          {`${label} [${Int.toString(Array.length(arr))}]`->React.string}
+        </summary>
+        <div className="mt-1">
+          {arr
+          ->Array.mapWithIndex((v, i) => renderJsonNode(Int.toString(i), v, depth + 1))
+          ->React.array}
+        </div>
+      </details>
+    | JSONObject(obj) => {
+        let keys = Js.Dict.keys(obj)
+        <details className={`text-xs ${indent}`} open_={depth < 1}>
+          <summary className="cursor-pointer font-mono text-slate-700">
+            {`${label} {}`->React.string}
+          </summary>
+          <div className="mt-1">
+            {keys
+            ->Array.map(k => {
+              let v = Js.Dict.get(obj, k)->Belt.Option.getWithDefault(Js.Json.null)
+              renderJsonNode(k, v, depth + 1)
+            })
+            ->React.array}
+          </div>
+        </details>
+      }
+    }
+  }
 
   // Return only core dataset names in order of preference
   let getCoreDatasetNames: Js.Json.t => array<string> = %raw(`(data) => {
@@ -859,6 +952,11 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                   {"Copy JSON"->React.string}
                 </button>
                 <button
+                  onClick={_ => copyResultsJson()}
+                  className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                  {"Copy Results JSON"->React.string}
+                </button>
+                <button
                   onClick={_ => downloadJson()}
                   className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
                   {"Download"->React.string}
@@ -960,11 +1058,39 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                 </div>
               </div>
               {switch resultsView {
-              | Raw =>
-                <pre
-                  className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre max-h-96">
-                  {result->React.string}
-                </pre>
+              | Raw => switch rawMode {
+                | Plain =>
+                  <div>
+                    <div className="mb-2">
+                      <button
+                        onClick={_ => setRawMode(_ => Interactive)}
+                        className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                        {"Interactive JSON"->React.string}
+                      </button>
+                    </div>
+                    <pre
+                      className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre max-h-96">
+                      {result->React.string}
+                    </pre>
+                  </div>
+                | Interactive =>
+                  <div>
+                    <div className="mb-2">
+                      <button
+                        onClick={_ => setRawMode(_ => Plain)}
+                        className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                        {"Plain JSON"->React.string}
+                      </button>
+                    </div>
+                    <div
+                      className="bg-slate-50 border border-slate-200 rounded-xl p-4 max-h-96 overflow-auto">
+                      {switch queryResultJson {
+                      | Some(json) => renderJsonNode("root", json, 0)
+                      | None => React.null
+                      }}
+                    </div>
+                  </div>
+                }
               | Table =>
                 switch queryResultJson {
                 | Some(json) => {
@@ -1047,7 +1173,7 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                                     key={col}
                                     className="px-3 py-2 text-left text-xs font-semibold text-slate-700 sticky top-0 z-10 bg-white border-b whitespace-nowrap">
                                     <button
-                                      className="inline-flex items-center gap-1 hover:underline max-w-[12rem] truncate"
+                                      className="inline-flex items-center gap-1 hover:underline max-w-[10rem] truncate"
                                       onClick={_ =>
                                         setSortColumn(prev =>
                                           if prev === Some(col) {
@@ -1086,7 +1212,9 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
                                       className="px-3 py-2 text-xs text-slate-800 align-top border-b font-mono whitespace-nowrap">
                                       <span
                                         className="inline-flex items-center gap-1 overflow-hidden">
-                                        <span className="block truncate" style={{maxWidth: "16ch"}}>
+                                        <span
+                                          className="block truncate"
+                                          style={{maxWidth: widthForColumn(col)}}>
                                           {truncateMiddle(v)->React.string}
                                         </span>
                                         {String.length(v) > 12
