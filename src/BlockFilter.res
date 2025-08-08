@@ -108,7 +108,8 @@ let make = (
     Array.length(filterState.hash->Option.getOr([])) > 0 ||
       Array.length(filterState.miner->Option.getOr([])) > 0
 
-  <div className="bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
+  <div
+    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
     <div className="p-4 border-b border-slate-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -159,7 +160,7 @@ let make = (
           <div className="mb-4">
             <button
               onClick={_ => setTitanBuilderExample()}
-              className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+              className="px-2.5 py-1 bg-slate-700 text-white text-xs font-medium rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500">
               {"Titan Builder Blocks"->React.string}
             </button>
           </div>

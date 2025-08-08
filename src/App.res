@@ -34,13 +34,40 @@ let make = () => {
   })
 
   let (selectedChainName, setSelectedChainName) = React.useState(() => {
-    // Try to load selectedChainName from URL first, fallback to None
+    // Try to load selectedChainName from URL first, fallback to eth by default
     switch UrlEncoder.getUrlStateFromUrl() {
-    | Some(urlState) => urlState.selectedChainName
-    | None => None
+    | Some(urlState) =>
+      switch urlState.selectedChainName {
+      | Some(name) => Some(name)
+      | None => Some("eth")
+      }
+    | None => Some("eth")
     }
   })
   let (expandedFilterKey, setExpandedFilterKey) = React.useState(() => None)
+
+  // Quick Start shared address (used by address-based presets)
+  let (quickStartAddress, setQuickStartAddress) = React.useState(() => "")
+
+  let padLeftZeros = (hex: string, totalLen: int): string => {
+    let len = String.length(hex)
+    if len >= totalLen {
+      hex
+    } else {
+      let zeros = Belt.Array.makeBy(totalLen - len, _ => "0")->Array.join("")
+      zeros ++ hex
+    }
+  }
+
+  let encodeAddressToTopic = (addr: string): option<string> => {
+    if !(addr->String.startsWith("0x")) || String.length(addr) !== 42 {
+      None
+    } else {
+      let hex = Js.String2.substringToEnd(addr, ~from=2)->Js.String2.toLowerCase
+      let padded = padLeftZeros(hex, 64)
+      Some("0x" ++ padded)
+    }
+  }
 
   // Helper function to check if selected chain supports traces
   let selectedChainSupportsTraces = () => {
@@ -70,7 +97,8 @@ let make = () => {
     )
 
   let resetBuilder = () => {
-    setSelectedChainName(_ => None)
+    setSelectedChainName(_ => Some("eth"))
+    setQuickStartAddress(_ => "")
     setExpandedFilterKey(_ => None)
     setQuery(_ => {
       fromBlock: 0,
@@ -175,6 +203,140 @@ let make = () => {
     setQuery(_ => preset)
     setExpandedFilterKey(_ => Some("transaction-0"))
     // Select a sensible default network if none selected
+    setSelectedChainName(prev =>
+      switch prev {
+      | Some(_) => prev
+      | None => Some("eth")
+      }
+    )
+  }
+
+  // Additional Quick-start templates inspired by docs
+  // https://docs.envio.dev/docs/HyperSync/hypersync-curl-examples#get-all-erc-20-transfers-for-an-address
+  let applyPresetErc20TransfersForAddress = () => {
+    // Example address from docs; users can override via Quick Start Address
+    let defaultAddr = "0x1e037f97d730Cc881e77F01E409D828b0bb14de0"
+    let addr = if (
+      quickStartAddress->String.startsWith("0x") && String.length(quickStartAddress) === 42
+    ) {
+      quickStartAddress
+    } else {
+      defaultAddr
+    }
+    // 32-byte topic-encoded address
+    let addrTopic = encodeAddressToTopic(addr)->Option.getOr("")
+    let transferTopic0 = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+    let preset: query = {
+      ...query,
+      fromBlock: 0,
+      logs: Some([
+        {address: None, topics: Some([[transferTopic0], [], [addrTopic]])},
+        {address: None, topics: Some([[transferTopic0], [addrTopic], []])},
+      ]),
+      transactions: Some([
+        {
+          from_: Some([addr]),
+          to_: None,
+          sighash: None,
+          status: None,
+          kind: None,
+          contractAddress: None,
+          authorizationList: None,
+        },
+        {
+          from_: None,
+          to_: Some([addr]),
+          sighash: None,
+          status: None,
+          kind: None,
+          contractAddress: None,
+          authorizationList: None,
+        },
+      ]),
+      blocks: None,
+      traces: None,
+      fieldSelection: {
+        block: [Number, Timestamp, Hash],
+        log: [
+          BlockNumber,
+          LogIndex,
+          TransactionIndex,
+          Data,
+          Address,
+          Topic0,
+          Topic1,
+          Topic2,
+          Topic3,
+        ],
+        transaction: [BlockNumber, TransactionIndex, Hash, From, To, Value, Input],
+        trace: [],
+      },
+      maxNumBlocks: Some(10),
+      maxNumTransactions: Some(10),
+      maxNumLogs: Some(10),
+      maxNumTraces: None,
+      joinMode: query.joinMode,
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("log-0"))
+    setSelectedChainName(prev =>
+      switch prev {
+      | Some(_) => prev
+      | None => Some("eth")
+      }
+    )
+  }
+
+  // https://docs.envio.dev/docs/HyperSync/hypersync-curl-examples#get-all-transactions-for-an-address
+  let applyPresetAddressTransactions = () => {
+    let defaultAddr = "0xdb255746609baadd67ef44fc15b5e1d04befbca7"
+    let addr = if (
+      quickStartAddress->String.startsWith("0x") && String.length(quickStartAddress) === 42
+    ) {
+      quickStartAddress
+    } else {
+      defaultAddr
+    }
+    let preset: query = {
+      ...query,
+      fromBlock: 15362000,
+      logs: None,
+      transactions: Some([
+        {
+          from_: Some([addr]),
+          to_: None,
+          sighash: None,
+          status: None,
+          kind: None,
+          contractAddress: None,
+          authorizationList: None,
+        },
+        {
+          from_: None,
+          to_: Some([addr]),
+          sighash: None,
+          status: None,
+          kind: None,
+          contractAddress: None,
+          authorizationList: None,
+        },
+      ]),
+      blocks: None,
+      traces: None,
+      fieldSelection: {
+        block: [Number, Timestamp, Hash],
+        transaction: [BlockNumber, TransactionIndex, Hash, From, To],
+        log: [],
+        trace: [],
+      },
+      maxNumBlocks: Some(10),
+      maxNumTransactions: Some(10),
+      maxNumLogs: Some(10),
+      maxNumTraces: None,
+      joinMode: query.joinMode,
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("transaction-0"))
     setSelectedChainName(prev =>
       switch prev {
       | Some(_) => prev
@@ -453,6 +615,25 @@ let make = () => {
                     </p>
                   </div>
                 </div>
+                <div className="mb-2 flex items-center gap-2">
+                  <input
+                    type_="text"
+                    value={quickStartAddress}
+                    onChange={e => {
+                      let target = ReactEvent.Form.target(e)
+                      setQuickStartAddress(_ => target["value"])
+                    }}
+                    placeholder="Address for address-based presets (0x...)"
+                    className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-colors"
+                  />
+                  <span className="text-[11px] text-slate-500">
+                    {if String.length(quickStartAddress) == 0 {
+                      "If empty, examples are used: transfers 0x1e037f97d730Cc881e77F01E409D828b0bb14de0 · txns 0xdb255746609baadd67ef44fc15b5e1d04befbca7"
+                    } else {
+                      "Using your address for address-based presets"
+                    }->React.string}
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={_ => applyPresetErc20Transfers()}
@@ -463,6 +644,16 @@ let make = () => {
                     onClick={_ => applyPresetFailedTransactions()}
                     className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
                     {"Failed Transactions"->React.string}
+                  </button>
+                  <button
+                    onClick={_ => applyPresetErc20TransfersForAddress()}
+                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                    {"ERC20 Transfers for Address"->React.string}
+                  </button>
+                  <button
+                    onClick={_ => applyPresetAddressTransactions()}
+                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                    {"All Txns for Address"->React.string}
                   </button>
                 </div>
               </div>
@@ -519,7 +710,7 @@ let make = () => {
                   : React.null}
               </div>
 
-              <div className="mb-6">
+              <div className="mb-8">
                 <div className="flex flex-wrap gap-3">
                   <button
                     onClick={_ => addLogFilter()}
@@ -602,7 +793,7 @@ let make = () => {
                   ? Array.length(query.traces->Option.getOr([])) > 0
                   : false
               )
-                ? <div className="mt-6">
+                ? <div className="mt-6 relative z-0">
                     <div className="grid gap-4">
                       // Log Filters
                       {Array.mapWithIndex(query.logs->Option.getOr([]), (logFilter, index) =>
