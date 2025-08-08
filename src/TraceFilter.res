@@ -276,22 +276,22 @@ let make = (
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={_ => setCallExample()}
-                className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-md hover:bg-blue-200">
+                className="inline-flex items-center px-2.5 py-1 bg-slate-700 text-white text-xs font-medium rounded-md hover:bg-slate-800">
                 {"Call traces"->React.string}
               </button>
               <button
                 onClick={_ => setCreateExample()}
-                className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-md hover:bg-green-200">
+                className="inline-flex items-center px-2.5 py-1 bg-emerald-600 text-white text-xs font-medium rounded-md hover:bg-emerald-700">
                 {"Create traces"->React.string}
               </button>
               <button
                 onClick={_ => setSuicideExample()}
-                className="inline-flex items-center px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-md hover:bg-red-200">
+                className="inline-flex items-center px-2.5 py-1 bg-rose-600 text-white text-xs font-medium rounded-md hover:bg-rose-700">
                 {"Suicide traces"->React.string}
               </button>
               <button
                 onClick={_ => setRewardExample()}
-                className="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-md hover:bg-yellow-200">
+                className="inline-flex items-center px-2.5 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700">
                 {"Reward traces"->React.string}
               </button>
             </div>

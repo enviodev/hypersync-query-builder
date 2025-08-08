@@ -285,7 +285,8 @@ let make = (
     Array.length(filterState.kind->Option.getOr([])) > 0 ||
     Array.length(filterState.contractAddress->Option.getOr([])) > 0
 
-  <div className="bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
+  <div
+    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
     <div className="p-4 border-b border-slate-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -336,22 +337,22 @@ let make = (
           <div className="mb-6 flex flex-wrap gap-2">
             <button
               onClick={_ => setEip7702Example()}
-              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+              className="px-2.5 py-1 bg-slate-700 text-white text-xs font-medium rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
               {"EIP-7702 Transactions"->React.string}
             </button>
             <button
               onClick={_ => setFailedTransactionsExample()}
-              className="px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-lg hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-colors">
+              className="px-2.5 py-1 bg-rose-600 text-white text-xs font-medium rounded-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-colors">
               {"Failed Transactions"->React.string}
             </button>
             <button
               onClick={_ => setTransferCallExample()}
-              className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
+              className="px-2.5 py-1 bg-emerald-600 text-white text-xs font-medium rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
               {"Transfer EOA Calls"->React.string}
             </button>
             <button
               onClick={_ => setApproveCallExample()}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="px-2.5 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
               {"Approve EOA Calls"->React.string}
             </button>
           </div>
