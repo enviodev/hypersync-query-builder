@@ -151,7 +151,8 @@ let make = (
     Array.length(filterState.address->Option.getOr([])) > 0 ||
       Array.length(filterState.topics->Option.getOr([])) > 0
 
-  <div className="bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
+  <div
+    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
     <div className="p-4 border-b border-slate-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -202,12 +203,12 @@ let make = (
           <div className="mb-6 flex flex-wrap gap-2">
             <button
               onClick={_ => setTransferEventsExample()}
-              className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+              className="px-2.5 py-1 bg-slate-700 text-white text-xs font-medium rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
               {"Transfer Events"->React.string}
             </button>
             <button
               onClick={_ => setBurnEventsExample()}
-              className="px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-lg hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-colors">
+              className="px-2.5 py-1 bg-rose-600 text-white text-xs font-medium rounded-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-colors">
               {"Burn Events"->React.string}
             </button>
           </div>
