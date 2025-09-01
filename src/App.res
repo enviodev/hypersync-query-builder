@@ -45,6 +45,7 @@ let make = () => {
     }
   })
   let (expandedFilterKey, setExpandedFilterKey) = React.useState(() => None)
+  let (executeSignal, setExecuteSignal) = React.useState(() => 0)
 
   // Quick Start shared address (used by address-based presets)
   let (quickStartAddress, setQuickStartAddress) = React.useState(() => "")
@@ -923,15 +924,26 @@ let make = () => {
       // Right Column - Results
       <div className="w-full lg:w-1/2 overflow-y-auto">
         <div className="p-6 lg:p-8">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              {"Query Results"->React.string}
-            </h2>
-            <p className="text-slate-600">
-              {"View your generated query, execute it, and see the results."->React.string}
-            </p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                {"Query Results"->React.string}
+              </h2>
+              <p className="text-slate-600">
+                {"View your generated query, execute it, and see the results."->React.string}
+              </p>
+            </div>
+            <div className="flex items-center">
+              <button
+                onClick={_ => setExecuteSignal(prev => prev + 1)}
+                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-slate-700 hover:bg-slate-800 rounded-lg border border-slate-700 transition-colors">
+                {"Execute Query"->React.string}
+              </button>
+            </div>
           </div>
-          <QueryResults query={query} selectedChainName={selectedChainName} />
+          <QueryResults
+            query={query} selectedChainName={selectedChainName} executeSignal={executeSignal}
+          />
         </div>
       </div>
     </div>

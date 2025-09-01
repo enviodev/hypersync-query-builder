@@ -5,7 +5,7 @@ ReactDOM.querySelector("#root")
 ->ReactDOM.Client.createRoot
 ->ReactDOM.Client.Root.render(
   <React.StrictMode>
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 sticky top-0 z-10">
         <div className="px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
@@ -52,7 +52,7 @@ ReactDOM.querySelector("#root")
         </div>
       </header>
       <App />
-      <footer className="bg-white border-t border-slate-200">
+      <footer className="bg-white border-t border-slate-200 mt-auto">
         <div className="px-6 lg:px-8 py-3">
           <div className="flex items-center justify-center text-xs text-slate-500">
             <span>

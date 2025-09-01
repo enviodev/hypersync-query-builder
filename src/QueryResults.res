@@ -6,7 +6,7 @@ type resultsView = Raw | Table
 type rawMode = Plain | Interactive
 
 @react.component
-let make = (~query: query, ~selectedChainName: option<string>) => {
+let make = (~query: query, ~selectedChainName: option<string>, ~executeSignal: int) => {
   let (activeTab, setActiveTab) = React.useState(() => QueryJson)
   let (isExecuting, setIsExecuting) = React.useState(() => false)
   let (queryResult, setQueryResult) = React.useState(() => None)
@@ -20,6 +20,8 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
   let (serverMs, setServerMs) = React.useState(() => None)
   let (responseBytes, setResponseBytes) = React.useState(() => None)
   let (selectedDataset, setSelectedDataset) = React.useState(() => None)
+
+  // executeSignal will be handled after executeQuery is defined
 
   // Helper function to check if selected chain supports traces
   let selectedChainSupportsTraces = () => {
@@ -463,6 +465,12 @@ let make = (~query: query, ~selectedChainName: option<string>) => {
     | None => ()
     }
   }
+
+  // Trigger execute when the inline button is pressed in the parent
+  React.useEffect1(() => {
+    executeQuery()->ignore
+    None
+  }, [executeSignal])
 
   let generateCurlCommand = (query: query) => {
     let url = generateChainUrl()

@@ -240,16 +240,7 @@ let defaultChains = [
   {name: "lisk", tier: "STONE", chain_id: 1135, ecosystem: "evm", additional_features: None},
 ]
 
-let getTierColor = (tier: string) => {
-  switch tier {
-  | "GOLD" => "bg-yellow-100 text-yellow-800 border-yellow-200"
-  | "SILVER" => "bg-gray-100 text-gray-800 border-gray-200"
-  | "BRONZE" => "bg-orange-100 text-orange-800 border-orange-200"
-  | "TESTNET" => "bg-red-100 text-red-800 border-red-200"
-  | "STONE" => "bg-blue-100 text-blue-800 border-blue-200"
-  | _ => "bg-green-100 text-green-800 border-green-200"
-  }
-}
+// Tier visuals removed from UI; no color mapping needed
 
 let getEcosystemIcon = (ecosystem: string) => {
   switch ecosystem {
@@ -384,8 +375,7 @@ let make = (~selectedChainName: option<string>, ~onChainSelect: string => unit) 
     } else if isNumeric(searchTerm) {
       String.includes(Int.toString(chain.chain_id), searchTerm)
     } else {
-      String.includes(String.toLowerCase(chain.name), String.toLowerCase(searchTerm)) ||
-      String.includes(String.toLowerCase(chain.tier), String.toLowerCase(searchTerm))
+      String.includes(String.toLowerCase(chain.name), String.toLowerCase(searchTerm))
     }
   })
 
@@ -500,12 +490,6 @@ let make = (~selectedChainName: option<string>, ~onChainSelect: string => unit) 
                         {Int.toString(chain.chain_id)->React.string}
                       </span>
                     </div>
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTierColor(
-                          chain.tier,
-                        )}`}>
-                      {chain.tier->React.string}
-                    </span>
                   </button>
                 )->React.array}
           </div>
