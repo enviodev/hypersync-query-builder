@@ -136,8 +136,8 @@ let make = (
           : "md:grid-cols-2 lg:grid-cols-3"} gap-4`}>
       // Block Fields
       <div
-        className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex items-center justify-between mb-4">
+        className="bg-white border border-slate-200 rounded-xl p-4 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
           <button
             onClick={_ => toggleSection("block")}
             className="flex items-center space-x-2 text-left hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors">
@@ -162,7 +162,7 @@ let make = (
               </span>
             </div>
           </button>
-          <div className="flex space-x-1">
+          <div className="flex space-x-1 flex-shrink-0">
             <button
               onClick={_ => selectAllBlockFields()}
               className="text-xs px-2 py-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-colors">
@@ -209,8 +209,8 @@ let make = (
 
       // Transaction Fields
       <div
-        className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex items-center justify-between mb-4">
+        className="bg-white border border-slate-200 rounded-xl p-4 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
           <button
             onClick={_ => toggleSection("transaction")}
             className="flex items-center space-x-2 text-left hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors">
@@ -237,7 +237,7 @@ let make = (
               </span>
             </div>
           </button>
-          <div className="flex space-x-1">
+          <div className="flex space-x-1 flex-shrink-0">
             <button
               onClick={_ => selectAllTransactionFields()}
               className="text-xs px-2 py-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors">
@@ -286,8 +286,8 @@ let make = (
 
       // Log Fields
       <div
-        className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex items-center justify-between mb-4">
+        className="bg-white border border-slate-200 rounded-xl p-4 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
           <button
             onClick={_ => toggleSection("log")}
             className="flex items-center space-x-2 text-left hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors">
@@ -312,7 +312,7 @@ let make = (
               </span>
             </div>
           </button>
-          <div className="flex space-x-1">
+          <div className="flex space-x-1 flex-shrink-0">
             <button
               onClick={_ => selectAllLogFields()}
               className="text-xs px-2 py-1 text-slate-600 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
@@ -360,8 +360,8 @@ let make = (
       // Trace Fields
       {tracesSupported
         ? <div
-            className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
+            className="bg-white border border-slate-200 rounded-xl p-4 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
               <button
                 onClick={_ => toggleSection("trace")}
                 className="flex items-center space-x-2 text-left hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors">
@@ -388,7 +388,7 @@ let make = (
                   </span>
                 </div>
               </button>
-              <div className="flex space-x-1">
+              <div className="flex space-x-1 flex-shrink-0">
                 <button
                   onClick={_ => selectAllTraceFields()}
                   className="text-xs px-2 py-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded transition-colors">
