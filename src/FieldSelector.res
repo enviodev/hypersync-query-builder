@@ -165,7 +165,7 @@ let make = (
           <div className="flex space-x-1 flex-shrink-0">
             <button
               onClick={_ => selectAllBlockFields()}
-              className="text-xs px-2 py-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-colors">
+              className="text-xs px-2 py-1 text-slate-600 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
               {"All"->React.string}
             </button>
             <button
@@ -240,7 +240,7 @@ let make = (
           <div className="flex space-x-1 flex-shrink-0">
             <button
               onClick={_ => selectAllTransactionFields()}
-              className="text-xs px-2 py-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors">
+              className="text-xs px-2 py-1 text-slate-600 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
               {"All"->React.string}
             </button>
             <button
