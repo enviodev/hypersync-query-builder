@@ -12,4 +12,7 @@ let make: (
   ~title: string,
   ~onOpen: (unit => unit)=?,
   ~onClose: (unit => unit)=?,
+  ~forceOpen: bool=?,
+  ~showSelectedChips: bool=?,
+  ~showInput: bool=?,
 ) => React.element
