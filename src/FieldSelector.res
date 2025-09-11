@@ -1,4 +1,5 @@
 open QueryStructure
+open TagSelector
 
 let snakeToCamel = (input: string): string =>
   Js.String.split("_", input)
@@ -68,25 +69,9 @@ let traceFieldOptions = Array.map(QueryStructure.allTraceFields, field => (
   snakeToTitle(traceFieldToSnakeCaseString(field)),
 ))
 
+
 @react.component
-let make = (
-  ~fieldSelection: fieldSelection,
-  ~onFieldSelectionChange: fieldSelection => unit,
-  ~tracesSupported: bool,
-) => {
-  let (expandedSections, setExpandedSections) = React.useState(() => [])
-
-  let toggleSection = (sectionName: string) => {
-    setExpandedSections(prev =>
-      if Array.includes(prev, sectionName) {
-        Array.filter(prev, s => s !== sectionName)
-      } else {
-        Array.concat(prev, [sectionName])
-      }
-    )
-  }
-
-  let isSectionExpanded = (sectionName: string) => Array.includes(expandedSections, sectionName)
+let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelection => unit, ~tracesSupported: bool) => {
   let updateBlockFields = newFields => onFieldSelectionChange({...fieldSelection, block: newFields})
   let updateTransactionFields = newFields =>
     onFieldSelectionChange({...fieldSelection, transaction: newFields})
@@ -129,310 +114,144 @@ let make = (
     onFieldSelectionChange({...fieldSelection, trace: []})
   }
 
-  <div className="space-y-6">
-    <div
-      className={`grid grid-cols-1 ${tracesSupported
-          ? "md:grid-cols-2 lg:grid-cols-4"
-          : "md:grid-cols-2 lg:grid-cols-3"} gap-4`}>
+  <div className="bg-white rounded-lg shadow p-6 mb-8">
+    <div className="mb-6">
+      <h3 className="text-lg font-medium text-gray-900 mb-2">
+        {"Field Selection"->React.string}
+      </h3>
+      <p className="text-sm text-gray-500">
+        {"Choose which fields to include in your query results"->React.string}
+      </p>
+    </div>
+
+    <div className={`grid grid-cols-1 lg:grid-cols-2 ${tracesSupported ? "xl:grid-cols-4" : "xl:grid-cols-3"} gap-6`}>
       // Block Fields
-      <div
-        className="bg-white border border-slate-200 rounded-xl p-4 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-          <button
-            onClick={_ => toggleSection("block")}
-            className="flex items-center space-x-2 text-left hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors">
-            <div className="flex items-center space-x-2">
-              <svg
-                className={`w-4 h-4 text-slate-500 transition-transform ${isSectionExpanded("block")
-                    ? "rotate-90"
-                    : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"
-                />
-              </svg>
-              <h4 className="font-semibold text-slate-900 text-sm">
-                {"Block Fields"->React.string}
-              </h4>
-              <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                {`${Int.toString(Array.length(fieldSelection.block))}`->React.string}
-              </span>
-            </div>
-          </button>
-          <div className="flex space-x-1 flex-shrink-0">
+      <div className="border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="font-medium text-gray-900"> {"Block Fields"->React.string} </h4>
+          <div className="flex space-x-2">
             <button
               onClick={_ => selectAllBlockFields()}
-              className="text-xs px-2 py-1 text-slate-600 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
+              className="text-xs text-blue-600 hover:text-blue-700">
               {"All"->React.string}
             </button>
+            <span className="text-xs text-gray-300"> {"|"->React.string} </span>
             <button
               onClick={_ => clearAllBlockFields()}
-              className="text-xs px-2 py-1 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
+              className="text-xs text-red-600 hover:text-red-700">
               {"Clear"->React.string}
             </button>
           </div>
         </div>
-        {isSectionExpanded("block")
-          ? <div className="space-y-3">
-              <div className="space-y-2">
-                {blockFieldOptions
-                ->Array.map(((field, label)) =>
-                  <label
-                    key={label}
-                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group">
-                    <input
-                      type_="checkbox"
-                      checked={Array.includes(fieldSelection.block, field)}
-                      onChange={_ => {
-                        if Array.includes(fieldSelection.block, field) {
-                          updateBlockFields(Array.filter(fieldSelection.block, f => f !== field))
-                        } else {
-                          updateBlockFields(Array.concat(fieldSelection.block, [field]))
-                        }
-                      }}
-                      className="w-4 h-4 text-indigo-600 bg-white border-slate-300 rounded focus:ring-indigo-500 focus:ring-2"
-                    />
-                    <span
-                      className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
-                      {label->React.string}
-                    </span>
-                  </label>
-                )
-                ->React.array}
-              </div>
-            </div>
-          : React.null}
+        <TagSelector
+          title=""
+          placeholder="Add field..."
+          options={blockFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+          selectedValues={fieldSelection.block}
+          onSelectionChange={updateBlockFields}
+        />
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="text-xs text-gray-500">
+            {`${Int.toString(Array.length(fieldSelection.block))} selected`->React.string}
+          </div>
+        </div>
       </div>
 
       // Transaction Fields
-      <div
-        className="bg-white border border-slate-200 rounded-xl p-4 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-          <button
-            onClick={_ => toggleSection("transaction")}
-            className="flex items-center space-x-2 text-left hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors">
-            <div className="flex items-center space-x-2">
-              <svg
-                className={`w-4 h-4 text-slate-500 transition-transform ${isSectionExpanded(
-                    "transaction",
-                  )
-                    ? "rotate-90"
-                    : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"
-                />
-              </svg>
-              <h4 className="font-semibold text-slate-900 text-sm">
-                {"Transaction Fields"->React.string}
-              </h4>
-              <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                {`${Int.toString(Array.length(fieldSelection.transaction))}`->React.string}
-              </span>
-            </div>
-          </button>
-          <div className="flex space-x-1 flex-shrink-0">
+      <div className="border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="font-medium text-gray-900"> {"Transaction Fields"->React.string} </h4>
+          <div className="flex space-x-2">
             <button
               onClick={_ => selectAllTransactionFields()}
-              className="text-xs px-2 py-1 text-slate-600 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
+              className="text-xs text-blue-600 hover:text-blue-700">
               {"All"->React.string}
             </button>
+            <span className="text-xs text-gray-300"> {"|"->React.string} </span>
             <button
               onClick={_ => clearAllTransactionFields()}
-              className="text-xs px-2 py-1 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
+              className="text-xs text-red-600 hover:text-red-700">
               {"Clear"->React.string}
             </button>
           </div>
         </div>
-        {isSectionExpanded("transaction")
-          ? <div className="space-y-3">
-              <div className="space-y-2">
-                {transactionFieldOptions
-                ->Array.map(((field, label)) =>
-                  <label
-                    key={label}
-                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group">
-                    <input
-                      type_="checkbox"
-                      checked={Array.includes(fieldSelection.transaction, field)}
-                      onChange={_ => {
-                        if Array.includes(fieldSelection.transaction, field) {
-                          updateTransactionFields(
-                            Array.filter(fieldSelection.transaction, f => f !== field),
-                          )
-                        } else {
-                          updateTransactionFields(Array.concat(fieldSelection.transaction, [field]))
-                        }
-                      }}
-                      className="w-4 h-4 text-emerald-600 bg-white border-slate-300 rounded focus:ring-emerald-500 focus:ring-2"
-                    />
-                    <span
-                      className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
-                      {label->React.string}
-                    </span>
-                  </label>
-                )
-                ->React.array}
-              </div>
-            </div>
-          : React.null}
+        <TagSelector
+          title=""
+          placeholder="Add field..."
+          options={transactionFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+          selectedValues={fieldSelection.transaction}
+          onSelectionChange={updateTransactionFields}
+        />
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="text-xs text-gray-500">
+            {`${Int.toString(Array.length(fieldSelection.transaction))} selected`->React.string}
+          </div>
+        </div>
       </div>
 
       // Log Fields
-      <div
-        className="bg-white border border-slate-200 rounded-xl p-4 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-          <button
-            onClick={_ => toggleSection("log")}
-            className="flex items-center space-x-2 text-left hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors">
-            <div className="flex items-center space-x-2">
-              <svg
-                className={`w-4 h-4 text-slate-500 transition-transform ${isSectionExpanded("log")
-                    ? "rotate-90"
-                    : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"
-                />
-              </svg>
-              <h4 className="font-semibold text-slate-900 text-sm">
-                {"Log Fields"->React.string}
-              </h4>
-              <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                {`${Int.toString(Array.length(fieldSelection.log))}`->React.string}
-              </span>
-            </div>
-          </button>
-          <div className="flex space-x-1 flex-shrink-0">
+      <div className="border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="font-medium text-gray-900"> {"Log Fields"->React.string} </h4>
+          <div className="flex space-x-2">
             <button
               onClick={_ => selectAllLogFields()}
-              className="text-xs px-2 py-1 text-slate-600 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
+              className="text-xs text-blue-600 hover:text-blue-700">
               {"All"->React.string}
             </button>
+            <span className="text-xs text-gray-300"> {"|"->React.string} </span>
             <button
               onClick={_ => clearAllLogFields()}
-              className="text-xs px-2 py-1 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
+              className="text-xs text-red-600 hover:text-red-700">
               {"Clear"->React.string}
             </button>
           </div>
         </div>
-        {isSectionExpanded("log")
-          ? <div className="space-y-3">
-              <div className="space-y-2">
-                {logFieldOptions
-                ->Array.map(((field, label)) =>
-                  <label
-                    key={label}
-                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group">
-                    <input
-                      type_="checkbox"
-                      checked={Array.includes(fieldSelection.log, field)}
-                      onChange={_ => {
-                        if Array.includes(fieldSelection.log, field) {
-                          updateLogFields(Array.filter(fieldSelection.log, f => f !== field))
-                        } else {
-                          updateLogFields(Array.concat(fieldSelection.log, [field]))
-                        }
-                      }}
-                      className="w-4 h-4 text-slate-600 bg-white border-slate-300 rounded focus:ring-slate-500 focus:ring-2"
-                    />
-                    <span
-                      className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
-                      {label->React.string}
-                    </span>
-                  </label>
-                )
-                ->React.array}
-              </div>
-            </div>
-          : React.null}
+        <TagSelector
+          title=""
+          placeholder="Add field..."
+          options={logFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+          selectedValues={fieldSelection.log}
+          onSelectionChange={updateLogFields}
+        />
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="text-xs text-gray-500">
+            {`${Int.toString(Array.length(fieldSelection.log))} selected`->React.string}
+          </div>
+        </div>
       </div>
 
       // Trace Fields
       {tracesSupported
-        ? <div
-            className="bg-white border border-slate-200 rounded-xl p-4 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-              <button
-                onClick={_ => toggleSection("trace")}
-                className="flex items-center space-x-2 text-left hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors">
-                <div className="flex items-center space-x-2">
-                  <svg
-                    className={`w-4 h-4 text-slate-500 transition-transform ${isSectionExpanded(
-                        "trace",
-                      )
-                        ? "rotate-90"
-                        : ""}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                  <h4 className="font-semibold text-slate-900 text-sm">
-                    {"Trace Fields"->React.string}
-                  </h4>
-                  <span
-                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                    {`${Int.toString(Array.length(fieldSelection.trace))}`->React.string}
-                  </span>
-                </div>
-              </button>
-              <div className="flex space-x-1 flex-shrink-0">
+        ? <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-medium text-gray-900"> {"Trace Fields"->React.string} </h4>
+              <div className="flex space-x-2">
                 <button
                   onClick={_ => selectAllTraceFields()}
-                  className="text-xs px-2 py-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded transition-colors">
+                  className="text-xs text-blue-600 hover:text-blue-700">
                   {"All"->React.string}
                 </button>
+                <span className="text-xs text-gray-300"> {"|"->React.string} </span>
                 <button
                   onClick={_ => clearAllTraceFields()}
-                  className="text-xs px-2 py-1 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
+                  className="text-xs text-red-600 hover:text-red-700">
                   {"Clear"->React.string}
                 </button>
               </div>
             </div>
-            {isSectionExpanded("trace")
-              ? <div className="space-y-3">
-                  <div className="space-y-2">
-                    {traceFieldOptions
-                    ->Array.map(((field, label)) =>
-                      <label
-                        key={label}
-                        className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group">
-                        <input
-                          type_="checkbox"
-                          checked={Array.includes(fieldSelection.trace, field)}
-                          onChange={_ => {
-                            if Array.includes(fieldSelection.trace, field) {
-                              updateTraceFields(
-                                Array.filter(fieldSelection.trace, f => f !== field),
-                              )
-                            } else {
-                              updateTraceFields(Array.concat(fieldSelection.trace, [field]))
-                            }
-                          }}
-                          className="w-4 h-4 text-amber-600 bg-white border-slate-300 rounded focus:ring-amber-500 focus:ring-2"
-                        />
-                        <span
-                          className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
-                          {label->React.string}
-                        </span>
-                      </label>
-                    )
-                    ->React.array}
-                  </div>
-                </div>
-              : React.null}
+            <TagSelector
+              title=""
+              placeholder="Add field..."
+              options={traceFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+              selectedValues={fieldSelection.trace}
+              onSelectionChange={updateTraceFields}
+            />
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="text-xs text-gray-500">
+                {`${Int.toString(Array.length(fieldSelection.trace))} selected`->React.string}
+              </div>
+            </div>
           </div>
         : React.null}
     </div>
