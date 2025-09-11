@@ -141,24 +141,36 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
          <div className="border border-gray-200 rounded-lg p-4">
            <div className="mb-3">
              <h4 className="font-medium text-gray-900"> {"Block Fields"->React.string} </h4>
-             <div className="mt-2 flex items-center gap-3">
-               <button
-                 onClick={_ => selectAllBlockFields()}
-                 className="text-xs text-blue-600 hover:text-blue-700">
-                 {"All"->React.string}
-               </button>
-               <button
-                 onClick={_ => clearAllBlockFields()}
-                 className="text-xs text-red-600 hover:text-red-700">
-                 {"Clear"->React.string}
-               </button>
-               <span className="text-gray-300"> {"·"->React.string} </span>
-               <button
-                 onClick={_ => setActive(_ => Some(Block))}
-                 className="text-xs text-gray-700 hover:text-gray-900">
-                 {"Add fields"->React.string}
-               </button>
-             </div>
+             {let selectedCount = Array.length(fieldSelection.block)
+              let totalCount = Array.length(blockFieldOptions)
+              let allSelected = selectedCount == totalCount
+              let noneSelected = selectedCount == 0
+              <div className="mt-2 flex items-center gap-3">
+                {allSelected ? React.null :
+                  <button
+                    onClick={_ => selectAllBlockFields()}
+                    className="text-xs text-blue-600 hover:text-blue-700">
+                    {"All"->React.string}
+                  </button>
+                }
+                {noneSelected ? React.null :
+                  <button
+                    onClick={_ => clearAllBlockFields()}
+                    className="text-xs text-red-600 hover:text-red-700">
+                    {"Clear"->React.string}
+                  </button>
+                }
+                {allSelected ? React.null :
+                  <>
+                    <span className="text-gray-300"> {"·"->React.string} </span>
+                    <button
+                      onClick={_ => setActive(_ => Some(Block))}
+                      className="text-xs text-gray-700 hover:text-gray-900">
+                      {"Add fields"->React.string}
+                    </button>
+                  </>
+                }
+              </div>}
            </div>
            <TagSelector
              title=""
@@ -179,24 +191,36 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
          <div className="border border-gray-200 rounded-lg p-4">
            <div className="mb-3">
              <h4 className="font-medium text-gray-900"> {"Transaction Fields"->React.string} </h4>
-             <div className="mt-2 flex items-center gap-3">
-               <button
-                 onClick={_ => selectAllTransactionFields()}
-                 className="text-xs text-blue-600 hover:text-blue-700">
-                 {"All"->React.string}
-               </button>
-               <button
-                 onClick={_ => clearAllTransactionFields()}
-                 className="text-xs text-red-600 hover:text-red-700">
-                 {"Clear"->React.string}
-               </button>
-               <span className="text-gray-300"> {"·"->React.string} </span>
-               <button
-                 onClick={_ => setActive(_ => Some(Transaction))}
-                 className="text-xs text-gray-700 hover:text-gray-900">
-                 {"Add fields"->React.string}
-               </button>
-             </div>
+             {let selectedCount = Array.length(fieldSelection.transaction)
+              let totalCount = Array.length(transactionFieldOptions)
+              let allSelected = selectedCount == totalCount
+              let noneSelected = selectedCount == 0
+              <div className="mt-2 flex items-center gap-3">
+                {allSelected ? React.null :
+                  <button
+                    onClick={_ => selectAllTransactionFields()}
+                    className="text-xs text-blue-600 hover:text-blue-700">
+                    {"All"->React.string}
+                  </button>
+                }
+                {noneSelected ? React.null :
+                  <button
+                    onClick={_ => clearAllTransactionFields()}
+                    className="text-xs text-red-600 hover:text-red-700">
+                    {"Clear"->React.string}
+                  </button>
+                }
+                {allSelected ? React.null :
+                  <>
+                    <span className="text-gray-300"> {"·"->React.string} </span>
+                    <button
+                      onClick={_ => setActive(_ => Some(Transaction))}
+                      className="text-xs text-gray-700 hover:text-gray-900">
+                      {"Add fields"->React.string}
+                    </button>
+                  </>
+                }
+              </div>}
            </div>
            <TagSelector
              title=""
@@ -217,24 +241,36 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
          <div className="border border-gray-200 rounded-lg p-4">
            <div className="mb-3">
              <h4 className="font-medium text-gray-900"> {"Log Fields"->React.string} </h4>
-             <div className="mt-2 flex items-center gap-3">
-               <button
-                 onClick={_ => selectAllLogFields()}
-                 className="text-xs text-blue-600 hover:text-blue-700">
-                 {"All"->React.string}
-               </button>
-               <button
-                 onClick={_ => clearAllLogFields()}
-                 className="text-xs text-red-600 hover:text-red-700">
-                 {"Clear"->React.string}
-               </button>
-               <span className="text-gray-300"> {"·"->React.string} </span>
-               <button
-                 onClick={_ => setActive(_ => Some(Log))}
-                 className="text-xs text-gray-700 hover:text-gray-900">
-                 {"Add fields"->React.string}
-               </button>
-             </div>
+             {let selectedCount = Array.length(fieldSelection.log)
+              let totalCount = Array.length(logFieldOptions)
+              let allSelected = selectedCount == totalCount
+              let noneSelected = selectedCount == 0
+              <div className="mt-2 flex items-center gap-3">
+                {allSelected ? React.null :
+                  <button
+                    onClick={_ => selectAllLogFields()}
+                    className="text-xs text-blue-600 hover:text-blue-700">
+                    {"All"->React.string}
+                  </button>
+                }
+                {noneSelected ? React.null :
+                  <button
+                    onClick={_ => clearAllLogFields()}
+                    className="text-xs text-red-600 hover:text-red-700">
+                    {"Clear"->React.string}
+                  </button>
+                }
+                {allSelected ? React.null :
+                  <>
+                    <span className="text-gray-300"> {"·"->React.string} </span>
+                    <button
+                      onClick={_ => setActive(_ => Some(Log))}
+                      className="text-xs text-gray-700 hover:text-gray-900">
+                      {"Add fields"->React.string}
+                    </button>
+                  </>
+                }
+              </div>}
            </div>
            <TagSelector
              title=""
@@ -256,24 +292,36 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
            ? <div className="border border-gray-200 rounded-lg p-4">
                <div className="mb-3">
                  <h4 className="font-medium text-gray-900"> {"Trace Fields"->React.string} </h4>
-                 <div className="mt-2 flex items-center gap-3">
-                   <button
-                     onClick={_ => selectAllTraceFields()}
-                     className="text-xs text-blue-600 hover:text-blue-700">
-                     {"All"->React.string}
-                   </button>
-                   <button
-                     onClick={_ => clearAllTraceFields()}
-                     className="text-xs text-red-600 hover:text-red-700">
-                     {"Clear"->React.string}
-                   </button>
-                   <span className="text-gray-300"> {"·"->React.string} </span>
-                   <button
-                     onClick={_ => setActive(_ => Some(Trace))}
-                     className="text-xs text-gray-700 hover:text-gray-900">
-                     {"Add fields"->React.string}
-                   </button>
-                 </div>
+                 {let selectedCount = Array.length(fieldSelection.trace)
+                  let totalCount = Array.length(traceFieldOptions)
+                  let allSelected = selectedCount == totalCount
+                  let noneSelected = selectedCount == 0
+                  <div className="mt-2 flex items-center gap-3">
+                    {allSelected ? React.null :
+                      <button
+                        onClick={_ => selectAllTraceFields()}
+                        className="text-xs text-blue-600 hover:text-blue-700">
+                        {"All"->React.string}
+                      </button>
+                    }
+                    {noneSelected ? React.null :
+                      <button
+                        onClick={_ => clearAllTraceFields()}
+                        className="text-xs text-red-600 hover:text-red-700">
+                        {"Clear"->React.string}
+                      </button>
+                    }
+                    {allSelected ? React.null :
+                      <>
+                        <span className="text-gray-300"> {"·"->React.string} </span>
+                        <button
+                          onClick={_ => setActive(_ => Some(Trace))}
+                          className="text-xs text-gray-700 hover:text-gray-900">
+                          {"Add fields"->React.string}
+                        </button>
+                      </>
+                    }
+                  </div>}
                </div>
                <TagSelector
                  title=""

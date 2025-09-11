@@ -31,6 +31,7 @@ let make = (
     setSearchTerm(_ => "")
     setIsOpen(_ => true)
   }
+  let isAllSelected = Array.length(selectedValues) >= Array.length(options)
 
   let filteredOptions =
     options->Array.filter(option =>
@@ -80,6 +81,18 @@ let make = (
         | None => ()
         }
       }
+    | "Tab" => {
+        ReactEvent.Synthetic.preventDefault(e)
+        let isShift = ReactEvent.Keyboard.shiftKey(e)
+        let len = Array.length(filteredOptions)
+        if isShift {
+          let prev = highlightIndex - 1
+          setHighlightIndex(_ => prev < 0 ? 0 : prev)
+        } else {
+          let next = highlightIndex + 1
+          setHighlightIndex(_ => next >= len ? len - 1 : next)
+        }
+      }
     | _ => ()
     }
   }
@@ -123,7 +136,7 @@ let make = (
           )
           ->React.array
         : React.null}
-      {showInput_
+      {showInput_ && !isAllSelected
         ? <input
             value={searchTerm}
             onFocus={_ => {
@@ -160,32 +173,36 @@ let make = (
     {(forceOpen_ || isOpen)
       ? <>
           <div className="mt-2 text-xs text-gray-500">
-            {"Type to search. Use ↑/↓ to navigate, Enter to add."->React.string}
+            {isAllSelected
+              ? "All fields are already selected"->React.string
+              : "Type to search. Use ↑/↓ to navigate, Enter to add."->React.string}
           </div>
-          {Array.length(filteredOptions) > 0
-            ? <div className="mt-1 w-full bg-white rounded-md border border-gray-200 max-h-72 overflow-y-auto p-2"
-                onKeyDown={handleKeyDown}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-1">
-                  {filteredOptions
-                  ->Array.mapWithIndex((option, index) =>
-                    <button
-                      key={Int.toString(index)}
-                      onMouseDown={e => { ReactEvent.Synthetic.preventDefault(e); addValue(option.value) }}
-                      onMouseEnter={_ => setHighlightIndex(_ => index)}
-                      className={"text-left px-3 py-1.5 text-sm rounded border" ++ (
-                        index === highlightIndex
-                          ? " bg-blue-50 border-blue-300 text-blue-900 font-semibold ring-2 ring-blue-200"
-                          : " border-transparent hover:bg-gray-50"
-                      )}>
-                      {option.label->React.string}
-                    </button>
-                  )
-                  ->React.array}
+          {isAllSelected
+            ? React.null
+            : Array.length(filteredOptions) > 0
+              ? <div className="mt-1 w-full bg-white rounded-md border border-gray-200 max-h-72 overflow-y-auto p-2"
+                  onKeyDown={handleKeyDown}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-1">
+                    {filteredOptions
+                    ->Array.mapWithIndex((option, index) =>
+                      <button
+                        key={Int.toString(index)}
+                        onMouseDown={e => { ReactEvent.Synthetic.preventDefault(e); addValue(option.value) }}
+                        onMouseEnter={_ => setHighlightIndex(_ => index)}
+                        className={"text-left px-3 py-1.5 text-sm rounded border" ++ (
+                          index === highlightIndex
+                            ? " bg-blue-50 border-blue-300 text-blue-900 font-semibold ring-2 ring-blue-200"
+                            : " border-transparent hover:bg-gray-50"
+                        )}>
+                        {option.label->React.string}
+                      </button>
+                    )
+                    ->React.array}
+                  </div>
                 </div>
-              </div>
-            : <div className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">
-                {"No matches"->React.string}
-              </div>}
+              : <div className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">
+                  {"No matches"->React.string}
+                </div>}
         </>
       : React.null}
   </div>
