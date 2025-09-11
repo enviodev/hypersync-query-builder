@@ -12,6 +12,8 @@ let make = (
   ~onSelectionChange: array<'a> => unit,
   ~placeholder: string,
   ~title: string,
+  ~onOpen: (unit => unit) =?,
+  ~onClose: (unit => unit) =?,
 ) => {
   let (searchTerm, setSearchTerm) = React.useState(() => "")
   let (isOpen, setIsOpen) = React.useState(() => false)
@@ -76,8 +78,24 @@ let make = (
       ->React.array}
       <input
         value={searchTerm}
-        onFocus={_ => setIsOpen(_ => true)}
-        onBlur={_ => Js.Global.setTimeout(_ => setIsOpen(_ => false), 100)->ignore}
+        onFocus={_ => {
+          setIsOpen(_ => true)
+          switch onOpen {
+          | Some(cb) => cb()
+          | None => ()
+          }
+        }}
+        onBlur={_ =>
+          Js.Global.setTimeout(
+            _ => {
+              setIsOpen(_ => false)
+              switch onClose {
+              | Some(cb) => cb()
+              | None => ()
+              }
+            },
+            100,
+          )->ignore}
         onChange={e => {
           let target = ReactEvent.Form.target(e)
           setSearchTerm(_ => target["value"])
@@ -96,6 +114,13 @@ let make = (
               let prev = highlightIndex - 1
               setHighlightIndex(_ => prev < 0 ? 0 : prev)
             }
+          | "Escape" => {
+              setIsOpen(_ => false)
+              switch onClose {
+              | Some(cb) => cb()
+              | None => ()
+              }
+            }
           | "Enter" => {
               ReactEvent.Synthetic.preventDefault(e)
               switch filteredOptions[highlightIndex] {
@@ -110,23 +135,31 @@ let make = (
         className="flex-1 min-w-0 text-sm focus:outline-none"
       />
     </div>
-    {isOpen && Array.length(filteredOptions) > 0
-      ? <div
-          className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
-          {filteredOptions
-          ->Array.mapWithIndex((option, index) =>
-            <button
-              key={Int.toString(index)}
-              onMouseDown={_ => addValue(option.value)}
-              onMouseEnter={_ => setHighlightIndex(_ => index)}
-              className={"w-full text-left px-3 py-2 hover:bg-gray-50 text-sm" ++ (
-                index === highlightIndex ? " bg-gray-100" : ""
-              )}>
-              {option.label->React.string}
-            </button>
-          )
-          ->React.array}
-        </div>
+    {isOpen
+      ? <>
+          <div className="mt-2 text-xs text-gray-500">
+            {"Type to search. Use ↑/↓ to navigate, Enter to add."->React.string}
+          </div>
+          {Array.length(filteredOptions) > 0
+            ? <div className="mt-1 w-full bg-white rounded-md border border-gray-200 max-h-72 overflow-y-auto">
+                {filteredOptions
+                ->Array.mapWithIndex((option, index) =>
+                  <button
+                    key={Int.toString(index)}
+                    onMouseDown={_ => addValue(option.value)}
+                    onMouseEnter={_ => setHighlightIndex(_ => index)}
+                    className={"w-full text-left px-3 py-2 hover:bg-gray-50 text-sm" ++ (
+                      index === highlightIndex ? " bg-gray-100" : ""
+                    )}>
+                    {option.label->React.string}
+                  </button>
+                )
+                ->React.array}
+              </div>
+            : <div className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">
+                {"No matches"->React.string}
+              </div>}
+        </>
       : React.null}
   </div>
 }

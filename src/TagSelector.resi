@@ -10,4 +10,6 @@ let make: (
   ~onSelectionChange: array<'a> => unit,
   ~placeholder: string,
   ~title: string,
+  ~onOpen: (unit => unit)=?,
+  ~onClose: (unit => unit)=?,
 ) => React.element
