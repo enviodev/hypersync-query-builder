@@ -17,13 +17,12 @@
     }
   ],
   "suffix": ".res.mjs",
-  "bs-dependencies": [
+  "dependencies": [
     "@rescript/react",
     "rescript-test",
     "@glennsl/rescript-fetch"
   ],
-  "bs-dev-dependencies": [],
-  "bsc-flags": [],
+  "dev-dependencies": [],
   "jsx": {
     "version": 4
   }

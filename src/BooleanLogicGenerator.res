@@ -102,7 +102,7 @@ let generateFilterDescription = (filterState: filterState) => {
 let generateTransactionFilterDescription = (filterState: QueryStructure.transactionSelection) => {
   let description = TransactionBooleanLogicGenerator.generateEnglishDescription(filterState)
   switch String.startsWith(description, "Match transactions where: ") {
-  | true => String.sliceToEnd(description, ~start=26) // Remove "Match transactions where: " prefix
+  | true => String.slice(description, ~start=26) // Remove "Match transactions where: " prefix
   | false => description
   }
 }
@@ -111,7 +111,7 @@ let generateTransactionFilterDescription = (filterState: QueryStructure.transact
 let generateBlockFilterDescription = (filterState: QueryStructure.blockSelection) => {
   let description = BlockBooleanLogicGenerator.generateEnglishDescription(filterState)
   switch String.startsWith(description, "Match blocks where: ") {
-  | true => String.sliceToEnd(description, ~start=20) // Remove "Match blocks where: " prefix
+  | true => String.slice(description, ~start=20) // Remove "Match blocks where: " prefix
   | false => description
   }
 }
@@ -120,7 +120,7 @@ let generateBlockFilterDescription = (filterState: QueryStructure.blockSelection
 let generateTraceFilterDescription = (filterState: QueryStructure.traceSelection) => {
   let description = TraceBooleanLogicGenerator.generateEnglishDescription(filterState)
   switch String.startsWith(description, "Match traces where: ") {
-  | true => String.sliceToEnd(description, ~start=20) // Remove "Match traces where: " prefix
+  | true => String.slice(description, ~start=20) // Remove "Match traces where: " prefix
   | false => description
   }
 }
