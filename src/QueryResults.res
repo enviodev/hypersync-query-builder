@@ -6,7 +6,12 @@ type resultsView = Raw | Table
 type rawMode = Plain | Interactive
 
 @react.component
-let make = (~query: query, ~selectedChainName: option<string>, ~executeSignal: int) => {
+let make = (
+  ~query: query,
+  ~selectedChainName: option<string>,
+  ~executeSignal: int,
+  ~bearerToken: option<string>,
+) => {
   let (activeTab, setActiveTab) = React.useState(() => QueryJson)
   let (isExecuting, setIsExecuting) = React.useState(() => false)
   let (queryResult, setQueryResult) = React.useState(() => None)
@@ -409,14 +414,26 @@ let make = (~query: query, ~selectedChainName: option<string>, ~executeSignal: i
           let body = serializeQuery(query)
           let calcByteLength: string => int = %raw(`(s) => new TextEncoder().encode(s).length`)
           let t0: float = %raw("performance.now()")
+          
+          // Build headers with Authorization token
+          let headers = switch bearerToken {
+          | Some(token) =>
+            Headers.fromObject({
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            })
+          | None =>
+            Headers.fromObject({
+              "Content-Type": "application/json",
+            })
+          }
+          
           let response = await fetch(
             url,
             {
               method: #POST,
               body: Body.string(body),
-              headers: Headers.fromObject({
-                "Content-Type": "application/json",
-              }),
+              headers: headers,
             },
           )
           let resultTextRaw = await response->Response.text

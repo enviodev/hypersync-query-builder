@@ -1,10 +1,23 @@
 %%raw("import './tailwind.css'")
 
-ReactDOM.querySelector("#root")
-->Belt.Option.getExn
-->ReactDOM.Client.createRoot
-->ReactDOM.Client.Root.render(
-  <React.StrictMode>
+module AppWrapper = {
+  @react.component
+  let make = () => {
+    // Token state management at the top level
+    let (bearerToken, setBearerToken) = React.useState(() => AuthToken.getToken())
+    
+    let handleTokenUpdate = (token: string) => {
+      if AuthToken.saveToken(token) {
+        setBearerToken(_ => Some(token))
+      }
+    }
+
+    let handleTokenClear = () => {
+      if AuthToken.clearToken() {
+        setBearerToken(_ => None)
+      }
+    }
+
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 sticky top-0 z-10">
         <div className="px-6 lg:px-8">
@@ -15,6 +28,11 @@ ReactDOM.querySelector("#root")
               </h1>
             </div>
             <div className="flex items-center space-x-3">
+              <TokenSettings
+                token={bearerToken}
+                onTokenUpdate={handleTokenUpdate}
+                onTokenClear={handleTokenClear}
+              />
               <a
                 href="https://docs.envio.dev/docs/HyperSync/overview"
                 target="_blank"
@@ -62,5 +80,14 @@ ReactDOM.querySelector("#root")
         </div>
       </footer>
     </div>
+  }
+}
+
+ReactDOM.querySelector("#root")
+->Belt.Option.getExn
+->ReactDOM.Client.createRoot
+->ReactDOM.Client.Root.render(
+  <React.StrictMode>
+    <AppWrapper />
   </React.StrictMode>,
 )
