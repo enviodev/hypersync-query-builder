@@ -19,8 +19,7 @@
   "suffix": ".res.mjs",
   "dependencies": [
     "@rescript/react",
-    "rescript-test",
-    "@glennsl/rescript-fetch"
+    "rescript-test"
   ],
   "dev-dependencies": [],
   "jsx": {

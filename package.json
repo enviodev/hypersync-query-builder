@@ -49,7 +49,6 @@
     "prepublishOnly": "npm run build:package"
   },
   "dependencies": {
-    "@glennsl/rescript-fetch": "^0.2.3",
     "@rescript/react": "^0.13.0",
     "@rescript/runtime": "^12.0.0-beta.10"
   },

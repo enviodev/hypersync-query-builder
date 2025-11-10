@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@glennsl/rescript-fetch':
-        specifier: ^0.2.3
-        version: 0.2.3
       '@rescript/react':
         specifier: ^0.13.0
         version: 0.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -333,9 +330,6 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
-
-  '@glennsl/rescript-fetch@0.2.3':
-    resolution: {integrity: sha512-0MuaXeJHGii0/SKzR4ASB1Wal+ogdnNsD1K6HSTFUVc+TQzAZY+V8Nb7Z8K4OUqMJzmurIgVXNmirx3DC1Huyg==}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -1578,8 +1572,6 @@ snapshots:
 
   '@esbuild/win32-x64@0.25.9':
     optional: true
-
-  '@glennsl/rescript-fetch@0.2.3': {}
 
   '@isaacs/cliui@8.0.2':
     dependencies:

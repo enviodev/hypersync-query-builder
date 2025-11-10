@@ -263,7 +263,7 @@ let fetchChains = async () => {
   open Fetch
 
   try {
-    let response = await fetch("https://chains.hyperquery.xyz/active_chains", {})
+    let response = await fetchSimple("https://chains.hyperquery.xyz/active_chains")
     let json = await response->Response.json
 
     // Parse the JSON response - the API returns an array of chain objects

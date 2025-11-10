@@ -428,14 +428,13 @@ let make = (
             })
           }
           
-          let response = await fetch(
-            url,
-            {
-              method: #POST,
-              body: Body.string(body),
-              headers: headers,
-            },
-          )
+          let requestInit = makeRequestInit({
+            "method": "POST",
+            "body": Body.string(body),
+            "headers": headers,
+          })
+          
+          let response = await fetch(url, requestInit)
           let resultTextRaw = await response->Response.text
           let t1: float = %raw("performance.now()")
           let clientElapsed = t1 -. t0
