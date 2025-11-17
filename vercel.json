@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "installCommand": "pnpm install --frozen-lockfile --prod=false && pnpm remove rescript-test",
+  "installCommand": "pnpm install --frozen-lockfile --prod=false && pnpm remove rescript-test && npx rescript clean",
   "buildCommand": "pnpm run build:site",
   "outputDirectory": "dist",
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- src rescript.json vite.config* package.json pnpm-lock.yaml"
