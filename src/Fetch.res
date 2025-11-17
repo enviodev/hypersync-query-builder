@@ -17,9 +17,9 @@ let makeRequestInit: {..} => requestInit = %raw(`(obj) => obj`)
 
 module Headers = {
   @new external make: unit => headers = "Headers"
-  
+
   @new external fromObject: {..} => headers = "Headers"
-  
+
   @send external append: (headers, string, string) => unit = "append"
   @send external delete: (headers, string) => unit = "delete"
   @send external get: (headers, string) => Js.Nullable.t<string> = "get"
@@ -36,11 +36,10 @@ module Response = {
   @send external json: response => promise<Js.Json.t> = "json"
   @send external arrayBuffer: response => promise<Js.TypedArray2.ArrayBuffer.t> = "arrayBuffer"
   @send external blob: response => promise<'a> = "blob"
-  
+
   @get external ok: response => bool = "ok"
   @get external status: response => int = "status"
   @get external statusText: response => string = "statusText"
   @get external headers: response => headers = "headers"
   @get external url: response => string = "url"
 }
-
