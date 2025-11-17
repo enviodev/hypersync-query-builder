@@ -4,6 +4,10 @@
     {
       "dir": "src",
       "subdirs": true
+    },
+    {
+      "dir": "tests",
+      "subdirs": true
     }
   ],
   "package-specs": [
@@ -14,10 +18,12 @@
   ],
   "suffix": ".res.mjs",
   "dependencies": [
-    "@rescript/react"
+    "@rescript/react",
+    "rescript-test"
   ],
   "dev-dependencies": [],
   "jsx": {
     "version": 4
   }
 }
+

@@ -45,7 +45,7 @@
     "build:site": "npm run res:build && vite build",
     "build:dev": "vite build",
     "preview": "vite preview",
-    "test": "rescript build && retest tests/**/*.res.mjs",
+    "test": "cp rescript.json rescript.json.bak && cp rescript.test.json rescript.json && rescript build --dev && retest tests/**/*.res.mjs; RESULT=$?; cp rescript.json.bak rescript.json && rm rescript.json.bak; exit $RESULT",
     "prepublishOnly": "npm run build:package"
   },
   "dependencies": {
