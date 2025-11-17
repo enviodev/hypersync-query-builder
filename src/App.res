@@ -6,6 +6,15 @@ open UrlEncoder
 
 @react.component
 let make = () => {
+  // Token state management
+  let (bearerToken, setBearerToken) = React.useState(() => AuthToken.getToken())
+  
+  let handleTokenSubmit = (token: string) => {
+    if AuthToken.saveToken(token) {
+      setBearerToken(_ => Some(token))
+    }
+  }
+
   let (query, setQuery) = React.useState(() => {
     // Try to load query from URL first, fallback to default
     switch UrlEncoder.getUrlStateFromUrl() {
@@ -553,10 +562,14 @@ let make = () => {
     )
   }
 
-  <main className="flex-1 overflow-hidden bg-slate-50">
-    <div className="h-full flex flex-col lg:flex-row lg:gap-8">
-      // Left Column - Query Builder
-      <div className="w-full lg:w-1/2 overflow-y-auto">
+  <>
+    // Show token prompt if no valid token
+    {!AuthToken.isValidToken(bearerToken) ? <TokenPrompt onTokenSubmit={handleTokenSubmit} /> : React.null}
+    
+    <main className="flex-1 overflow-hidden bg-slate-50">
+      <div className="h-full flex flex-col lg:flex-row lg:gap-8">
+        // Left Column - Query Builder
+        <div className="w-full lg:w-1/2 overflow-y-auto">
         <div className="p-6 lg:p-8">
           <div className="mb-8 flex items-center justify-between">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
@@ -942,10 +955,14 @@ let make = () => {
             </div>
           </div>
           <QueryResults
-            query={query} selectedChainName={selectedChainName} executeSignal={executeSignal}
+            query={query}
+            selectedChainName={selectedChainName}
+            executeSignal={executeSignal}
+            bearerToken={bearerToken}
           />
         </div>
       </div>
     </div>
-  </main>
+    </main>
+  </>
 }
