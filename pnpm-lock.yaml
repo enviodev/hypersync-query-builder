@@ -12,12 +12,12 @@ importers:
         specifier: ^0.13.0
         version: 0.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@rescript/runtime':
-        specifier: ^12.0.0-beta.10
-        version: 12.0.0-beta.10
+        specifier: ^12.0.0-rc.5
+        version: 12.0.0-rc.5
     devDependencies:
       '@rescript/linux-x64':
-        specifier: 12.0.0-beta.10
-        version: 12.0.0-beta.10
+        specifier: 12.0.0-rc.5
+        version: 12.0.0-rc.5
       '@tailwindcss/postcss':
         specifier: ^4.1.11
         version: 4.1.13
@@ -40,11 +40,11 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
       rescript:
-        specifier: ^12.0.0-beta.10
-        version: 12.0.0-beta.10
+        specifier: ^12.0.0-rc.5
+        version: 12.0.0-rc.5
       rescript-test:
         specifier: 7.0.1
-        version: 7.0.1(rescript@12.0.0-beta.10)
+        version: 7.0.1(rescript@12.0.0-rc.5)
       tailwindcss:
         specifier: ^4.0.3
         version: 4.1.13
@@ -364,26 +364,26 @@ packages:
     peerDependencies:
       rescript: '>=11.1.0'
 
-  '@rescript/darwin-arm64@12.0.0-beta.10':
-    resolution: {integrity: sha512-P3Y5Yy7uPGVXdBlfyT67NG724bsMfmwrZ/qEAgEabrGEXjJc9iA9I+a7Kz9gq5E252Mfi0O2DGp2JUmNyOyo9A==}
+  '@rescript/darwin-arm64@12.0.0-rc.5':
+    resolution: {integrity: sha512-on94/D8LNX8+SwKKvVd5Zj7amtgzk+BRGiEw+5XW7Kz+hW/S0jwGvfVg8RlDweRI9duEkab4quesfEN4VuW+JA==}
     engines: {node: '>=20.11.0'}
     cpu: [arm64]
     os: [darwin]
 
-  '@rescript/darwin-x64@12.0.0-beta.10':
-    resolution: {integrity: sha512-4WuFdzmZhp0iXmjAtOCGJUnGHxQeK8kxnahk7nViwN6RHZG1RDEQmxvjnVfQUnNdMH2anZGpGYjAhZC+n9goDQ==}
+  '@rescript/darwin-x64@12.0.0-rc.5':
+    resolution: {integrity: sha512-tfSOWR9fhHcVlV04t7qsL1pka64p9oo+5J9kNQeE6j/h3r5qnjg32M+XQl9hDKfg/btqf0KoeyDq/rQXFVsDSA==}
     engines: {node: '>=20.11.0'}
     cpu: [x64]
     os: [darwin]
 
-  '@rescript/linux-arm64@12.0.0-beta.10':
-    resolution: {integrity: sha512-DgdCbnYySwDhPpJlttb6JvO7FucS4wkueuAtXiecCNCPkdaRWNPIrRAmZS5KZ/MlU8vQWh2jzCvDY9yeh/MNBA==}
+  '@rescript/linux-arm64@12.0.0-rc.5':
+    resolution: {integrity: sha512-6YHdSUYU+vBYXCqCxQve3CLHUqp8ojUV9476n7qxdYM36bWTvglnZae/SqMhGASwhviyXFumJDH15FLfUGpiZg==}
     engines: {node: '>=20.11.0'}
     cpu: [arm64]
     os: [linux]
 
-  '@rescript/linux-x64@12.0.0-beta.10':
-    resolution: {integrity: sha512-v0ydM9UdiS1cXgm25ajTl5k61ejWg2s0YDDrjD+5a7N/zUnsfv4L5y+3bhhv6GhV3o/xgH+YYPwMe2057oT3pA==}
+  '@rescript/linux-x64@12.0.0-rc.5':
+    resolution: {integrity: sha512-qS/1x6v2CdVuDIgMF3BnyxSwQ/QGwrrkhH4L1wjgS58STURDlwSxsEeS/tZca1v8TFbRKbMOi4KaWyyRuivgRA==}
     engines: {node: '>=20.11.0'}
     cpu: [x64]
     os: [linux]
@@ -394,11 +394,11 @@ packages:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@rescript/runtime@12.0.0-beta.10':
-    resolution: {integrity: sha512-ZAMUE6C8c5cMaDHzpqoq8+6dDXD/wBHUsRHjeGkbz/BbexFnj8i4O9kEYdOEF+9P7GdY6IyRWKKX5RJaNpAs2g==}
+  '@rescript/runtime@12.0.0-rc.5':
+    resolution: {integrity: sha512-IkjXDr2hlMJDlJCVk1QlDR3r1sSKAJg8xnBq3Uh4IO0FToeMmeSYv/xh0j0YrInzCwgq6RmYgsyYS+ornEepJw==}
 
-  '@rescript/win32-x64@12.0.0-beta.10':
-    resolution: {integrity: sha512-4CFQBkpuFb+DBFS9xy3+7KaGuAdUEYQyCAtSgDinXgj4IYYTFQ+a/6Sz8pPNkA5OlUwVAwMiONrTu3Zj+5NvMA==}
+  '@rescript/win32-x64@12.0.0-rc.5':
+    resolution: {integrity: sha512-kWAjl9nAsUntpMERAJE3c6EKRR6hl6tVB/9LzPkgvBLrX8m5FkPGUeeD4UJihTD2+BxC4BfLak4yOrENqMBA9g==}
     engines: {node: '>=20.11.0'}
     cpu: [x64]
     os: [win32]
@@ -1111,8 +1111,8 @@ packages:
     peerDependencies:
       rescript: ^11.0.0
 
-  rescript@12.0.0-beta.10:
-    resolution: {integrity: sha512-QeDZebbCgWIXCn15qlFB+Q+4kis+ZJMmPrKMEoisu5xJnSmFJoCDQIsOH5oubKyTClK9Mr3XROC47nsgPlkNKw==}
+  rescript@12.0.0-rc.5:
+    resolution: {integrity: sha512-4GZRZVbVLD/EoJskfmkVnWPBuA39njQahB+Qy69aeIE20x29AYbW9tuWYl9SE3Ul2zxbTe2Ymg//EQNFN2eWDQ==}
     engines: {node: '>=20.11.0'}
     hasBin: true
 
@@ -1608,29 +1608,29 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@rescript/core@1.6.1(rescript@12.0.0-beta.10)':
+  '@rescript/core@1.6.1(rescript@12.0.0-rc.5)':
     dependencies:
-      rescript: 12.0.0-beta.10
+      rescript: 12.0.0-rc.5
 
-  '@rescript/darwin-arm64@12.0.0-beta.10':
+  '@rescript/darwin-arm64@12.0.0-rc.5':
     optional: true
 
-  '@rescript/darwin-x64@12.0.0-beta.10':
+  '@rescript/darwin-x64@12.0.0-rc.5':
     optional: true
 
-  '@rescript/linux-arm64@12.0.0-beta.10':
+  '@rescript/linux-arm64@12.0.0-rc.5':
     optional: true
 
-  '@rescript/linux-x64@12.0.0-beta.10': {}
+  '@rescript/linux-x64@12.0.0-rc.5': {}
 
   '@rescript/react@0.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@rescript/runtime@12.0.0-beta.10': {}
+  '@rescript/runtime@12.0.0-rc.5': {}
 
-  '@rescript/win32-x64@12.0.0-beta.10':
+  '@rescript/win32-x64@12.0.0-rc.5':
     optional: true
 
   '@rolldown/pluginutils@1.0.0-beta.27': {}
@@ -2273,27 +2273,27 @@ snapshots:
 
   requires-port@1.0.0: {}
 
-  rescript-test@7.0.1(rescript@12.0.0-beta.10):
+  rescript-test@7.0.1(rescript@12.0.0-rc.5):
     dependencies:
-      '@rescript/core': 1.6.1(rescript@12.0.0-beta.10)
+      '@rescript/core': 1.6.1(rescript@12.0.0-rc.5)
       glob: 10.4.5
       jsdom: 23.2.0
-      rescript: 12.0.0-beta.10
+      rescript: 12.0.0-rc.5
     transitivePeerDependencies:
       - bufferutil
       - canvas
       - supports-color
       - utf-8-validate
 
-  rescript@12.0.0-beta.10:
+  rescript@12.0.0-rc.5:
     dependencies:
-      '@rescript/runtime': 12.0.0-beta.10
+      '@rescript/runtime': 12.0.0-rc.5
     optionalDependencies:
-      '@rescript/darwin-arm64': 12.0.0-beta.10
-      '@rescript/darwin-x64': 12.0.0-beta.10
-      '@rescript/linux-arm64': 12.0.0-beta.10
-      '@rescript/linux-x64': 12.0.0-beta.10
-      '@rescript/win32-x64': 12.0.0-beta.10
+      '@rescript/darwin-arm64': 12.0.0-rc.5
+      '@rescript/darwin-x64': 12.0.0-rc.5
+      '@rescript/linux-arm64': 12.0.0-rc.5
+      '@rescript/linux-x64': 12.0.0-rc.5
+      '@rescript/win32-x64': 12.0.0-rc.5
 
   rollup@4.50.1:
     dependencies:
