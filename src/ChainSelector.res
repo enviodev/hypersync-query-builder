@@ -339,12 +339,19 @@ let fetchChains = async () => {
 }
 
 @react.component
-let make = (~selectedChainName: option<string>, ~onChainSelect: string => unit) => {
+let make = (
+  ~selectedChainName: option<string>,
+  ~onChainSelect: string => unit,
+  ~customUrl: option<string>,
+  ~onCustomUrlChange: option<string => unit>,
+) => {
   let (searchTerm, setSearchTerm) = React.useState(() => "")
   let (chains, setChains) = React.useState(() => defaultChains)
   let (isExpanded, setIsExpanded) = React.useState(() => Option.isNone(selectedChainName))
   let (isLoading, setIsLoading) = React.useState(() => true)
   let (focusedIndex, setFocusedIndex) = React.useState(() => 0)
+  let (showCustomInput, setShowCustomInput) = React.useState(() => false)
+  let (localCustomUrl, setLocalCustomUrl) = React.useState(() => customUrl->Option.getOr(""))
 
   // Load chains on component mount
   React.useEffect0(() => {
@@ -387,8 +394,21 @@ let make = (~selectedChainName: option<string>, ~onChainSelect: string => unit) 
   // Handle selection logic
   let handleChainSelect = (chainName: string) => {
     onChainSelect(chainName)
-    setIsExpanded(_ => false) // Collapse after selection
-    setSearchTerm(_ => "") // Clear search
+    setIsExpanded(_ => false)
+    setSearchTerm(_ => "")
+    setShowCustomInput(_ => false)
+  }
+
+  // Handle custom URL submission
+  let handleCustomUrlSubmit = () => {
+    if String.length(localCustomUrl) > 0 {
+      switch onCustomUrlChange {
+      | Some(callback) => callback(localCustomUrl)
+      | None => ()
+      }
+      setIsExpanded(_ => false)
+      setShowCustomInput(_ => false)
+    }
   }
 
   // Handle selected chain click (expand/collapse toggle)
@@ -406,15 +426,22 @@ let make = (~selectedChainName: option<string>, ~onChainSelect: string => unit) 
     <button
       onClick={_ => handleSelectedChainClick()}
       className="w-full flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
-      {switch selectedChain {
-      | Some(chain) =>
+      {switch (customUrl, selectedChain) {
+      | (Some(url), _) if String.length(url) > 0 =>
+        <div className="flex items-center space-x-2">
+          <span className="font-medium text-blue-900"> {"Custom URL"->React.string} </span>
+          <span className="text-sm text-blue-600 truncate max-w-[200px]">
+            {url->React.string}
+          </span>
+        </div>
+      | (_, Some(chain)) =>
         <div className="flex items-center space-x-2">
           <span className="font-medium text-blue-900"> {chain.name->React.string} </span>
           <span className="text-sm text-blue-600">
             {Int.toString(chain.chain_id)->React.string}
           </span>
         </div>
-      | None => <span className="text-blue-900"> {"Select a chain"->React.string} </span>
+      | (_, None) => <span className="text-blue-900"> {"Select a chain"->React.string} </span>
       }}
       <svg
         className={`w-5 h-5 text-blue-500 transform transition-transform duration-200 ${isExpanded
@@ -463,6 +490,50 @@ let make = (~selectedChainName: option<string>, ~onChainSelect: string => unit) 
               className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
+          // Custom URL input section
+          {Option.isSome(onCustomUrlChange)
+            ? <div className="px-2 pb-2 border-b border-gray-200">
+                {showCustomInput
+                  ? <div className="flex items-center gap-2">
+                      <input
+                        type_="text"
+                        placeholder="Enter custom HyperSync URL..."
+                        value={localCustomUrl}
+                        onChange={e => {
+                          let target = ReactEvent.Form.target(e)
+                          setLocalCustomUrl(_ => target["value"])
+                        }}
+                        onKeyDown={e => {
+                          if ReactEvent.Keyboard.key(e) === "Enter" {
+                            ReactEvent.Synthetic.preventDefault(e)
+                            handleCustomUrlSubmit()
+                          }
+                        }}
+                        className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <button
+                        onClick={_ => handleCustomUrlSubmit()}
+                        className="px-3 py-1 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                        {"Use"->React.string}
+                      </button>
+                      <button
+                        onClick={_ => setShowCustomInput(_ => false)}
+                        className="px-2 py-1 text-gray-500 hover:text-gray-700 text-sm">
+                        {"Cancel"->React.string}
+                      </button>
+                    </div>
+                  : <button
+                      onClick={_ => setShowCustomInput(_ => true)}
+                      className="w-full flex items-center justify-between px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span> {"Use Custom URL"->React.string} </span>
+                      </div>
+                    </button>}
+              </div>
+            : React.null}
           <div className="max-h-60 overflow-y-auto">
             {isLoading
               ? <div className="px-4 py-8 text-center text-gray-500">
