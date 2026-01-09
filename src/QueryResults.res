@@ -11,6 +11,7 @@ let make = (
   ~selectedChainName: option<string>,
   ~executeSignal: int,
   ~bearerToken: option<string>,
+  ~customUrl: option<string>,
 ) => {
   let (activeTab, setActiveTab) = React.useState(() => QueryJson)
   let (isExecuting, setIsExecuting) = React.useState(() => false)
@@ -25,6 +26,24 @@ let make = (
   let (serverMs, setServerMs) = React.useState(() => None)
   let (responseBytes, setResponseBytes) = React.useState(() => None)
   let (selectedDataset, setSelectedDataset) = React.useState(() => None)
+  let (copiedCurl, setCopiedCurl) = React.useState(() => false)
+  let (copiedJson, setCopiedJson) = React.useState(() => false)
+  let (copiedLink, setCopiedLink) = React.useState(() => false)
+  let (copiedResults, setCopiedResults) = React.useState(() => false)
+
+  // Switch to QueryJson tab when query changes (but not on initial render)
+  let isFirstRender = React.useRef(true)
+  React.useEffect1(() => {
+    if isFirstRender.current {
+      isFirstRender.current = false
+    } else {
+      // Only switch to QueryJson if we're on the Results tab
+      if activeTab === Results {
+        setActiveTab(_ => QueryJson)
+      }
+    }
+    None
+  }, [query])
 
   // executeSignal will be handled after executeQuery is defined
 
@@ -44,20 +63,25 @@ let make = (
 
   // Helper function to generate the correct URL for the selected chain
   let generateChainUrl = () => {
-    switch selectedChainName {
-    | Some(chainName) =>
-      let selectedChain = ChainSelector.defaultChains->Array.find(chain => chain.name === chainName)
-      switch selectedChain {
-      | Some(chain) =>
-        let baseUrl = `https://${Int.toString(chain.chain_id)}.hypersync.xyz/query`
-        if ChainSelector.chainSupportsTraces(chain) {
-          `https://${Int.toString(chain.chain_id)}-traces.hypersync.xyz/query`
-        } else {
-          baseUrl
+    // Use custom URL if provided
+    switch customUrl {
+    | Some(url) if String.length(url) > 0 => url
+    | _ =>
+      switch selectedChainName {
+      | Some(chainName) =>
+        let selectedChain = ChainSelector.defaultChains->Array.find(chain => chain.name === chainName)
+        switch selectedChain {
+        | Some(chain) =>
+          let baseUrl = `https://${Int.toString(chain.chain_id)}.hypersync.xyz/query`
+          if ChainSelector.chainSupportsTraces(chain) {
+            `https://${Int.toString(chain.chain_id)}-traces.hypersync.xyz/query`
+          } else {
+            baseUrl
+          }
+        | None => ""
         }
       | None => ""
       }
-    | None => ""
     }
   }
 
@@ -395,10 +419,17 @@ let make = (
 }`
   }
 
+  // Check if we have a valid URL (either custom or from selected chain)
+  let hasValidUrl = () => {
+    switch customUrl {
+    | Some(url) if String.length(url) > 0 => true
+    | _ => Option.isSome(selectedChainName)
+    }
+  }
+
   let executeQuery = async () => {
-    switch selectedChainName {
-    | Some(_) => {
-        setActiveTab(_ => Results) // Switch to Results tab when query starts
+    if hasValidUrl() {
+        setActiveTab(_ => Results)
         setIsExecuting(_ => true)
         setQueryError(_ => None)
         setQueryResult(_ => None)
@@ -477,8 +508,6 @@ let make = (
         }
 
         setIsExecuting(_ => false)
-      }
-    | None => ()
     }
   }
 
@@ -499,20 +528,18 @@ let make = (
   }
 
   let copyCurlToClipboard = () => {
-    switch selectedChainName {
-    | Some(_) => {
-        let curlCommand = generateCurlCommand(query)
-        // Use the Clipboard API
-        let copyToClipboard: string => unit = %raw(`(curlCommand) => {
-          navigator.clipboard.writeText(curlCommand).then(() => {
-            console.log('cURL command copied to clipboard');
-          }).catch(err => {
-            console.error('Failed to copy: ', err);
-          })
-        }`)
-        copyToClipboard(curlCommand)
-      }
-    | None => ()
+    if hasValidUrl() {
+      let curlCommand = generateCurlCommand(query)
+      let copyToClipboard: string => unit = %raw(`(curlCommand) => {
+        navigator.clipboard.writeText(curlCommand).then(() => {
+          console.log('cURL command copied to clipboard');
+        }).catch(err => {
+          console.error('Failed to copy: ', err);
+        })
+      }`)
+      copyToClipboard(curlCommand)
+      setCopiedCurl(_ => true)
+      let _: Js.Global.timeoutId = Js.Global.setTimeout(() => setCopiedCurl(_ => false), 2000)
     }
   }
 
@@ -526,6 +553,8 @@ let make = (
       })
     }`)
     copyToClipboard(jsonText)
+    setCopiedJson(_ => true)
+    let _: Js.Global.timeoutId = Js.Global.setTimeout(() => setCopiedJson(_ => false), 2000)
   }
 
   let copyShareLinkToClipboard = () => {
@@ -539,6 +568,8 @@ let make = (
       })
     }`)
     copyToClipboard(href)
+    setCopiedLink(_ => true)
+    let _: Js.Global.timeoutId = Js.Global.setTimeout(() => setCopiedLink(_ => false), 2000)
   }
 
   let downloadJson = () => {
@@ -565,6 +596,8 @@ let make = (
           navigator.clipboard.writeText(text).catch(() => {})
         }`)
         copyToClipboard(result)
+        setCopiedResults(_ => true)
+        let _: Js.Global.timeoutId = Js.Global.setTimeout(() => setCopiedResults(_ => false), 2000)
       }
     | None => ()
     }
@@ -905,16 +938,14 @@ let make = (
       <p className="text-sm text-slate-600">
         {"View your query structure and results"->React.string}
       </p>
-      {switch selectedChainName {
-      | Some(_) =>
-        <div className="mt-3">
-          <span
-            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
-            {`Query URL: ${generateChainUrl()}`->React.string}
-          </span>
-        </div>
-      | None => React.null
-      }}
+      {hasValidUrl()
+        ? <div className="mt-3">
+            <span
+              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+              {`Query URL: ${generateChainUrl()}`->React.string}
+            </span>
+          </div>
+        : React.null}
     </div>
 
     // Tab Navigation
@@ -957,38 +988,81 @@ let make = (
             <h4 className="text-sm font-medium text-slate-900">
               {"Query Structure"->React.string}
             </h4>
-            {switch selectedChainName {
-            | Some(_) =>
-              <div className="flex space-x-2">
+            {hasValidUrl()
+              ? <div className="flex space-x-2">
                 <button
                   onClick={_ => copyCurlToClipboard()}
-                  className="px-3 py-1 bg-slate-600 text-white text-xs font-medium rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
-                  {"Copy cURL"->React.string}
+                  className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 ${copiedCurl
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-600 text-white hover:bg-slate-700"}`}>
+                  {copiedCurl
+                    ? <>
+                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {"Copied!"->React.string}
+                      </>
+                    : <>
+                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        {"Copy cURL"->React.string}
+                      </>}
                 </button>
                 <button
                   onClick={_ => copyJsonToClipboard()}
-                  className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
-                  {"Copy JSON"->React.string}
+                  className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 ${copiedJson
+                      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200"}`}>
+                  {copiedJson
+                    ? <>
+                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {"Copied!"->React.string}
+                      </>
+                    : <>
+                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        {"Copy JSON"->React.string}
+                      </>}
                 </button>
                 <button
                   onClick={_ => downloadJson()}
-                  className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                  className="inline-flex items-center px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                  <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
                   {"Download"->React.string}
                 </button>
                 <button
                   onClick={_ => copyShareLinkToClipboard()}
-                  className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
-                  {"Share Query Link"->React.string}
+                  className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 ${copiedLink
+                      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                      : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"}`}>
+                  {copiedLink
+                    ? <>
+                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {"Copied!"->React.string}
+                      </>
+                    : <>
+                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        {"Copy Query Link"->React.string}
+                      </>}
                 </button>
                 <button
                   onClick={_ => executeQuery()->ignore}
                   disabled={isExecuting}
-                  className="px-3 py-1 bg-slate-700 text-white text-xs font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 transition-colors">
+                  className="inline-flex items-center px-3 py-1 bg-slate-700 text-white text-xs font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 transition-colors">
                   {(isExecuting ? "Executing..." : "Execute Query")->React.string}
                 </button>
               </div>
-            | None => React.null
-            }}
+              : React.null}
           </div>
           <pre
             className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre">
@@ -1053,8 +1127,22 @@ let make = (
                   }}
                   <button
                     onClick={_ => copyResultsJson()}
-                    className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors mr-2">
-                    {"Copy Results JSON"->React.string}
+                    className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 mr-2 ${copiedResults
+                        ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                        : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"}`}>
+                    {copiedResults
+                      ? <>
+                          <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                          {"Copied!"->React.string}
+                        </>
+                      : <>
+                          <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          {"Copy Results JSON"->React.string}
+                        </>}
                   </button>
                   <div className="inline-flex items-center">
                     <button
@@ -1323,25 +1411,22 @@ let make = (
               <p className="text-slate-500">
                 {"Execute query to see results here..."->React.string}
               </p>
-              {switch selectedChainName {
-              | Some(_) =>
-                <div className="mt-4 flex justify-center space-x-2">
-                  <button
-                    onClick={_ => copyCurlToClipboard()}
-                    className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
-                    {"Copy cURL"->React.string}
-                  </button>
-                  <button
-                    onClick={_ => executeQuery()->ignore}
-                    className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
-                    {"Execute Query"->React.string}
-                  </button>
-                </div>
-              | None =>
-                <div className="mt-4 text-sm text-orange-600">
-                  {"Please select a chain to execute queries"->React.string}
-                </div>
-              }}
+              {hasValidUrl()
+                ? <div className="mt-4 flex justify-center space-x-2">
+                    <button
+                      onClick={_ => copyCurlToClipboard()}
+                      className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                      {"Copy cURL"->React.string}
+                    </button>
+                    <button
+                      onClick={_ => executeQuery()->ignore}
+                      className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                      {"Execute Query"->React.string}
+                    </button>
+                  </div>
+                : <div className="mt-4 text-sm text-orange-600">
+                    {"Please select a chain or enter a custom URL to execute queries"->React.string}
+                  </div>}
             </div>
           }}
         </div>

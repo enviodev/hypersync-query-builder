@@ -20,6 +20,68 @@ type urlState = {
   selectedChainName: option<string>,
 }
 
+// ============================================================================
+// Compression utilities using pako for base64url encoding
+// ============================================================================
+
+// Import pako for compression
+%%raw(`import * as pako from 'pako'`)
+
+// Compress JSON string to base64url format using pako deflate
+let compressToBase64Url: string => string = %raw(`
+  function(jsonString) {
+    // Compress with deflate
+    const compressed = pako.deflate(jsonString);
+    // Convert Uint8Array to binary string
+    let binary = '';
+    for (let i = 0; i < compressed.length; i++) {
+      binary += String.fromCharCode(compressed[i]);
+    }
+    // Convert to base64
+    const base64 = btoa(binary);
+    // Convert to base64url (URL-safe)
+    return base64
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
+`)
+
+// Decompress base64url string back to JSON string using pako inflate
+let decompressFromBase64Url: string => option<string> = %raw(`
+  function(encoded) {
+    try {
+      // Convert base64url to base64
+      let base64 = encoded
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+      // Add padding if needed
+      while (base64.length % 4) {
+        base64 += '=';
+      }
+      // Decode base64 to binary string
+      const binary = atob(base64);
+      // Convert binary string to Uint8Array
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      // Decompress with inflate
+      const jsonString = pako.inflate(bytes, { to: 'string' });
+      return jsonString;
+    } catch (e) {
+      return undefined;
+    }
+  }
+`)
+
+// Check if a string looks like old URL-encoded JSON (starts with %7B which is "{")
+let isLegacyUrlEncoded: string => bool = %raw(`
+  function(str) {
+    return str.startsWith('%7B') || str.startsWith('%7b') || str.startsWith('{');
+  }
+`)
+
 // Helper functions to serialize/deserialize field enums
 let serializeBlockField = (field: blockField): string =>
   FieldSelector.blockFieldToCamelCaseString(field)
@@ -779,14 +841,30 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
   }
 }
 
+// Encode state to compressed base64url format
 let encodeUrlStateToUrl = (state: urlState): string => {
   let jsonString = serializeUrlState(state)
-  Js.Global.encodeURIComponent(jsonString)
+  compressToBase64Url(jsonString)
 }
 
+// Decode state from URL, with backwards compatibility for old URL-encoded format
 let decodeUrlStateFromUrl = (encodedString: string): option<urlState> => {
-  let decodedString = Js.Global.decodeURIComponent(encodedString)
-  deserializeUrlState(decodedString)
+  // First, try the new compressed base64url format
+  switch decompressFromBase64Url(encodedString) {
+  | Some(jsonString) => deserializeUrlState(jsonString)
+  | None =>
+    // Fall back to legacy URL-encoded format for backwards compatibility
+    if isLegacyUrlEncoded(encodedString) {
+      try {
+        let decodedString = Js.Global.decodeURIComponent(encodedString)
+        deserializeUrlState(decodedString)
+      } catch {
+      | _ => None
+      }
+    } else {
+      None
+    }
+  }
 }
 
 let getUrlStateFromUrl = (): option<urlState> => {

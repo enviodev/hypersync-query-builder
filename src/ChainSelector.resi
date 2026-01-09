@@ -10,4 +10,9 @@ let defaultChains: array<chain>
 let chainSupportsTraces: chain => bool
 
 @react.component
-let make: (~selectedChainName: option<string>, ~onChainSelect: string => unit) => React.element
+let make: (
+  ~selectedChainName: option<string>,
+  ~onChainSelect: string => unit,
+  ~customUrl: option<string>,
+  ~onCustomUrlChange: option<string => unit>,
+) => React.element

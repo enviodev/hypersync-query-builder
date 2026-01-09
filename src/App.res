@@ -53,6 +53,7 @@ let make = () => {
     | None => Some("eth")
     }
   })
+  let (customUrl, setCustomUrl) = React.useState(() => None)
   let (expandedFilterKey, setExpandedFilterKey) = React.useState(() => None)
   let (executeSignal, setExecuteSignal) = React.useState(() => 0)
 
@@ -567,14 +568,19 @@ let make = () => {
     {!AuthToken.isValidToken(bearerToken) ? <TokenPrompt onTokenSubmit={handleTokenSubmit} /> : React.null}
     
     <main className="flex-1 overflow-hidden bg-slate-50">
-      <div className="h-full flex flex-col lg:flex-row lg:gap-8">
+      <div className="h-full flex flex-col lg:flex-row">
         // Left Column - Query Builder
         <div className="w-full lg:w-1/2 overflow-y-auto">
-        <div className="p-6 lg:p-8">
+        <div className="p-6 lg:p-4 lg:pr-2">
           <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              {"Create Your Query"->React.string}
-            </h2>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-1">
+                {"Create Your Query"->React.string}
+              </h2>
+              <p className="text-sm text-slate-600">
+                {"Build and test HyperSync queries with a visual interface"->React.string}
+              </p>
+            </div>
             <button
               onClick={_ => resetBuilder()}
               className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors">
@@ -610,7 +616,15 @@ let make = () => {
               <div className="mb-6">
                 <ChainSelector
                   selectedChainName={selectedChainName}
-                  onChainSelect={chainName => setSelectedChainName(_ => Some(chainName))}
+                  onChainSelect={chainName => {
+                    setSelectedChainName(_ => Some(chainName))
+                    setCustomUrl(_ => None)
+                  }}
+                  customUrl={customUrl}
+                  onCustomUrlChange={Some(url => {
+                    setCustomUrl(_ => Some(url))
+                    setSelectedChainName(_ => None)
+                  })}
                 />
               </div>
 
@@ -936,7 +950,7 @@ let make = () => {
 
       // Right Column - Results
       <div className="w-full lg:w-1/2 overflow-y-auto">
-        <div className="p-6 lg:p-8">
+        <div className="p-6 lg:p-4 lg:pl-2">
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 mb-2">
@@ -959,6 +973,7 @@ let make = () => {
             selectedChainName={selectedChainName}
             executeSignal={executeSignal}
             bearerToken={bearerToken}
+            customUrl={customUrl}
           />
         </div>
       </div>
