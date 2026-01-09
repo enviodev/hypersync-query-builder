@@ -80,7 +80,7 @@ let defaultChains = [
     tier: "BRONZE",
     chain_id: 100,
     ecosystem: "evm",
-    additional_features: None,
+    additional_features: Some(["TRACES"]),
   },
   {name: "opbnb", tier: "STONE", chain_id: 204, ecosystem: "evm", additional_features: None},
   {name: "eth", tier: "GOLD", chain_id: 1, ecosystem: "evm", additional_features: None},
