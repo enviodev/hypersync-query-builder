@@ -78,6 +78,31 @@ let make = (
   ~tracesSupported: bool,
 ) => {
   let (active, setActive) = React.useState(() => None)
+  let selectionPanelRef = React.useRef(Nullable.null)
+
+  let scrollAndFlash: Dom.element => unit = %raw(`
+    function(el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      el.classList.add('field-selection-flash');
+      setTimeout(function() {
+        el.classList.remove('field-selection-flash');
+      }, 700);
+    }
+  `)
+
+  React.useEffect1(() => {
+    switch active {
+    | Some(_) =>
+      let timerId: timeoutId = setTimeout(() => {
+        switch Nullable.toOption(selectionPanelRef.current) {
+        | Some(el) => scrollAndFlash(el)
+        | None => ()
+        }
+      }, 50)
+      Some(() => clearTimeout(timerId))
+    | None => None
+    }
+  }, [active])
   let updateBlockFields = newFields => onFieldSelectionChange({...fieldSelection, block: newFields})
   let updateTransactionFields = newFields =>
     onFieldSelectionChange({...fieldSelection, transaction: newFields})
@@ -370,7 +395,10 @@ let make = (
     {switch active {
     | None => React.null
     | Some(section) =>
-      <div className="mt-6 border border-gray-200 rounded-lg p-4">
+      <div
+        ref={ReactDOM.Ref.domRef(selectionPanelRef)}
+        className="mt-6 border border-gray-200 rounded-lg p-4"
+      >
         <div className="mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

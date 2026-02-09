@@ -36,3 +36,22 @@
     transform: rotate(360deg);
   }
 }
+
+@keyframes field-selection-flash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    border-color: #e5e7eb;
+  }
+  20% {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    border-color: #3b82f6;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    border-color: #e5e7eb;
+  }
+}
+
+.field-selection-flash {
+  animation: field-selection-flash 0.7s ease-out;
+}
