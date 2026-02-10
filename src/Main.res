@@ -5,7 +5,7 @@ module AppWrapper = {
   let make = () => {
     // Token state management at the top level
     let (bearerToken, setBearerToken) = React.useState(() => AuthToken.getToken())
-    
+
     let handleTokenUpdate = (token: string) => {
       if AuthToken.saveToken(token) {
         setBearerToken(_ => Some(token))
@@ -37,9 +37,11 @@ module AppWrapper = {
                 href="https://docs.envio.dev/docs/HyperSync/overview"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200">
+                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200"
+              >
                 <svg
-                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -53,9 +55,11 @@ module AppWrapper = {
                 href="https://envio.dev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200">
+                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200"
+              >
                 <svg
-                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

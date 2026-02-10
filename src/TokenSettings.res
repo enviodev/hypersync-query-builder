@@ -1,7 +1,11 @@
 // TokenSettings - Small settings panel for managing the bearer token
 
 @react.component
-let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClear: unit => unit) => {
+let make = (
+  ~token: option<string>,
+  ~onTokenUpdate: string => unit,
+  ~onTokenClear: unit => unit,
+) => {
   let (isOpen, setIsOpen) = React.useState(() => false)
   let (showToken, setShowToken) = React.useState(() => false)
   let (newToken, setNewToken) = React.useState(() => "")
@@ -28,8 +32,8 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
     if len <= 8 {
       String.repeat("•", len)
     } else {
-      let start = Js.String2.substring(t, ~from=0, ~to_=4)
-      let end = Js.String2.substringToEnd(t, ~from=len - 4)
+      let start = String.substring(t, ~start=0, ~end=4)
+      let end = String.substring(t, ~start=len - 4)
       start ++ String.repeat("•", len - 8) ++ end
     }
   }
@@ -38,7 +42,8 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
     <button
       onClick={_ => setIsOpen(prev => !prev)}
       className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200"
-      title="Token Settings">
+      title="Token Settings"
+    >
       <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
@@ -47,7 +52,10 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
           d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
         />
         <path
-          strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
         />
       </svg>
       {"Token"->React.string}
@@ -55,14 +63,16 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
 
     {isOpen
       ? <div
-          className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 p-4 z-50">
+          className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 p-4 z-50"
+        >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-slate-900">
               {"API Token Settings"->React.string}
             </h3>
             <button
               onClick={_ => setIsOpen(_ => false)}
-              className="text-slate-400 hover:text-slate-600 transition-colors">
+              className="text-slate-400 hover:text-slate-600 transition-colors"
+            >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -83,16 +93,19 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
                 </label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 overflow-hidden">
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 overflow-hidden"
+                  >
                     {(showToken ? t : maskToken(t))->React.string}
                   </div>
                   <button
                     onClick={_ => setShowToken(prev => !prev)}
                     className="p-2 text-slate-500 hover:text-slate-700 transition-colors"
-                    title={showToken ? "Hide token" : "Show token"}>
+                    title={showToken ? "Hide token" : "Show token"}
+                  >
                     {showToken
                       ? <svg
-                          className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -101,7 +114,8 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
                           />
                         </svg>
                       : <svg
-                          className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -122,12 +136,14 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
               <div className="flex gap-2">
                 <button
                   onClick={_ => setIsEditing(_ => true)}
-                  className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                  className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+                >
                   {"Update Token"->React.string}
                 </button>
                 <button
                   onClick={_ => handleClear()}
-                  className="flex-1 px-3 py-2 bg-red-50 text-red-700 text-xs font-medium rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors">
+                  className="flex-1 px-3 py-2 bg-red-50 text-red-700 text-xs font-medium rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                >
                   {"Clear Token"->React.string}
                 </button>
               </div>
@@ -137,9 +153,12 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
                   href="https://envio.dev/app/api-tokens"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center text-xs text-slate-600 hover:text-slate-900 transition-colors">
+                  className="inline-flex items-center text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                >
                   {"Manage tokens at Envio"->React.string}
-                  <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -154,7 +173,10 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
           | _ =>
             <div>
               <div className="mb-4">
-                <label htmlFor="new-token-input" className="block text-xs font-medium text-slate-700 mb-2">
+                <label
+                  htmlFor="new-token-input"
+                  className="block text-xs font-medium text-slate-700 mb-2"
+                >
                   {(isEditing ? "New Token" : "Bearer Token")->React.string}
                 </label>
                 <input
@@ -179,7 +201,8 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
               <div className="flex gap-2">
                 <button
                   onClick={_ => handleUpdate()}
-                  className="flex-1 px-3 py-2 bg-slate-900 text-white text-xs font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                  className="flex-1 px-3 py-2 bg-slate-900 text-white text-xs font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+                >
                   {(isEditing ? "Update" : "Save")->React.string}
                 </button>
                 {isEditing
@@ -188,7 +211,8 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
                         setIsEditing(_ => false)
                         setNewToken(_ => "")
                       }}
-                      className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                      className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+                    >
                       {"Cancel"->React.string}
                     </button>
                   : React.null}
@@ -199,4 +223,3 @@ let make = (~token: option<string>, ~onTokenUpdate: string => unit, ~onTokenClea
       : React.null}
   </div>
 }
-

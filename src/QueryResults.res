@@ -36,11 +36,9 @@ let make = (
   React.useEffect1(() => {
     if isFirstRender.current {
       isFirstRender.current = false
-    } else {
-      // Only switch to QueryJson if we're on the Results tab
-      if activeTab === Results {
-        setActiveTab(_ => QueryJson)
-      }
+    } // Only switch to QueryJson if we're on the Results tab
+    else if activeTab === Results {
+      setActiveTab(_ => QueryJson)
     }
     None
   }, [query])
@@ -69,7 +67,8 @@ let make = (
     | _ =>
       switch selectedChainName {
       | Some(chainName) =>
-        let selectedChain = ChainSelector.defaultChains->Array.find(chain => chain.name === chainName)
+        let selectedChain =
+          ChainSelector.defaultChains->Array.find(chain => chain.name === chainName)
         switch selectedChain {
         | Some(chain) =>
           let baseUrl = `https://${Int.toString(chain.chain_id)}.hypersync.xyz/query`
@@ -429,85 +428,83 @@ let make = (
 
   let executeQuery = async () => {
     if hasValidUrl() {
-        setActiveTab(_ => Results)
-        setIsExecuting(_ => true)
-        setQueryError(_ => None)
-        setQueryResult(_ => None)
-        setQueryResultJson(_ => None)
-        setClientMs(_ => None)
-        setServerMs(_ => None)
-        setResponseBytes(_ => None)
-        setSelectedDataset(_ => None)
-        setQueryResultJson(_ => None)
+      setActiveTab(_ => Results)
+      setIsExecuting(_ => true)
+      setQueryError(_ => None)
+      setQueryResult(_ => None)
+      setQueryResultJson(_ => None)
+      setClientMs(_ => None)
+      setServerMs(_ => None)
+      setResponseBytes(_ => None)
+      setSelectedDataset(_ => None)
+      setQueryResultJson(_ => None)
 
-        try {
-          let url = generateChainUrl()
-          let body = serializeQuery(query)
-          let calcByteLength: string => int = %raw(`(s) => new TextEncoder().encode(s).length`)
-          let t0: float = %raw("performance.now()")
-          
-          // Build headers with Authorization token
-          let headers = switch bearerToken {
-          | Some(token) =>
-            Headers.fromObject({
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
-            })
-          | None =>
-            Headers.fromObject({
-              "Content-Type": "application/json",
-            })
-          }
-          
-          let requestInit = makeRequestInit({
-            "method": "POST",
-            "body": Body.string(body),
-            "headers": headers,
+      try {
+        let url = generateChainUrl()
+        let body = serializeQuery(query)
+        let calcByteLength: string => int = %raw(`(s) => new TextEncoder().encode(s).length`)
+        let t0: float = %raw("performance.now()")
+
+        // Build headers with Authorization token
+        let headers = switch bearerToken {
+        | Some(token) =>
+          Headers.fromObject({
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
           })
-          
-          let response = await fetch(url, requestInit)
-          let resultTextRaw = await response->Response.text
-          let t1: float = %raw("performance.now()")
-          let clientElapsed = t1 -. t0
-          setClientMs(_ => Some(Float.toInt(clientElapsed)))
-          setResponseBytes(_ => Some(calcByteLength(resultTextRaw)))
-          let resultJson = try {
-            Js.Json.parseExn(resultTextRaw)
-          } catch {
-          | _ => Js.Json.string(resultTextRaw)
-          }
-
-          if response->Response.ok {
-            // Convert JSON back to string for display purposes
-            try {
-              let resultText = Js.Json.stringifyWithSpace(resultJson, 2)
-              setQueryResult(_ => Some(resultText))
-              setQueryResultJson(_ => Some(resultJson))
-              // server duration if present
-              let serverDurationMs =
-                resultJson
-                ->Js.Json.decodeObject
-                ->Option.flatMap(dict => Js.Dict.get(dict, "total_execution_time"))
-                ->Option.flatMap(Js.Json.decodeNumber)
-                ->Option.map(Float.toInt)
-              setServerMs(_ => serverDurationMs)
-            } catch {
-            | e =>
-              Console.log(e)
-              setQueryError(_ => Some("Caught exception - during stringify of json"))
-            }
-            // ->Option.getOr("Invalid JSON response")
-          } else {
-            let errorText = await response->Response.text
-            setQueryError(_ => Some(
-              `HTTP ${Int.toString(response->Response.status)}: ${errorText}`,
-            ))
-          }
-        } catch {
-        | _ => setQueryError(_ => Some("Network error occurred"))
+        | None =>
+          Headers.fromObject({
+            "Content-Type": "application/json",
+          })
         }
 
-        setIsExecuting(_ => false)
+        let requestInit = makeRequestInit({
+          "method": "POST",
+          "body": Body.string(body),
+          "headers": headers,
+        })
+
+        let response = await fetch(url, requestInit)
+        let resultTextRaw = await response->Response.text
+        let t1: float = %raw("performance.now()")
+        let clientElapsed = t1 -. t0
+        setClientMs(_ => Some(Float.toInt(clientElapsed)))
+        setResponseBytes(_ => Some(calcByteLength(resultTextRaw)))
+        let resultJson = try {
+          JSON.parseOrThrow(resultTextRaw)
+        } catch {
+        | _ => JSON.Encode.string(resultTextRaw)
+        }
+
+        if response->Response.ok {
+          // Convert JSON back to string for display purposes
+          try {
+            let resultText = JSON.stringify(resultJson, ~space=2)
+            setQueryResult(_ => Some(resultText))
+            setQueryResultJson(_ => Some(resultJson))
+            // server duration if present
+            let serverDurationMs =
+              resultJson
+              ->JSON.Decode.object
+              ->Option.flatMap(dict => Dict.get(dict, "total_execution_time"))
+              ->Option.flatMap(JSON.Decode.float)
+              ->Option.map(Float.toInt)
+            setServerMs(_ => serverDurationMs)
+          } catch {
+          | e =>
+            Console.log(e)
+            setQueryError(_ => Some("Caught exception - during stringify of json"))
+          }
+          // ->Option.getOr("Invalid JSON response")
+        } else {
+          let errorText = await response->Response.text
+          setQueryError(_ => Some(`HTTP ${Int.toString(response->Response.status)}: ${errorText}`))
+        }
+      } catch {
+      | _ => setQueryError(_ => Some("Network error occurred"))
+      }
+
+      setIsExecuting(_ => false)
     }
   }
 
@@ -539,7 +536,7 @@ let make = (
       }`)
       copyToClipboard(curlCommand)
       setCopiedCurl(_ => true)
-      let _: Js.Global.timeoutId = Js.Global.setTimeout(() => setCopiedCurl(_ => false), 2000)
+      let _: timeoutId = setTimeout(() => setCopiedCurl(_ => false), 2000)
     }
   }
 
@@ -554,7 +551,7 @@ let make = (
     }`)
     copyToClipboard(jsonText)
     setCopiedJson(_ => true)
-    let _: Js.Global.timeoutId = Js.Global.setTimeout(() => setCopiedJson(_ => false), 2000)
+    let _: timeoutId = setTimeout(() => setCopiedJson(_ => false), 2000)
   }
 
   let copyShareLinkToClipboard = () => {
@@ -569,7 +566,7 @@ let make = (
     }`)
     copyToClipboard(href)
     setCopiedLink(_ => true)
-    let _: Js.Global.timeoutId = Js.Global.setTimeout(() => setCopiedLink(_ => false), 2000)
+    let _: timeoutId = setTimeout(() => setCopiedLink(_ => false), 2000)
   }
 
   let downloadJson = () => {
@@ -597,7 +594,7 @@ let make = (
         }`)
         copyToClipboard(result)
         setCopiedResults(_ => true)
-        let _: Js.Global.timeoutId = Js.Global.setTimeout(() => setCopiedResults(_ => false), 2000)
+        let _: timeoutId = setTimeout(() => setCopiedResults(_ => false), 2000)
       }
     | None => ()
     }
@@ -605,7 +602,7 @@ let make = (
 
   // ---- Table helpers (analysis, sorting, formatting) ----
   // Determine column data types from sample rows
-  let analyzeColumns: array<Js.Dict.t<string>> => Js.Dict.t<string> = %raw(`(flatRows) => {
+  let analyzeColumns: array<dict<string>> => dict<string> = %raw(`(flatRows) => {
     const isNumeric = (v) => typeof v === 'string' && /^-?\d+(?:\.\d+)?$/.test(v.trim());
     const isHex = (v) => typeof v === 'string' && /^0x[0-9a-fA-F]{6,}$/.test(v);
     const counts = new Map();
@@ -632,11 +629,11 @@ let make = (
 
   // Sort rows by a column (stable-ish)
   let sortFlatRows: (
-    array<Js.Dict.t<string>>,
+    array<dict<string>>,
     string,
     string,
     bool,
-  ) => array<Js.Dict.t<string>> = %raw(`(rows, col, colType, asc) => {
+  ) => array<dict<string>> = %raw(`(rows, col, colType, asc) => {
       const arr = rows.slice();
       const cmp = (a, b) => {
         const av = a[col];
@@ -669,7 +666,7 @@ let make = (
   }`)
 
   // Dataset detection and extraction
-  let _detectDatasetNames: Js.Json.t => array<string> = %raw(`(data) => {
+  let _detectDatasetNames: JSON.t => array<string> = %raw(`(data) => {
     const names = new Set();
     const scanObject = (obj) => {
       if (!obj || typeof obj !== 'object') return;
@@ -717,7 +714,7 @@ let make = (
     return [];
   }`)
 
-  let getDatasetRowsByName: (Js.Json.t, string) => array<Js.Json.t> = %raw(`(data, name) => {
+  let getDatasetRowsByName: (JSON.t, string) => array<JSON.t> = %raw(`(data, name) => {
     const concat = (a,b) => (a.push.apply(a,b), a);
     if (Array.isArray(data)) {
       if (name === 'data') return data;
@@ -756,41 +753,41 @@ let make = (
       text
     } else {
       let half = maxLength / 2 - 2
-      let start = Js.String2.substring(text, ~from=0, ~to_=half)
-      let end = Js.String2.substringToEnd(text, ~from=String.length(text) - half)
+      let start = String.substring(text, ~start=0, ~end=half)
+      let end = String.substring(text, ~start=String.length(text) - half)
       start ++ "..." ++ end
     }
   }
 
   // Collapsible JSON renderer using <details/summary>
-  let rec renderJsonNode = (label: string, node: Js.Json.t, depth: int): React.element => {
+  let rec renderJsonNode = (label: string, node: JSON.t, depth: int): React.element => {
     let indent = if depth > 0 {
       "ml-4"
     } else {
       ""
     }
-    switch Js.Json.classify(node) {
-    | JSONString(s) =>
+    switch node {
+    | JSON.String(s) =>
       <div className={`text-xs ${indent} font-mono text-slate-800`}>
         {`${label}: "${s}"`->React.string}
       </div>
-    | JSONNumber(n) =>
+    | JSON.Number(n) =>
       <div className={`text-xs ${indent} font-mono text-slate-800`}>
-        {`${label}: ${Js.Float.toString(n)}`->React.string}
+        {`${label}: ${Float.toString(n)}`->React.string}
       </div>
-    | JSONTrue =>
+    | JSON.Boolean(true) =>
       <div className={`text-xs ${indent} font-mono text-slate-800`}>
         {`${label}: true`->React.string}
       </div>
-    | JSONFalse =>
+    | JSON.Boolean(false) =>
       <div className={`text-xs ${indent} font-mono text-slate-800`}>
         {`${label}: false`->React.string}
       </div>
-    | JSONNull =>
+    | JSON.Null =>
       <div className={`text-xs ${indent} font-mono text-slate-500`}>
         {`${label}: null`->React.string}
       </div>
-    | JSONArray(arr) =>
+    | JSON.Array(arr) =>
       <details className={`text-xs ${indent}`} open_={depth < 1}>
         <summary className="cursor-pointer font-mono text-slate-700">
           {`${label} [${Int.toString(Array.length(arr))}]`->React.string}
@@ -801,8 +798,8 @@ let make = (
           ->React.array}
         </div>
       </details>
-    | JSONObject(obj) => {
-        let keys = Js.Dict.keys(obj)
+    | JSON.Object(obj) => {
+        let keys = Dict.keysToArray(obj)
         <details className={`text-xs ${indent}`} open_={depth < 1}>
           <summary className="cursor-pointer font-mono text-slate-700">
             {`${label} {}`->React.string}
@@ -810,7 +807,7 @@ let make = (
           <div className="mt-1">
             {keys
             ->Array.map(k => {
-              let v = Js.Dict.get(obj, k)->Belt.Option.getWithDefault(Js.Json.null)
+              let v = Dict.get(obj, k)->Option.getOr(JSON.Encode.null)
               renderJsonNode(k, v, depth + 1)
             })
             ->React.array}
@@ -821,7 +818,7 @@ let make = (
   }
 
   // Return only core dataset names in order of preference
-  let getCoreDatasetNames: Js.Json.t => array<string> = %raw(`(data) => {
+  let getCoreDatasetNames: JSON.t => array<string> = %raw(`(data) => {
     const keys = ['logs','transactions','blocks','traces'];
     const found = new Set();
     const scan = (obj) => {
@@ -842,7 +839,7 @@ let make = (
 
   // ---- Table helpers (JS interop) ----
   // Pick an array from common response shapes
-  let _pickFirstArrayDataset: Js.Json.t => array<Js.Json.t> = %raw(`(data) => {
+  let _pickFirstArrayDataset: JSON.t => array<JSON.t> = %raw(`(data) => {
     if (Array.isArray(data)) return data;
     if (data && typeof data === 'object') {
       const preferred = ['rows','data','results','logs','transactions','blocks','traces','items'];
@@ -853,7 +850,7 @@ let make = (
   }`)
 
   // Flatten nested objects; stringify arrays
-  let flattenRows: array<Js.Json.t> => array<Js.Dict.t<string>> = %raw(`(rows) => {
+  let flattenRows: array<JSON.t> => array<dict<string>> = %raw(`(rows) => {
     const flattenObject = (obj, prefix) => {
       const out = {};
       const stack = [[obj, prefix]];
@@ -878,7 +875,7 @@ let make = (
   }`)
 
   // Detect columns from first N rows
-  let detectColumns: array<Js.Dict.t<string>> => array<string> = %raw(`(flatRows) => {
+  let detectColumns: array<dict<string>> => array<string> = %raw(`(flatRows) => {
     const cols = new Set();
     for (let i = 0; i < flatRows.length && i < 200; i++) {
       const r = flatRows[i];
@@ -888,7 +885,7 @@ let make = (
   }`)
 
   // Build CSV from flattened rows
-  let rowsToCsv: array<Js.Dict.t<string>> => string = %raw(`(flatRows) => {
+  let rowsToCsv: array<dict<string>> => string = %raw(`(flatRows) => {
     const cols = (() => {
       const s = new Set();
       for (let i = 0; i < flatRows.length && i < 200; i++) { for (const k in flatRows[i]) s.add(k); }
@@ -941,7 +938,8 @@ let make = (
       {hasValidUrl()
         ? <div className="mt-3">
             <span
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
+            >
               {`Query URL: ${generateChainUrl()}`->React.string}
             </span>
           </div>
@@ -950,14 +948,16 @@ let make = (
 
     // Tab Navigation
     <div
-      className="border-b border-slate-200 sticky top-[56px] bg-white/80 backdrop-blur z-10 -mx-6 px-6 mb-6">
+      className="border-b border-slate-200 sticky top-[56px] bg-white/80 backdrop-blur z-10 -mx-6 px-6 mb-6"
+    >
       <nav className="flex space-x-8">
         <button
           onClick={_ => setActiveTab(_ => QueryJson)}
           className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
               QueryJson
               ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}>
+              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}
+        >
           {"Query JSON"->React.string}
         </button>
         <button
@@ -965,7 +965,8 @@ let make = (
           className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
               QueryLogic
               ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}>
+              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}
+        >
           {"Query Logic"->React.string}
         </button>
         <button
@@ -973,7 +974,8 @@ let make = (
           className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
               Results
               ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}>
+              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}
+        >
           {"Results"->React.string}
         </button>
       </nav>
@@ -990,82 +992,158 @@ let make = (
             </h4>
             {hasValidUrl()
               ? <div className="flex space-x-2">
-                <button
-                  onClick={_ => copyCurlToClipboard()}
-                  className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 ${copiedCurl
-                      ? "bg-emerald-600 text-white"
-                      : "bg-slate-600 text-white hover:bg-slate-700"}`}>
-                  {copiedCurl
-                    ? <>
-                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        {"Copied!"->React.string}
-                      </>
-                    : <>
-                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        {"Copy cURL"->React.string}
-                      </>}
-                </button>
-                <button
-                  onClick={_ => copyJsonToClipboard()}
-                  className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 ${copiedJson
-                      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200"}`}>
-                  {copiedJson
-                    ? <>
-                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        {"Copied!"->React.string}
-                      </>
-                    : <>
-                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        {"Copy JSON"->React.string}
-                      </>}
-                </button>
-                <button
-                  onClick={_ => downloadJson()}
-                  className="inline-flex items-center px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
-                  <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  {"Download"->React.string}
-                </button>
-                <button
-                  onClick={_ => copyShareLinkToClipboard()}
-                  className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 ${copiedLink
-                      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                      : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"}`}>
-                  {copiedLink
-                    ? <>
-                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        {"Copied!"->React.string}
-                      </>
-                    : <>
-                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        {"Copy Query Link"->React.string}
-                      </>}
-                </button>
-                <button
-                  onClick={_ => executeQuery()->ignore}
-                  disabled={isExecuting}
-                  className="inline-flex items-center px-3 py-1 bg-slate-700 text-white text-xs font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 transition-colors">
-                  {(isExecuting ? "Executing..." : "Execute Query")->React.string}
-                </button>
-              </div>
+                  <button
+                    onClick={_ => copyCurlToClipboard()}
+                    className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 ${copiedCurl
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-600 text-white hover:bg-slate-700"}`}
+                  >
+                    {copiedCurl
+                      ? <>
+                          <svg
+                            className="w-3.5 h-3.5 mr-1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          {"Copied!"->React.string}
+                        </>
+                      : <>
+                          <svg
+                            className="w-3.5 h-3.5 mr-1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                          {"Copy cURL"->React.string}
+                        </>}
+                  </button>
+                  <button
+                    onClick={_ => copyJsonToClipboard()}
+                    className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 ${copiedJson
+                        ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200"}`}
+                  >
+                    {copiedJson
+                      ? <>
+                          <svg
+                            className="w-3.5 h-3.5 mr-1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          {"Copied!"->React.string}
+                        </>
+                      : <>
+                          <svg
+                            className="w-3.5 h-3.5 mr-1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                          {"Copy JSON"->React.string}
+                        </>}
+                  </button>
+                  <button
+                    onClick={_ => downloadJson()}
+                    className="inline-flex items-center px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors"
+                  >
+                    <svg
+                      className="w-3.5 h-3.5 mr-1.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                    {"Download"->React.string}
+                  </button>
+                  <button
+                    onClick={_ => copyShareLinkToClipboard()}
+                    className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 ${copiedLink
+                        ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                        : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"}`}
+                  >
+                    {copiedLink
+                      ? <>
+                          <svg
+                            className="w-3.5 h-3.5 mr-1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          {"Copied!"->React.string}
+                        </>
+                      : <>
+                          <svg
+                            className="w-3.5 h-3.5 mr-1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                          {"Copy Query Link"->React.string}
+                        </>}
+                  </button>
+                  <button
+                    onClick={_ => executeQuery()->ignore}
+                    disabled={isExecuting}
+                    className="inline-flex items-center px-3 py-1 bg-slate-700 text-white text-xs font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 transition-colors"
+                  >
+                    {(isExecuting ? "Executing..." : "Execute Query")->React.string}
+                  </button>
+                </div>
               : React.null}
           </div>
           <pre
-            className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre">
+            className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre"
+          >
             {serializeQuery(query)->React.string}
           </pre>
         </div>
@@ -1082,7 +1160,8 @@ let make = (
                   className="w-8 h-8 mx-auto animate-spin"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24">
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -1107,7 +1186,8 @@ let make = (
                 </h4>
                 <div className="flex items-center">
                   <span
-                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 mr-3">
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 mr-3"
+                  >
                     {"Success"->React.string}
                   </span>
                   {switch (clientMs, serverMs, responseBytes) {
@@ -1129,17 +1209,38 @@ let make = (
                     onClick={_ => copyResultsJson()}
                     className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 mr-2 ${copiedResults
                         ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                        : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"}`}>
+                        : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"}`}
+                  >
                     {copiedResults
                       ? <>
-                          <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          <svg
+                            className="w-3.5 h-3.5 mr-1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                           {"Copied!"->React.string}
                         </>
                       : <>
-                          <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          <svg
+                            className="w-3.5 h-3.5 mr-1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
                           </svg>
                           {"Copy Results JSON"->React.string}
                         </>}
@@ -1150,7 +1251,8 @@ let make = (
                       className={`px-3 py-1 text-xs font-medium rounded-l-lg border border-slate-200 ${resultsView ===
                           Raw
                           ? "bg-slate-800 text-white"
-                          : "bg-white text-slate-700 hover:bg-slate-50"}`}>
+                          : "bg-white text-slate-700 hover:bg-slate-50"}`}
+                    >
                       {"Raw"->React.string}
                     </button>
                     <button
@@ -1158,7 +1260,8 @@ let make = (
                       className={`px-3 py-1 text-xs font-medium rounded-r-lg border border-slate-200 border-l-0 ${resultsView ===
                           Table
                           ? "bg-slate-800 text-white"
-                          : "bg-white text-slate-700 hover:bg-slate-50"}`}>
+                          : "bg-white text-slate-700 hover:bg-slate-50"}`}
+                    >
                       {"Table"->React.string}
                     </button>
                   </div>
@@ -1172,12 +1275,14 @@ let make = (
                     <div className="mb-2">
                       <button
                         onClick={_ => setRawMode(_ => Interactive)}
-                        className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                        className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors"
+                      >
                         {"Interactive JSON"->React.string}
                       </button>
                     </div>
                     <pre
-                      className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre max-h-96">
+                      className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre max-h-96"
+                    >
                       {result->React.string}
                     </pre>
                   </div>
@@ -1186,12 +1291,14 @@ let make = (
                     <div className="mb-2">
                       <button
                         onClick={_ => setRawMode(_ => Plain)}
-                        className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                        className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors"
+                      >
                         {"Plain JSON"->React.string}
                       </button>
                     </div>
                     <div
-                      className="bg-slate-50 border border-slate-200 rounded-xl p-4 max-h-96 overflow-auto">
+                      className="bg-slate-50 border border-slate-200 rounded-xl p-4 max-h-96 overflow-auto"
+                    >
                       {switch queryResultJson {
                       | Some(json) => renderJsonNode("root", json, 0)
                       | None => React.null
@@ -1216,7 +1323,8 @@ let make = (
                     let rowsJson = getDatasetRowsByName(json, effectiveDataset)
                     if Array.length(rowsJson) == 0 {
                       <div
-                        className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                        className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4"
+                      >
                         {"No tabular rows detected in response"->React.string}
                       </div>
                     } else {
@@ -1226,8 +1334,7 @@ let make = (
                       let columnTypes = analyzeColumns(flatRows)
                       let displayedRows = switch sortColumn {
                       | Some(col) =>
-                        let colType =
-                          Js.Dict.get(columnTypes, col)->Belt.Option.getWithDefault("text")
+                        let colType = Dict.get(columnTypes, col)->Belt.Option.getWithDefault("text")
                         sortFlatRows(flatRows, col, colType, sortAscending)
                       | None => flatRows
                       }
@@ -1239,7 +1346,8 @@ let make = (
                                   {"Dataset"->React.string}
                                 </span>
                                 <div
-                                  className="inline-flex rounded-lg border border-slate-200 overflow-hidden">
+                                  className="inline-flex rounded-lg border border-slate-200 overflow-hidden"
+                                >
                                   {datasetNames
                                   ->Array.map(name =>
                                     <button
@@ -1247,7 +1355,8 @@ let make = (
                                       onClick={_ => setSelectedDataset(_ => Some(name))}
                                       className={`px-3 py-1 text-xs ${name === effectiveDataset
                                           ? "bg-slate-800 text-white"
-                                          : "bg-white text-slate-700 hover:bg-slate-50"}`}>
+                                          : "bg-white text-slate-700 hover:bg-slate-50"}`}
+                                    >
                                       {name->React.string}
                                     </button>
                                   )
@@ -1257,12 +1366,14 @@ let make = (
                             : React.null}
                           <button
                             onClick={_ => copyCsvToClipboard(csvText)}
-                            className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors mr-2">
+                            className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors mr-2"
+                          >
                             {"Copy CSV"->React.string}
                           </button>
                           <button
                             onClick={_ => downloadCsv(csvText)}
-                            className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors">
+                            className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 border border-slate-200 transition-colors"
+                          >
                             {"Download CSV"->React.string}
                           </button>
                           <span className="ml-3 text-xs text-slate-500">
@@ -1272,7 +1383,8 @@ let make = (
                           </span>
                         </div>
                         <div
-                          className="overflow-x-auto max-h-96 rounded-xl border border-slate-200">
+                          className="overflow-x-auto max-h-96 rounded-xl border border-slate-200"
+                        >
                           <table className="w-full table-fixed border-collapse">
                             <thead>
                               <tr>
@@ -1281,7 +1393,8 @@ let make = (
                                   <th
                                     key={col}
                                     className="px-3 py-2 text-left text-xs font-semibold text-slate-700 sticky top-0 z-10 bg-white border-b border-slate-200"
-                                    style={{width: fixedColumnWidth, maxWidth: fixedColumnWidth}}>
+                                    style={{width: fixedColumnWidth, maxWidth: fixedColumnWidth}}
+                                  >
                                     <div className="flex items-center justify-between">
                                       <button
                                         className="inline-flex items-center gap-1 hover:underline truncate flex-1 text-left"
@@ -1295,7 +1408,8 @@ let make = (
                                               Some(col)
                                             }
                                           )}
-                                        title={col}>
+                                        title={col}
+                                      >
                                         <span className="truncate">
                                           {smartTruncate(col, 20)->React.string}
                                         </span>
@@ -1320,14 +1434,16 @@ let make = (
                               ->Array.mapWithIndex((r, i) =>
                                 <tr
                                   key={Int.toString(i)}
-                                  className={mod(i, 2) == 1 ? "bg-slate-50" : "bg-white"}>
+                                  className={mod(i, 2) == 1 ? "bg-slate-50" : "bg-white"}
+                                >
                                   {columns
                                   ->Array.map(col => {
-                                    let v = Js.Dict.get(r, col)->Belt.Option.getWithDefault("")
+                                    let v = Dict.get(r, col)->Belt.Option.getWithDefault("")
                                     <td
                                       key={col}
                                       className="px-3 py-2 text-xs text-slate-800 border-b border-slate-200 font-mono"
-                                      style={{width: fixedColumnWidth, maxWidth: fixedColumnWidth}}>
+                                      style={{width: fixedColumnWidth, maxWidth: fixedColumnWidth}}
+                                    >
                                       <div className="flex items-center gap-2 overflow-hidden">
                                         <span className="truncate flex-1 cursor-default" title={v}>
                                           {smartTruncate(v, 25)->React.string}
@@ -1336,12 +1452,14 @@ let make = (
                                           ? <button
                                               title={`Copy: ${v}`}
                                               onClick={_ => copyText(v)}
-                                              className="text-slate-400 hover:text-slate-700 shrink-0 px-1 py-0.5 rounded hover:bg-slate-200 transition-colors">
+                                              className="text-slate-400 hover:text-slate-700 shrink-0 px-1 py-0.5 rounded hover:bg-slate-200 transition-colors"
+                                            >
                                               <svg
                                                 className="w-3 h-3"
                                                 fill="none"
                                                 stroke="currentColor"
-                                                viewBox="0 0 24 24">
+                                                viewBox="0 0 24 24"
+                                              >
                                                 <path
                                                   strokeLinecap="round"
                                                   strokeLinejoin="round"
@@ -1366,7 +1484,8 @@ let make = (
                   }
                 | None =>
                   <div
-                    className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4"
+                  >
                     {"No tabular rows detected in response"->React.string}
                   </div>
                 }
@@ -1380,7 +1499,8 @@ let make = (
                   {"Query Error"->React.string}
                 </h4>
                 <span
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                >
                   {"Error"->React.string}
                 </span>
               </div>
@@ -1396,7 +1516,8 @@ let make = (
                   className="w-12 h-12 mx-auto"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24">
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -1415,12 +1536,14 @@ let make = (
                 ? <div className="mt-4 flex justify-center space-x-2">
                     <button
                       onClick={_ => copyCurlToClipboard()}
-                      className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                      className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+                    >
                       {"Copy cURL"->React.string}
                     </button>
                     <button
                       onClick={_ => executeQuery()->ignore}
-                      className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                      className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+                    >
                       {"Execute Query"->React.string}
                     </button>
                   </div>

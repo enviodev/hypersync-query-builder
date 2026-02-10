@@ -8,4 +8,4 @@ let make: (
   ~filterIndex: int,
   ~isExpanded: bool,
   ~onToggleExpand: unit => unit,
-) => React.element 
+) => React.element
