@@ -8,7 +8,8 @@ let make = (~query: QueryStructure.query, ~onQueryChange: QueryStructure.query =
     <div className="px-6 py-4 border-b border-gray-200">
       <button
         onClick={_ => setIsExpanded(prev => !prev)}
-        className="flex items-center justify-between w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">
+        className="flex items-center justify-between w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+      >
         <div>
           <h3 className="text-lg font-medium text-gray-900">
             {"Advanced Options"->React.string}
@@ -23,7 +24,8 @@ let make = (~query: QueryStructure.query, ~onQueryChange: QueryStructure.query =
               : ""}`}
           fill="none"
           stroke="currentColor"
-          viewBox="0 0 24 24">
+          viewBox="0 0 24 24"
+        >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>

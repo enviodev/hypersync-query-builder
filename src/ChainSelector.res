@@ -269,37 +269,37 @@ let fetchChains = async () => {
     // Parse the JSON response - the API returns an array of chain objects
     let chains =
       json
-      ->Js.Json.decodeArray
+      ->JSON.Decode.array
       ->Option.getOr([])
       ->Array.filterMap(item => {
         try {
-          let obj = item->Js.Json.decodeObject
+          let obj = item->JSON.Decode.object
           switch obj {
           | Some(chainObj) =>
             let name =
-              chainObj->Js.Dict.get("name")->Option.flatMap(Js.Json.decodeString)->Option.getOr("")
+              chainObj->Dict.get("name")->Option.flatMap(JSON.Decode.string)->Option.getOr("")
             let tier =
               chainObj
-              ->Js.Dict.get("tier")
-              ->Option.flatMap(Js.Json.decodeString)
+              ->Dict.get("tier")
+              ->Option.flatMap(JSON.Decode.string)
               ->Option.getOr("STONE")
             let chain_id =
               chainObj
-              ->Js.Dict.get("chain_id")
-              ->Option.flatMap(Js.Json.decodeNumber)
+              ->Dict.get("chain_id")
+              ->Option.flatMap(JSON.Decode.float)
               ->Option.map(Float.toInt)
               ->Option.getOr(0)
             let ecosystem =
               chainObj
-              ->Js.Dict.get("ecosystem")
-              ->Option.flatMap(Js.Json.decodeString)
+              ->Dict.get("ecosystem")
+              ->Option.flatMap(JSON.Decode.string)
               ->Option.getOr("evm")
 
             let additional_features =
               chainObj
-              ->Js.Dict.get("additional_features")
-              ->Option.flatMap(Js.Json.decodeArray)
-              ->Option.map(arr => arr->Array.filterMap(Js.Json.decodeString))
+              ->Dict.get("additional_features")
+              ->Option.flatMap(JSON.Decode.array)
+              ->Option.map(arr => arr->Array.filterMap(JSON.Decode.string))
 
             // Only include chains with valid data
             if name !== "" && chain_id !== 0 {
@@ -329,7 +329,7 @@ let fetchChains = async () => {
       defaultChains
     }
   } catch {
-  | Js.Exn.Error(obj) =>
+  | JsExn(obj) =>
     Console.error2("Failed to fetch chains from API:", obj)
     defaultChains
   | _ =>
@@ -357,10 +357,10 @@ let make = (
   React.useEffect0(() => {
     let fetchData = async () => {
       let fetchedChains = await fetchChains()
-      let sorted = fetchedChains->Js.Array2.copy
-      Js.Array2.sortInPlaceWith(sorted, (a, b) =>
+      let sorted = fetchedChains->Array.copy
+      Array.sort(sorted, (a, b) =>
         // ensure alphabetical order A->Z
-        Js.String.localeCompare(b.name, a.name)->Float.toInt
+        Js.String.localeCompare(b.name, a.name)
       )->ignore
       setChains(_ => sorted)
       setIsLoading(_ => false)
@@ -425,7 +425,8 @@ let make = (
   <div className="relative mb-6">
     <button
       onClick={_ => handleSelectedChainClick()}
-      className="w-full flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
+      className="w-full flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
       {switch (customUrl, selectedChain) {
       | (Some(url), _) if String.length(url) > 0 =>
         <div className="flex items-center space-x-2">
@@ -449,14 +450,16 @@ let make = (
             : ""}`}
         fill="none"
         stroke="currentColor"
-        viewBox="0 0 24 24">
+        viewBox="0 0 24 24"
+      >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
       </svg>
     </button>
 
     {isExpanded
       ? <div
-          className="absolute left-0 right-0 mt-2 z-10 bg-white border border-gray-200 rounded-md shadow-lg">
+          className="absolute left-0 right-0 mt-2 z-10 bg-white border border-gray-200 rounded-md shadow-lg"
+        >
           <div className="p-2">
             <input
               type_="text"
@@ -513,21 +516,31 @@ let make = (
                       />
                       <button
                         onClick={_ => handleCustomUrlSubmit()}
-                        className="px-3 py-1 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                        className="px-3 py-1 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                      >
                         {"Use"->React.string}
                       </button>
                       <button
                         onClick={_ => setShowCustomInput(_ => false)}
-                        className="px-2 py-1 text-gray-500 hover:text-gray-700 text-sm">
+                        className="px-2 py-1 text-gray-500 hover:text-gray-700 text-sm"
+                      >
                         {"Cancel"->React.string}
                       </button>
                     </div>
                   : <button
                       onClick={_ => setShowCustomInput(_ => true)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                      className="w-full flex items-center justify-between px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    >
                       <div className="flex items-center space-x-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        <svg
+                          className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
                         </svg>
                         <span> {"Use Custom URL"->React.string} </span>
                       </div>
@@ -538,7 +551,8 @@ let make = (
             {isLoading
               ? <div className="px-4 py-8 text-center text-gray-500">
                   <div
-                    className="inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin mb-2">
+                    className="inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin mb-2"
+                  >
                   </div>
                   <div> {"Loading available chains..."->React.string} </div>
                 </div>
@@ -549,7 +563,8 @@ let make = (
                     className={`w-full flex items-center justify-between px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors ${selectedChainName ===
                         Some(chain.name)
                         ? "bg-blue-50"
-                        : ""} ${focusedIndex === index ? "bg-gray-100" : ""}`}>
+                        : ""} ${focusedIndex === index ? "bg-gray-100" : ""}`}
+                  >
                     <div className="flex items-center space-x-2">
                       <span className="text-lg">
                         {getEcosystemIcon(chain.ecosystem)->React.string}

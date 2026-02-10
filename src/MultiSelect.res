@@ -40,7 +40,8 @@ let make = (
     <button
       type_="button"
       onClick={_ => setIsOpen(prev => !prev)}
-      className="relative w-full bg-white border border-gray-300 rounded-md pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
+      className="relative w-full bg-white border border-gray-300 rounded-md pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+    >
       <span className="block truncate">
         {switch Array.length(selectedLabels) {
         | 0 => placeholder->React.string
@@ -50,7 +51,8 @@ let make = (
       </span>
       <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
         <svg
-          className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </span>
@@ -58,7 +60,8 @@ let make = (
 
     {isOpen
       ? <div
-          className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md border border-gray-200 overflow-auto">
+          className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md border border-gray-200 overflow-auto"
+        >
           <div className="py-1">
             {Array.mapWithIndex(options, (option, index) => {
               let isSelected = Array.includes(selectedValues, option.value)
@@ -66,7 +69,8 @@ let make = (
                 key={Int.toString(index)}
                 type_="button"
                 onClick={_ => toggleOption(option.value)}
-                className="relative w-full text-left px-3 py-2 hover:bg-gray-50 focus:outline-none focus:bg-gray-50">
+                className="relative w-full text-left px-3 py-2 hover:bg-gray-50 focus:outline-none focus:bg-gray-50"
+              >
                 <div className="flex items-center">
                   <input
                     type_="checkbox"

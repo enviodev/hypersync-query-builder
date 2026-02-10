@@ -671,7 +671,20 @@ let generateMultiTraceBooleanHierarchy = (
         lines->Array.push("OR")->ignore
 
         let allFilters = hasEmptyFilter
-          ? Array.concat(nonEmptyFilters, [{from_: None, to_: None, address: None, callType: None, rewardType: None, kind: None, sighash: None}])
+          ? Array.concat(
+              nonEmptyFilters,
+              [
+                {
+                  from_: None,
+                  to_: None,
+                  address: None,
+                  callType: None,
+                  rewardType: None,
+                  kind: None,
+                  sighash: None,
+                },
+              ],
+            )
           : nonEmptyFilters
 
         Array.forEachWithIndex(allFilters, (filter, i) => {

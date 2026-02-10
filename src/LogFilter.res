@@ -152,7 +152,8 @@ let make = (
       Array.length(filterState.topics->Option.getOr([])) > 0
 
   <div
-    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
+    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full"
+  >
     <div className="p-4 border-b border-slate-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -161,7 +162,8 @@ let make = (
           </h3>
           {hasFilters
             ? <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
+              >
                 {"Active"->React.string}
               </span>
             : React.null}
@@ -169,14 +171,16 @@ let make = (
         <div className="flex items-center space-x-1">
           <button
             onClick={_ => onToggleExpand()}
-            className="inline-flex items-center p-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+            className="inline-flex items-center p-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+          >
             <svg
               className={`w-4 h-4 transform transition-transform ${isExpanded
                   ? "rotate-180"
                   : "rotate-0"}`}
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"
               />
@@ -184,7 +188,8 @@ let make = (
           </button>
           <button
             onClick={_ => onRemove()}
-            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors">
+            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -203,12 +208,14 @@ let make = (
           <div className="mb-6 flex flex-wrap gap-2">
             <button
               onClick={_ => setTransferEventsExample()}
-              className="px-2.5 py-1 bg-slate-700 text-white text-xs font-medium rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+              className="px-2.5 py-1 bg-slate-700 text-white text-xs font-medium rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+            >
               {"Transfer Events"->React.string}
             </button>
             <button
               onClick={_ => setBurnEventsExample()}
-              className="px-2.5 py-1 bg-rose-600 text-white text-xs font-medium rounded-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-colors">
+              className="px-2.5 py-1 bg-rose-600 text-white text-xs font-medium rounded-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-colors"
+            >
               {"Burn Events"->React.string}
             </button>
           </div>
@@ -232,7 +239,8 @@ let make = (
               <button
                 onClick={_ => addAddress()}
                 disabled={String.length(newAddress) == 0 || !(newAddress->String.startsWith("0x"))}
-                className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
                 {(
                   Array.length(filterState.address->Option.getOr([])) > 0
                     ? "Add (via OR) Address"
@@ -244,13 +252,15 @@ let make = (
               {Array.mapWithIndex(filterState.address->Option.getOr([]), (address, index) =>
                 <div
                   key={Int.toString(index)}
-                  className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
+                  className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg border border-slate-100"
+                >
                   <span className="text-sm font-mono text-slate-800">
                     {address->React.string}
                   </span>
                   <button
                     onClick={_ => removeAddress(index)}
-                    className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
+                    className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
+                  >
                     {"Remove"->React.string}
                   </button>
                 </div>
@@ -273,7 +283,8 @@ let make = (
                   | None => ()
                   }
                 }}
-                className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+              >
                 {Array.mapWithIndex(Belt.Array.range(0, 3), (_, i) =>
                   <option key={Int.toString(i)} value={Int.toString(i)}>
                     {`Topic ${Int.toString(i)}`->React.string}
@@ -293,7 +304,8 @@ let make = (
               <button
                 onClick={_ => addTopic()}
                 disabled={String.length(newTopic) == 0 || !(newTopic->String.startsWith("0x"))}
-                className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
                 {(
                   currentTopicIndex < Array.length(filterState.topics->Option.getOr([])) &&
                     Array.length(
@@ -307,7 +319,8 @@ let make = (
             <div className="space-y-3">
               {Array.mapWithIndex(filterState.topics->Option.getOr([]), (topicArray, topicIndex) =>
                 <div
-                  key={Int.toString(topicIndex)} className="border border-gray-200 rounded-md p-3">
+                  key={Int.toString(topicIndex)} className="border border-gray-200 rounded-md p-3"
+                >
                   <h4 className="text-sm font-medium text-gray-700 mb-2">
                     {`Topic ${Int.toString(topicIndex)}`->React.string}
                   </h4>
@@ -315,13 +328,15 @@ let make = (
                     {Array.mapWithIndex(topicArray, (topic, itemIndex) =>
                       <div
                         key={`${Int.toString(topicIndex)}-${Int.toString(itemIndex)}`}
-                        className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                        className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+                      >
                         <span className="text-sm font-mono text-gray-800">
                           {topic->React.string}
                         </span>
                         <button
                           onClick={_ => removeTopic(topicIndex, itemIndex)}
-                          className="text-red-600 hover:text-red-800 text-sm">
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
                           {"Remove"->React.string}
                         </button>
                       </div>
@@ -347,7 +362,8 @@ let make = (
               {"Boolean Logic Hierarchy"->React.string}
             </label>
             <pre
-              className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono mb-4 whitespace-pre overflow-x-auto">
+              className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono mb-4 whitespace-pre overflow-x-auto"
+            >
               {generateBooleanHierarchy()->React.string}
             </pre>
 
@@ -355,7 +371,8 @@ let make = (
               {"Generated Query Structure"->React.string}
             </label>
             <pre
-              className="bg-gray-100 border border-gray-300 rounded-md p-4 text-sm font-mono overflow-x-auto">
+              className="bg-gray-100 border border-gray-300 rounded-md p-4 text-sm font-mono overflow-x-auto"
+            >
               {generateCodeBlock()->React.string}
             </pre>
           </div>

@@ -11,4 +11,3 @@ let clearToken: unit => bool
 
 // Validate that token is not empty
 let isValidToken: option<string> => bool
-

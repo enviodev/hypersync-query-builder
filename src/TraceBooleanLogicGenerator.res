@@ -374,4 +374,4 @@ let generateBooleanHierarchy = (filterState: traceFilterState) => {
 
     Array.join(lines, "\n")
   }
-} 
+}

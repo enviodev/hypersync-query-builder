@@ -22,7 +22,7 @@ module Headers = {
 
   @send external append: (headers, string, string) => unit = "append"
   @send external delete: (headers, string) => unit = "delete"
-  @send external get: (headers, string) => Js.Nullable.t<string> = "get"
+  @send external get: (headers, string) => Nullable.t<string> = "get"
   @send external has: (headers, string) => bool = "has"
   @send external set: (headers, string, string) => unit = "set"
 }
@@ -33,7 +33,7 @@ module Body = {
 
 module Response = {
   @send external text: response => promise<string> = "text"
-  @send external json: response => promise<Js.Json.t> = "json"
+  @send external json: response => promise<JSON.t> = "json"
   @send external arrayBuffer: response => promise<Js.TypedArray2.ArrayBuffer.t> = "arrayBuffer"
   @send external blob: response => promise<'a> = "blob"
 

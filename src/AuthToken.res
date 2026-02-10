@@ -5,9 +5,9 @@ let storageKey = "hypersync_bearer_token"
 // Get token from localStorage
 let getToken = () => {
   try {
-    let getItem: string => Js.Nullable.t<string> = %raw(`(key) => localStorage.getItem(key)`)
+    let getItem: string => Nullable.t<string> = %raw(`(key) => localStorage.getItem(key)`)
     let value = getItem(storageKey)
-    Js.Nullable.toOption(value)
+    Nullable.toOption(value)
   } catch {
   | _ => None
   }
@@ -42,4 +42,3 @@ let isValidToken = (token: option<string>) => {
   | None => false
   }
 }
-

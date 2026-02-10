@@ -109,7 +109,8 @@ let make = (
       Array.length(filterState.miner->Option.getOr([])) > 0
 
   <div
-    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
+    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full"
+  >
     <div className="p-4 border-b border-slate-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -118,7 +119,8 @@ let make = (
           </h3>
           {hasFilters
             ? <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700"
+              >
                 {"Active"->React.string}
               </span>
             : React.null}
@@ -126,14 +128,16 @@ let make = (
         <div className="flex items-center space-x-2">
           <button
             onClick={_ => onToggleExpand()}
-            className="inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            className="inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             <svg
               className={`w-4 h-4 transform transition-transform ${isExpanded
                   ? "rotate-180"
                   : "rotate-0"}`}
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"
               />
@@ -141,7 +145,8 @@ let make = (
           </button>
           <button
             onClick={_ => onRemove()}
-            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-100 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-100 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -160,7 +165,8 @@ let make = (
           <div className="mb-4">
             <button
               onClick={_ => setTitanBuilderExample()}
-              className="px-2.5 py-1 bg-slate-700 text-white text-xs font-medium rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500">
+              className="px-2.5 py-1 bg-slate-700 text-white text-xs font-medium rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500"
+            >
               {"Titan Builder Blocks"->React.string}
             </button>
           </div>
@@ -184,7 +190,8 @@ let make = (
               <button
                 onClick={_ => addHash()}
                 disabled={String.length(newHash) == 0 || !(newHash->String.startsWith("0x"))}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 {(
                   Array.length(filterState.hash->Option.getOr([])) > 0
                     ? "Add (via OR) Hash"
@@ -196,11 +203,13 @@ let make = (
               {Array.mapWithIndex(filterState.hash->Option.getOr([]), (hash, index) =>
                 <div
                   key={Int.toString(index)}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+                >
                   <span className="text-sm font-mono text-gray-800"> {hash->React.string} </span>
                   <button
                     onClick={_ => removeHash(index)}
-                    className="text-red-600 hover:text-red-800 text-sm">
+                    className="text-red-600 hover:text-red-800 text-sm"
+                  >
                     {"Remove"->React.string}
                   </button>
                 </div>
@@ -227,7 +236,8 @@ let make = (
               <button
                 onClick={_ => addMiner()}
                 disabled={String.length(newMiner) == 0 || !(newMiner->String.startsWith("0x"))}
-                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 {(
                   Array.length(filterState.miner->Option.getOr([])) > 0
                     ? "Add (via OR) Miner"
@@ -239,11 +249,13 @@ let make = (
               {Array.mapWithIndex(filterState.miner->Option.getOr([]), (miner, index) =>
                 <div
                   key={Int.toString(index)}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+                >
                   <span className="text-sm font-mono text-gray-800"> {miner->React.string} </span>
                   <button
                     onClick={_ => removeMiner(index)}
-                    className="text-red-600 hover:text-red-800 text-sm">
+                    className="text-red-600 hover:text-red-800 text-sm"
+                  >
                     {"Remove"->React.string}
                   </button>
                 </div>
@@ -266,7 +278,8 @@ let make = (
               {"Boolean Logic Hierarchy"->React.string}
             </label>
             <pre
-              className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono mb-4 whitespace-pre overflow-x-auto">
+              className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono mb-4 whitespace-pre overflow-x-auto"
+            >
               {generateBooleanHierarchy()->React.string}
             </pre>
 
@@ -274,7 +287,8 @@ let make = (
               {"Generated Query Structure"->React.string}
             </label>
             <pre
-              className="bg-gray-100 border border-gray-300 rounded-md p-4 text-sm font-mono overflow-x-auto">
+              className="bg-gray-100 border border-gray-300 rounded-md p-4 text-sm font-mono overflow-x-auto"
+            >
               {generateCodeBlock()->React.string}
             </pre>
           </div>

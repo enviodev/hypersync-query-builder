@@ -36,12 +36,14 @@ let make = (~query: query, ~tracesSupported: bool) => {
           onClick={_ => setActiveSubTab(_ => Logs)}
           className={`py-2 px-1 border-b-2 font-medium text-sm ${activeSubTab === Logs
               ? "border-blue-500 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
+        >
           <div className="flex items-center space-x-2">
             <span> {"Logs"->React.string} </span>
             {hasLogFilters
               ? <span
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                >
                   {Int.toString(query.logs->Option.getOr([])->Array.length)->React.string}
                 </span>
               : React.null}
@@ -51,12 +53,14 @@ let make = (~query: query, ~tracesSupported: bool) => {
           onClick={_ => setActiveSubTab(_ => Transactions)}
           className={`py-2 px-1 border-b-2 font-medium text-sm ${activeSubTab === Transactions
               ? "border-blue-500 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
+        >
           <div className="flex items-center space-x-2">
             <span> {"Transactions"->React.string} </span>
             {hasTransactionFilters
               ? <span
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                >
                   {Int.toString(query.transactions->Option.getOr([])->Array.length)->React.string}
                 </span>
               : React.null}
@@ -66,12 +70,14 @@ let make = (~query: query, ~tracesSupported: bool) => {
           onClick={_ => setActiveSubTab(_ => Blocks)}
           className={`py-2 px-1 border-b-2 font-medium text-sm ${activeSubTab === Blocks
               ? "border-blue-500 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
+        >
           <div className="flex items-center space-x-2">
             <span> {"Blocks"->React.string} </span>
             {hasBlockFilters
               ? <span
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+                >
                   {Int.toString(query.blocks->Option.getOr([])->Array.length)->React.string}
                 </span>
               : React.null}
@@ -82,12 +88,14 @@ let make = (~query: query, ~tracesSupported: bool) => {
               onClick={_ => setActiveSubTab(_ => Traces)}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${activeSubTab === Traces
                   ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
+            >
               <div className="flex items-center space-x-2">
                 <span> {"Traces"->React.string} </span>
                 {hasTraceFilters
                   ? <span
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
+                    >
                       {Int.toString(query.traces->Option.getOr([])->Array.length)->React.string}
                     </span>
                   : React.null}
@@ -131,7 +139,8 @@ let make = (~query: query, ~tracesSupported: bool) => {
                     {"Boolean Logic Hierarchy"->React.string}
                   </label>
                   <pre
-                    className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto">
+                    className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto"
+                  >
                     {generateMultiBooleanHierarchy(query.logs)->React.string}
                   </pre>
                 </div>
@@ -142,7 +151,8 @@ let make = (~query: query, ~tracesSupported: bool) => {
                     className="w-12 h-12 mx-auto"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24">
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -191,7 +201,8 @@ let make = (~query: query, ~tracesSupported: bool) => {
                     {"Boolean Logic Hierarchy"->React.string}
                   </label>
                   <pre
-                    className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto">
+                    className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto"
+                  >
                     {generateMultiTransactionBooleanHierarchy(query.transactions)->React.string}
                   </pre>
                 </div>
@@ -202,7 +213,8 @@ let make = (~query: query, ~tracesSupported: bool) => {
                     className="w-12 h-12 mx-auto"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24">
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -251,7 +263,8 @@ let make = (~query: query, ~tracesSupported: bool) => {
                     {"Boolean Logic Hierarchy"->React.string}
                   </label>
                   <pre
-                    className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto">
+                    className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto"
+                  >
                     {generateMultiBlockBooleanHierarchy(query.blocks)->React.string}
                   </pre>
                 </div>
@@ -262,7 +275,8 @@ let make = (~query: query, ~tracesSupported: bool) => {
                     className="w-12 h-12 mx-auto"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24">
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -312,7 +326,8 @@ let make = (~query: query, ~tracesSupported: bool) => {
                         {"Boolean Logic Hierarchy"->React.string}
                       </label>
                       <pre
-                        className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto">
+                        className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm font-mono whitespace-pre overflow-x-auto"
+                      >
                         {generateMultiTraceBooleanHierarchy(query.traces)->React.string}
                       </pre>
                     </div>
@@ -323,7 +338,8 @@ let make = (~query: query, ~tracesSupported: bool) => {
                         className="w-12 h-12 mx-auto"
                         fill="none"
                         stroke="currentColor"
-                        viewBox="0 0 24 24">
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -346,7 +362,8 @@ let make = (~query: query, ~tracesSupported: bool) => {
                   className="w-12 h-12 mx-auto"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24">
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
