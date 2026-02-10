@@ -12,6 +12,7 @@ let make = (
   ~executeSignal: int,
   ~bearerToken: option<string>,
   ~customUrl: option<string>,
+  ~availableChains: array<ChainSelector.chain>,
 ) => {
   let (activeTab, setActiveTab) = React.useState(() => QueryJson)
   let (isExecuting, setIsExecuting) = React.useState(() => false)
@@ -49,8 +50,8 @@ let make = (
   let selectedChainSupportsTraces = () => {
     switch selectedChainName {
     | Some(chainName) =>
-      // Find the selected chain in the default chains list
-      let selectedChain = ChainSelector.defaultChains->Array.find(chain => chain.name === chainName)
+      // Find the selected chain in the available chains list (fetched from API or default)
+      let selectedChain = availableChains->Array.find(chain => chain.name === chainName)
       switch selectedChain {
       | Some(chain) => ChainSelector.chainSupportsTraces(chain)
       | None => false
@@ -59,23 +60,46 @@ let make = (
     }
   }
 
+  // Normalise a custom URL so it always has a scheme and ends with /query
+  let normalizeCustomUrl = (raw: string) => {
+    // 1. Ensure https:// prefix
+    let withScheme = if String.startsWith(raw, "https://") || String.startsWith(raw, "http://") {
+      raw
+    } else {
+      "https://" ++ raw
+    }
+    // 2. Strip trailing slashes
+    let trimmed = {
+      let s = ref(withScheme)
+      while String.endsWith(s.contents, "/") {
+        s := String.slice(s.contents, ~start=0, ~end=String.length(s.contents) - 1)
+      }
+      s.contents
+    }
+
+    // 3. Ensure it ends with /query
+    if String.endsWith(trimmed, "/query") {
+      trimmed
+    } else {
+      trimmed ++ "/query"
+    }
+  }
+
   // Helper function to generate the correct URL for the selected chain
   let generateChainUrl = () => {
     // Use custom URL if provided
     switch customUrl {
-    | Some(url) if String.length(url) > 0 => url
+    | Some(url) if String.length(url) > 0 => normalizeCustomUrl(url)
     | _ =>
       switch selectedChainName {
       | Some(chainName) =>
-        let selectedChain =
-          ChainSelector.defaultChains->Array.find(chain => chain.name === chainName)
+        let selectedChain = availableChains->Array.find(chain => chain.name === chainName)
         switch selectedChain {
         | Some(chain) =>
-          let baseUrl = `https://${Int.toString(chain.chain_id)}.hypersync.xyz/query`
           if ChainSelector.chainSupportsTraces(chain) {
             `https://${Int.toString(chain.chain_id)}-traces.hypersync.xyz/query`
           } else {
-            baseUrl
+            `https://${Int.toString(chain.chain_id)}.hypersync.xyz/query`
           }
         | None => ""
         }
