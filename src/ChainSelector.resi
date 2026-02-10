@@ -15,4 +15,5 @@ let make: (
   ~onChainSelect: string => unit,
   ~customUrl: option<string>,
   ~onCustomUrlChange: option<string => unit>,
+  ~onChainsLoaded: option<array<chain> => unit>,
 ) => React.element

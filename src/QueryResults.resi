@@ -5,4 +5,5 @@ let make: (
   ~executeSignal: int,
   ~bearerToken: option<string>,
   ~customUrl: option<string>,
+  ~availableChains: array<ChainSelector.chain>,
 ) => React.element
