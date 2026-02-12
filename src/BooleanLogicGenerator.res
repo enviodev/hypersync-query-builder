@@ -12,11 +12,11 @@ let isEmptyFilter = (filterState: filterState) => {
 
 // Helper function to check if a transaction filter is empty
 let isEmptyTransactionFilter = (filterState: QueryStructure.transactionSelection) => {
-  let {from_, to_, sighash, status, kind, contractAddress, authorizationList} = filterState
+  let {from_, to_, sighash, status, type_, contractAddress, authorizationList} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
-  let kindArray = kind->Option.getOr([])
+  let typeArray = type_->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
   let authArray = authorizationList->Option.getOr([])
 
@@ -24,7 +24,7 @@ let isEmptyTransactionFilter = (filterState: QueryStructure.transactionSelection
   Array.length(toArray) === 0 &&
   Array.length(sighashArray) === 0 &&
   Option.isNone(status) &&
-  Array.length(kindArray) === 0 &&
+  Array.length(typeArray) === 0 &&
   Array.length(contractAddressArray) === 0 &&
   Array.length(authArray) === 0
 }
@@ -39,13 +39,13 @@ let isEmptyBlockFilter = (filterState: QueryStructure.blockSelection) => {
 
 // Helper function to check if a trace filter is empty
 let isEmptyTraceFilter = (filterState: QueryStructure.traceSelection) => {
-  let {from_, to_, address, callType, rewardType, kind, sighash} = filterState
+  let {from_, to_, address, callType, rewardType, type_, sighash} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let addressArray = address->Option.getOr([])
   let callTypeArray = callType->Option.getOr([])
   let rewardTypeArray = rewardType->Option.getOr([])
-  let kindArray = kind->Option.getOr([])
+  let typeArray = type_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
 
   Array.length(fromArray) === 0 &&
@@ -53,7 +53,7 @@ let isEmptyTraceFilter = (filterState: QueryStructure.traceSelection) => {
   Array.length(addressArray) === 0 &&
   Array.length(callTypeArray) === 0 &&
   Array.length(rewardTypeArray) === 0 &&
-  Array.length(kindArray) === 0 &&
+  Array.length(typeArray) === 0 &&
   Array.length(sighashArray) === 0
 }
 
@@ -536,7 +536,7 @@ let generateMultiTransactionBooleanHierarchy = (
                   to_: None,
                   sighash: None,
                   status: None,
-                  kind: None,
+                  type_: None,
                   contractAddress: None,
                   authorizationList: None,
                 },
@@ -680,7 +680,7 @@ let generateMultiTraceBooleanHierarchy = (
                   address: None,
                   callType: None,
                   rewardType: None,
-                  kind: None,
+                  type_: None,
                   sighash: None,
                 },
               ],

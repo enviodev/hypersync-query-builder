@@ -16,7 +16,7 @@ let make = (
   let (newAddress, setNewAddress) = React.useState(() => "")
   let (newCallType, setNewCallType) = React.useState(() => "")
   let (newRewardType, setNewRewardType) = React.useState(() => "")
-  let (newKind, setNewKind) = React.useState(() => "")
+  let (newType, setNewType) = React.useState(() => "")
   let (newSighash, setNewSighash) = React.useState(() => "")
 
   // Example filter states
@@ -26,7 +26,7 @@ let make = (
     address: None,
     callType: Some(["call"]),
     rewardType: None,
-    kind: None,
+    type_: None,
     sighash: None,
   }
 
@@ -36,7 +36,7 @@ let make = (
     address: None,
     callType: Some(["create"]),
     rewardType: None,
-    kind: None,
+    type_: None,
     sighash: None,
   }
 
@@ -46,7 +46,7 @@ let make = (
     address: None,
     callType: Some(["suicide"]),
     rewardType: None,
-    kind: None,
+    type_: None,
     sighash: None,
   }
 
@@ -56,7 +56,7 @@ let make = (
     address: None,
     callType: None,
     rewardType: Some(["block"]),
-    kind: None,
+    type_: None,
     sighash: None,
   }
 
@@ -171,22 +171,22 @@ let make = (
     })
   }
 
-  let addKind = () => {
-    if newKind !== "" {
+  let addType = () => {
+    if newType !== "" {
       onFilterChange({
         ...filterState,
-        kind: Some(Array.concat(filterState.kind->Option.getOr([]), [newKind])),
+        type_: Some(Array.concat(filterState.type_->Option.getOr([]), [newType])),
       })
-      setNewKind(_ => "")
+      setNewType(_ => "")
     }
   }
 
-  let removeKind = index => {
-    let currentArray = filterState.kind->Option.getOr([])
+  let removeType = index => {
+    let currentArray = filterState.type_->Option.getOr([])
     let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
     onFilterChange({
       ...filterState,
-      kind: Array.length(newArray) > 0 ? Some(newArray) : None,
+      type_: Array.length(newArray) > 0 ? Some(newArray) : None,
     })
   }
 
@@ -221,8 +221,7 @@ let make = (
             className="w-4 h-4 text-orange-600"
             fill="none"
             stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+            viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -277,26 +276,22 @@ let make = (
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={_ => setCallExample()}
-                className="inline-flex items-center px-2.5 py-1 bg-slate-700 text-white text-xs font-medium rounded-md hover:bg-slate-800"
-              >
+                className="inline-flex items-center px-2.5 py-1 bg-slate-700 text-white text-xs font-medium rounded-md hover:bg-slate-800">
                 {"Call traces"->React.string}
               </button>
               <button
                 onClick={_ => setCreateExample()}
-                className="inline-flex items-center px-2.5 py-1 bg-emerald-600 text-white text-xs font-medium rounded-md hover:bg-emerald-700"
-              >
+                className="inline-flex items-center px-2.5 py-1 bg-emerald-600 text-white text-xs font-medium rounded-md hover:bg-emerald-700">
                 {"Create traces"->React.string}
               </button>
               <button
                 onClick={_ => setSuicideExample()}
-                className="inline-flex items-center px-2.5 py-1 bg-rose-600 text-white text-xs font-medium rounded-md hover:bg-rose-700"
-              >
+                className="inline-flex items-center px-2.5 py-1 bg-rose-600 text-white text-xs font-medium rounded-md hover:bg-rose-700">
                 {"Suicide traces"->React.string}
               </button>
               <button
                 onClick={_ => setRewardExample()}
-                className="inline-flex items-center px-2.5 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700"
-              >
+                className="inline-flex items-center px-2.5 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700">
                 {"Reward traces"->React.string}
               </button>
             </div>
@@ -320,20 +315,17 @@ let make = (
               />
               <button
                 onClick={_ => addFrom()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
+                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
                 {"Add"->React.string}
               </button>
             </div>
             {Array.mapWithIndex(filterState.from_->Option.getOr([]), (address, index) =>
               <div
                 key={address}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
+                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1">
                 <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
                 <button
-                  onClick={_ => removeFrom(index)} className="text-red-400 hover:text-red-600"
-                >
+                  onClick={_ => removeFrom(index)} className="text-red-400 hover:text-red-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -365,16 +357,14 @@ let make = (
               />
               <button
                 onClick={_ => addTo()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
+                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
                 {"Add"->React.string}
               </button>
             </div>
             {Array.mapWithIndex(filterState.to_->Option.getOr([]), (address, index) =>
               <div
                 key={address}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
+                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1">
                 <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
                 <button onClick={_ => removeTo(index)} className="text-red-400 hover:text-red-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -408,20 +398,17 @@ let make = (
               />
               <button
                 onClick={_ => addAddress()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
+                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
                 {"Add"->React.string}
               </button>
             </div>
             {Array.mapWithIndex(filterState.address->Option.getOr([]), (address, index) =>
               <div
                 key={address}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
+                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1">
                 <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
                 <button
-                  onClick={_ => removeAddress(index)} className="text-red-400 hover:text-red-600"
-                >
+                  onClick={_ => removeAddress(index)} className="text-red-400 hover:text-red-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -453,20 +440,17 @@ let make = (
               />
               <button
                 onClick={_ => addCallType()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
+                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
                 {"Add"->React.string}
               </button>
             </div>
             {Array.mapWithIndex(filterState.callType->Option.getOr([]), (callType, index) =>
               <div
                 key={callType}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
+                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1">
                 <span className="text-sm text-gray-700"> {callType->React.string} </span>
                 <button
-                  onClick={_ => removeCallType(index)} className="text-red-400 hover:text-red-600"
-                >
+                  onClick={_ => removeCallType(index)} className="text-red-400 hover:text-red-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -498,20 +482,18 @@ let make = (
               />
               <button
                 onClick={_ => addRewardType()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
+                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
                 {"Add"->React.string}
               </button>
             </div>
             {Array.mapWithIndex(filterState.rewardType->Option.getOr([]), (rewardType, index) =>
               <div
                 key={rewardType}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
+                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1">
                 <span className="text-sm text-gray-700"> {rewardType->React.string} </span>
                 <button
-                  onClick={_ => removeRewardType(index)} className="text-red-400 hover:text-red-600"
-                >
+                  onClick={_ => removeRewardType(index)}
+                  className="text-red-400 hover:text-red-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -525,38 +507,35 @@ let make = (
             )->React.array}
           </div>
 
-          // Kinds
+          // Types
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Kinds"->React.string}
+              {"Types"->React.string}
             </label>
             <div className="flex gap-2 mb-2">
               <input
                 type_="text"
-                value={newKind}
+                value={newType}
                 onChange={e => {
                   let target = ReactEvent.Form.target(e)
-                  setNewKind(_ => target["value"])
+                  setNewType(_ => target["value"])
                 }}
                 placeholder="call, create, suicide, reward..."
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <button
-                onClick={_ => addKind()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
+                onClick={_ => addType()}
+                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
                 {"Add"->React.string}
               </button>
             </div>
-            {Array.mapWithIndex(filterState.kind->Option.getOr([]), (kind, index) =>
+            {Array.mapWithIndex(filterState.type_->Option.getOr([]), (t, index) =>
               <div
-                key={kind}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
-                <span className="text-sm text-gray-700"> {kind->React.string} </span>
+                key={t}
+                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1">
+                <span className="text-sm text-gray-700"> {t->React.string} </span>
                 <button
-                  onClick={_ => removeKind(index)} className="text-red-400 hover:text-red-600"
-                >
+                  onClick={_ => removeType(index)} className="text-red-400 hover:text-red-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -588,20 +567,17 @@ let make = (
               />
               <button
                 onClick={_ => addSighash()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
+                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
                 {"Add"->React.string}
               </button>
             </div>
             {Array.mapWithIndex(filterState.sighash->Option.getOr([]), (sighash, index) =>
               <div
                 key={sighash}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
+                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1">
                 <span className="text-sm text-gray-700 font-mono"> {sighash->React.string} </span>
                 <button
-                  onClick={_ => removeSighash(index)} className="text-red-400 hover:text-red-600"
-                >
+                  onClick={_ => removeSighash(index)} className="text-red-400 hover:text-red-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"

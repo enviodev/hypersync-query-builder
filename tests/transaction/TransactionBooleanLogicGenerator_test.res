@@ -8,7 +8,7 @@ test("generateEnglishDescription - empty transaction filter", () => {
     to_: None,
     sighash: None,
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -22,7 +22,7 @@ test("generateEnglishDescription - single from address", () => {
     to_: None,
     sighash: None,
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -36,7 +36,7 @@ test("generateEnglishDescription - multiple from addresses", () => {
     to_: None,
     sighash: None,
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -50,7 +50,7 @@ test("generateEnglishDescription - single to address", () => {
     to_: Some(["0xabcd"]),
     sighash: None,
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -64,7 +64,7 @@ test("generateEnglishDescription - multiple to addresses", () => {
     to_: Some(["0xabcd", "0xefgh"]),
     sighash: None,
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -78,7 +78,7 @@ test("generateEnglishDescription - single sighash", () => {
     to_: None,
     sighash: Some(["0xa9059cbb"]),
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -92,7 +92,7 @@ test("generateEnglishDescription - multiple sighashes", () => {
     to_: None,
     sighash: Some(["0xa9059cbb", "0x23b872dd"]),
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -109,7 +109,7 @@ test("generateEnglishDescription - successful status", () => {
     to_: None,
     sighash: None,
     status: Some(1),
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -123,7 +123,7 @@ test("generateEnglishDescription - failed status", () => {
     to_: None,
     sighash: None,
     status: Some(0),
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -131,32 +131,32 @@ test("generateEnglishDescription - failed status", () => {
   assertEqual(result, "Match transactions where: the transaction is failed")
 })
 
-test("generateEnglishDescription - single kind", () => {
+test("generateEnglishDescription - single type", () => {
   let state = {
     from_: None,
     to_: None,
     sighash: None,
     status: None,
-    kind: Some([2]),
+    type_: Some([2]),
     contractAddress: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
-  assertEqual(result, "Match transactions where: the transaction kind is 2")
+  assertEqual(result, "Match transactions where: the transaction type is 2")
 })
 
-test("generateEnglishDescription - multiple kinds", () => {
+test("generateEnglishDescription - multiple types", () => {
   let state = {
     from_: None,
     to_: None,
     sighash: None,
     status: None,
-    kind: Some([0, 2]),
+    type_: Some([0, 2]),
     contractAddress: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
-  assertEqual(result, "Match transactions where: the transaction kind is 0 OR 2")
+  assertEqual(result, "Match transactions where: the transaction type is 0 OR 2")
 })
 
 test("generateEnglishDescription - single contract address", () => {
@@ -165,7 +165,7 @@ test("generateEnglishDescription - single contract address", () => {
     to_: None,
     sighash: None,
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: Some(["0xA0b86a33E6441c8C06DD2F1ea9D25E4A7BB9A74e"]),
     authorizationList: None,
   }
@@ -182,7 +182,7 @@ test("generateEnglishDescription - complex transaction filter", () => {
     to_: Some(["0x5678"]),
     sighash: Some(["0xa9059cbb"]),
     status: Some(1),
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -199,7 +199,7 @@ test("generateBooleanHierarchy - empty transaction filter", () => {
     to_: None,
     sighash: None,
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -213,7 +213,7 @@ test("generateBooleanHierarchy - single from address", () => {
     to_: None,
     sighash: None,
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -227,7 +227,7 @@ test("generateBooleanHierarchy - multiple from addresses", () => {
     to_: None,
     sighash: None,
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -242,7 +242,7 @@ test("generateBooleanHierarchy - from and to addresses", () => {
     to_: Some(["0x5678"]),
     sighash: None,
     status: None,
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -257,12 +257,12 @@ test("generateBooleanHierarchy - complex transaction with multiple conditions", 
     to_: Some(["0xabcd"]),
     sighash: Some(["0xa9059cbb", "0x23b872dd"]),
     status: Some(1),
-    kind: Some([2]),
+    type_: Some([2]),
     contractAddress: None,
     authorizationList: None,
   }
   let result = generateBooleanHierarchy(state)
-  let expected = "AND\n├── OR (from)\n│   ├── 0x1234\n│   └── 0x5678\n├── to = 0xabcd\n├── OR (sighash)\n│   ├── 0xa9059cbb\n│   └── 0x23b872dd\n├── status = 1 (success)\n└── kind = 2"
+  let expected = "AND\n├── OR (from)\n│   ├── 0x1234\n│   └── 0x5678\n├── to = 0xabcd\n├── OR (sighash)\n│   ├── 0xa9059cbb\n│   └── 0x23b872dd\n├── status = 1 (success)\n└── type = 2"
   assertEqual(result, expected)
 })
 
@@ -272,7 +272,7 @@ test("generateBooleanHierarchy - ERC20 transfer transaction", () => {
     to_: Some(["0xA0b86a33E6441c8C06DD2F1ea9D25E4A7BB9A74e"]),
     sighash: Some(["0xa9059cbb"]), // ERC20 transfer signature
     status: Some(1),
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }
@@ -287,7 +287,7 @@ test("generateBooleanHierarchy - DEX swap transaction", () => {
     to_: None,
     sighash: Some(["0x38ed1739", "0x8803dbee"]), // swapExactTokensForTokens, swapTokensForExactTokens
     status: Some(1),
-    kind: None,
+    type_: None,
     contractAddress: None,
     authorizationList: None,
   }

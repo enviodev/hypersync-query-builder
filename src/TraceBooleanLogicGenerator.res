@@ -3,13 +3,13 @@ open QueryStructure
 type traceFilterState = QueryStructure.traceSelection
 
 let generateEnglishDescription = (filterState: traceFilterState) => {
-  let {from_, to_, address, callType, rewardType, kind, sighash} = filterState
+  let {from_, to_, address, callType, rewardType, type_, sighash} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let addressArray = address->Option.getOr([])
   let callTypeArray = callType->Option.getOr([])
   let rewardTypeArray = rewardType->Option.getOr([])
-  let kindArray = kind->Option.getOr([])
+  let typeArray = type_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
 
   let hasAnyFilter =
@@ -18,7 +18,7 @@ let generateEnglishDescription = (filterState: traceFilterState) => {
     Array.length(addressArray) > 0 ||
     Array.length(callTypeArray) > 0 ||
     Array.length(rewardTypeArray) > 0 ||
-    Array.length(kindArray) > 0 ||
+    Array.length(typeArray) > 0 ||
     Array.length(sighashArray) > 0
 
   if !hasAnyFilter {
@@ -81,15 +81,15 @@ let generateEnglishDescription = (filterState: traceFilterState) => {
       parts->Array.push(rewardTypeCondition)->ignore
     }
 
-    // Kind condition
-    if Array.length(kindArray) > 0 {
-      let kindCondition = if Array.length(kindArray) === 1 {
-        `the kind is ${Array.getUnsafe(kindArray, 0)}`
+    // Type condition
+    if Array.length(typeArray) > 0 {
+      let typeCondition = if Array.length(typeArray) === 1 {
+        `the type is ${Array.getUnsafe(typeArray, 0)}`
       } else {
-        let kindList = Array.join(kindArray, " OR ")
-        `the kind is ${kindList}`
+        let typeList = Array.join(typeArray, " OR ")
+        `the type is ${typeList}`
       }
-      parts->Array.push(kindCondition)->ignore
+      parts->Array.push(typeCondition)->ignore
     }
 
     // Sighash condition
@@ -108,13 +108,13 @@ let generateEnglishDescription = (filterState: traceFilterState) => {
 }
 
 let generateBooleanHierarchy = (filterState: traceFilterState) => {
-  let {from_, to_, address, callType, rewardType, kind, sighash} = filterState
+  let {from_, to_, address, callType, rewardType, type_, sighash} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let addressArray = address->Option.getOr([])
   let callTypeArray = callType->Option.getOr([])
   let rewardTypeArray = rewardType->Option.getOr([])
-  let kindArray = kind->Option.getOr([])
+  let typeArray = type_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
 
   let hasAnyFilter =
@@ -123,7 +123,7 @@ let generateBooleanHierarchy = (filterState: traceFilterState) => {
     Array.length(addressArray) > 0 ||
     Array.length(callTypeArray) > 0 ||
     Array.length(rewardTypeArray) > 0 ||
-    Array.length(kindArray) > 0 ||
+    Array.length(typeArray) > 0 ||
     Array.length(sighashArray) > 0
 
   if !hasAnyFilter {
@@ -147,8 +147,8 @@ let generateBooleanHierarchy = (filterState: traceFilterState) => {
     if Array.length(rewardTypeArray) > 0 {
       conditions->Array.push("rewardType")->ignore
     }
-    if Array.length(kindArray) > 0 {
-      conditions->Array.push("kind")->ignore
+    if Array.length(typeArray) > 0 {
+      conditions->Array.push("type")->ignore
     }
     if Array.length(sighashArray) > 0 {
       conditions->Array.push("sighash")->ignore
@@ -312,31 +312,31 @@ let generateBooleanHierarchy = (filterState: traceFilterState) => {
       conditionIndex := conditionIndex.contents + 1
     }
 
-    // Kinds
-    if Array.length(kindArray) > 0 {
+    // Types
+    if Array.length(typeArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
       let prefix = hasMultipleConditions ? isLast ? "└── " : "├── " : ""
 
-      if Array.length(kindArray) === 1 {
-        lines->Array.push(`${prefix}kind = ${Array.getUnsafe(kindArray, 0)}`)->ignore
+      if Array.length(typeArray) === 1 {
+        lines->Array.push(`${prefix}type = ${Array.getUnsafe(typeArray, 0)}`)->ignore
       } else {
-        lines->Array.push(`${prefix}OR (kind)`)->ignore
-        Array.forEachWithIndex(kindArray, (k, i) => {
-          let isLastKind = i === Array.length(kindArray) - 1
-          let kindPrefix = if hasMultipleConditions {
+        lines->Array.push(`${prefix}OR (type)`)->ignore
+        Array.forEachWithIndex(typeArray, (k, i) => {
+          let isLastType = i === Array.length(typeArray) - 1
+          let typePrefix = if hasMultipleConditions {
             if isLast {
-              isLastKind ? "    └── " : "    ├── "
-            } else if isLastKind {
+              isLastType ? "    └── " : "    ├── "
+            } else if isLastType {
               "│   └── "
             } else {
               "│   ├── "
             }
-          } else if isLastKind {
+          } else if isLastType {
             "└── "
           } else {
             "├── "
           }
-          lines->Array.push(`${kindPrefix}${k}`)->ignore
+          lines->Array.push(`${typePrefix}${k}`)->ignore
         })
       }
       conditionIndex := conditionIndex.contents + 1

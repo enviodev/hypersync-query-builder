@@ -158,10 +158,10 @@ let make = (
     | None => None
     }
 
-    let kindJson = switch transactionFilter.kind {
-    | Some(kinds) if Array.length(kinds) > 0 =>
-      let kindsStr = Array.map(kinds, kind => Int.toString(kind))->Array.join(", ")
-      Some(`"kind": [${kindsStr}]`)
+    let typeJson = switch transactionFilter.type_ {
+    | Some(types) if Array.length(types) > 0 =>
+      let typesStr = Array.map(types, t => Int.toString(t))->Array.join(", ")
+      Some(`"type": [${typesStr}]`)
     | _ => None
     }
 
@@ -201,7 +201,7 @@ let make = (
         toJson,
         sighashJson,
         statusJson,
-        kindJson,
+        typeJson,
         contractAddressJson,
         authorizationListJson,
       ]->Array.filterMap(x => x)
@@ -265,10 +265,10 @@ let make = (
     | _ => None
     }
 
-    let kindJson = switch traceFilter.kind {
-    | Some(kinds) if Array.length(kinds) > 0 =>
-      let kindsStr = Array.map(kinds, kind => `"${kind}"`)->Array.join(", ")
-      Some(`"kind": [${kindsStr}]`)
+    let typeJson = switch traceFilter.type_ {
+    | Some(types) if Array.length(types) > 0 =>
+      let typesStr = Array.map(types, t => `"${t}"`)->Array.join(", ")
+      Some(`"type": [${typesStr}]`)
     | _ => None
     }
 
@@ -286,7 +286,7 @@ let make = (
         addressJson,
         callTypeJson,
         rewardTypeJson,
-        kindJson,
+        typeJson,
         sighashJson,
       ]->Array.filterMap(x => x)
     let content = Array.join(allParts, ", ")

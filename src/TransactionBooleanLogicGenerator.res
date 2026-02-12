@@ -1,11 +1,11 @@
 type transactionFilterState = QueryStructure.transactionSelection
 
 let generateEnglishDescription = (filterState: transactionFilterState) => {
-  let {from_, to_, sighash, status, kind, contractAddress, authorizationList} = filterState
+  let {from_, to_, sighash, status, type_, contractAddress, authorizationList} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
-  let kindArray = kind->Option.getOr([])
+  let typeArray = type_->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
   let authArray = authorizationList->Option.getOr([])
 
@@ -14,7 +14,7 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
     Array.length(toArray) > 0 ||
     Array.length(sighashArray) > 0 ||
     Option.isSome(status) ||
-    Array.length(kindArray) > 0 ||
+    Array.length(typeArray) > 0 ||
     Array.length(contractAddressArray) > 0 ||
     Array.length(authArray) > 0
 
@@ -64,28 +64,28 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
     | None => ()
     }
 
-    // Kind condition
-    if Array.length(kindArray) > 0 {
-      let kindCondition = if Array.length(kindArray) === 1 {
-        `the transaction kind is ${Int.toString(Array.getUnsafe(kindArray, 0))}`
+    // Type condition
+    if Array.length(typeArray) > 0 {
+      let typeCondition = if Array.length(typeArray) === 1 {
+        `the transaction type is ${Int.toString(Array.getUnsafe(typeArray, 0))}`
       } else {
-        let kindList = switch Array.length(kindArray) {
+        let typeList = switch Array.length(typeArray) {
         | 0 => ""
-        | 1 => Int.toString(Array.getUnsafe(kindArray, 0))
+        | 1 => Int.toString(Array.getUnsafe(typeArray, 0))
         | 2 =>
-          Int.toString(Array.getUnsafe(kindArray, 0)) ++
+          Int.toString(Array.getUnsafe(typeArray, 0)) ++
           " OR " ++
-          Int.toString(Array.getUnsafe(kindArray, 1))
+          Int.toString(Array.getUnsafe(typeArray, 1))
         | _ =>
-          let first = Int.toString(Array.getUnsafe(kindArray, 0))
-          let second = Int.toString(Array.getUnsafe(kindArray, 1))
-          let rest = Array.slice(kindArray, ~start=2)
+          let first = Int.toString(Array.getUnsafe(typeArray, 0))
+          let second = Int.toString(Array.getUnsafe(typeArray, 1))
+          let rest = Array.sliceToEnd(typeArray, ~start=2)
           let restStr = Array.reduce(rest, "", (acc, k) => acc ++ " OR " ++ Int.toString(k))
           first ++ " OR " ++ second ++ restStr
         }
-        `the transaction kind is ${kindList}`
+        `the transaction type is ${typeList}`
       }
-      parts->Array.push(kindCondition)->ignore
+      parts->Array.push(typeCondition)->ignore
     }
 
     // Contract address condition
@@ -118,11 +118,11 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
 }
 
 let generateBooleanHierarchy = (filterState: transactionFilterState) => {
-  let {from_, to_, sighash, status, kind, contractAddress, authorizationList} = filterState
+  let {from_, to_, sighash, status, type_, contractAddress, authorizationList} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
-  let kindArray = kind->Option.getOr([])
+  let typeArray = type_->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
   let authArray = authorizationList->Option.getOr([])
 
@@ -131,7 +131,7 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     Array.length(toArray) > 0 ||
     Array.length(sighashArray) > 0 ||
     Option.isSome(status) ||
-    Array.length(kindArray) > 0 ||
+    Array.length(typeArray) > 0 ||
     Array.length(contractAddressArray) > 0 ||
     Array.length(authArray) > 0
 
@@ -153,8 +153,8 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     if Option.isSome(status) {
       conditions->Array.push("status")->ignore
     }
-    if Array.length(kindArray) > 0 {
-      conditions->Array.push("kind")->ignore
+    if Array.length(typeArray) > 0 {
+      conditions->Array.push("type")->ignore
     }
     if Array.length(contractAddressArray) > 0 {
       conditions->Array.push("contractAddress")->ignore
@@ -272,31 +272,31 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     | None => ()
     }
 
-    // Kind
-    if Array.length(kindArray) > 0 {
+    // Type
+    if Array.length(typeArray) > 0 {
       let isLast = conditionIndex.contents === Array.length(conditions) - 1
       let prefix = hasMultipleConditions ? isLast ? "└── " : "├── " : ""
 
-      if Array.length(kindArray) === 1 {
-        lines->Array.push(`${prefix}kind = ${Int.toString(Array.getUnsafe(kindArray, 0))}`)->ignore
+      if Array.length(typeArray) === 1 {
+        lines->Array.push(`${prefix}type = ${Int.toString(Array.getUnsafe(typeArray, 0))}`)->ignore
       } else {
-        lines->Array.push(`${prefix}OR (kind)`)->ignore
-        Array.forEachWithIndex(kindArray, (k, i) => {
-          let isLastKind = i === Array.length(kindArray) - 1
-          let kindPrefix = if hasMultipleConditions {
+        lines->Array.push(`${prefix}OR (type)`)->ignore
+        Array.forEachWithIndex(typeArray, (k, i) => {
+          let isLastType = i === Array.length(typeArray) - 1
+          let typePrefix = if hasMultipleConditions {
             if isLast {
-              isLastKind ? "    └── " : "    ├── "
-            } else if isLastKind {
+              isLastType ? "    └── " : "    ├── "
+            } else if isLastType {
               "│   └── "
             } else {
               "│   ├── "
             }
-          } else if isLastKind {
+          } else if isLastType {
             "└── "
           } else {
             "├── "
           }
-          lines->Array.push(`${kindPrefix}${Int.toString(k)}`)->ignore
+          lines->Array.push(`${typePrefix}${Int.toString(k)}`)->ignore
         })
       }
       conditionIndex := conditionIndex.contents + 1

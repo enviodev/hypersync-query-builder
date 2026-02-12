@@ -20,7 +20,7 @@ type transactionSelection = {
   to_: option<array<string>>,
   sighash: option<array<string>>,
   status: option<int>,
-  kind: option<array<int>>,
+  type_: option<array<int>>,
   contractAddress: option<array<string>>,
   authorizationList: option<array<authorizationSelection>>,
 }
@@ -31,7 +31,7 @@ type traceSelection = {
   address: option<array<string>>,
   callType: option<array<string>>,
   rewardType: option<array<string>>,
-  kind: option<array<string>>,
+  type_: option<array<string>>,
   sighash: option<array<string>>,
 }
 
@@ -126,14 +126,25 @@ type transactionField =
   | @as("gas_used") GasUsed
   | @as("contract_address") ContractAddress
   | @as("logs_bloom") LogsBloom
-  | @as("kind") Kind
+  | @as("type") Type_
   | @as("root") Root
   | @as("status") Status
+  | @as("sighash") Sighash
   | @as("l1_fee") L1Fee
   | @as("l1_gas_price") L1GasPrice
   | @as("l1_gas_used") L1GasUsed
   | @as("l1_fee_scalar") L1FeeScalar
   | @as("gas_used_for_l1") GasUsedForL1
+  | @as("blob_gas_price") BlobGasPrice
+  | @as("blob_gas_used") BlobGasUsed
+  | @as("deposit_nonce") DepositNonce
+  | @as("deposit_receipt_version") DepositReceiptVersion
+  | @as("l1_base_fee_scalar") L1BaseFeeScalar
+  | @as("l1_blob_base_fee") L1BlobBaseFee
+  | @as("l1_blob_base_fee_scalar") L1BlobBaseFeeScalar
+  | @as("l1_block_number") L1BlockNumber
+  | @as("mint") Mint
+  | @as("source_hash") SourceHash
 
 let allTransactionFields: array<transactionField> = [
   BlockHash,
@@ -163,14 +174,25 @@ let allTransactionFields: array<transactionField> = [
   GasUsed,
   ContractAddress,
   LogsBloom,
-  Kind,
+  Type_,
   Root,
   Status,
+  Sighash,
   L1Fee,
   L1GasPrice,
   L1GasUsed,
   L1FeeScalar,
   GasUsedForL1,
+  BlobGasPrice,
+  BlobGasUsed,
+  DepositNonce,
+  DepositReceiptVersion,
+  L1BaseFeeScalar,
+  L1BlobBaseFee,
+  L1BlobBaseFeeScalar,
+  L1BlockNumber,
+  Mint,
+  SourceHash,
 ]
 
 type logField =
@@ -221,8 +243,12 @@ type traceField =
   | @as("trace_address") TraceAddress
   | @as("transaction_hash") TransactionHash
   | @as("transaction_position") TransactionPosition
-  | @as("kind") Kind
+  | @as("type") Type_
   | @as("error") Trace_Error
+  | @as("sighash") Sighash
+  | @as("action_address") ActionAddress
+  | @as("balance") Balance
+  | @as("refund_address") RefundAddress
 
 let allTraceFields: array<traceField> = [
   From,
@@ -244,8 +270,12 @@ let allTraceFields: array<traceField> = [
   TraceAddress,
   TransactionHash,
   TransactionPosition,
-  Kind,
+  Type_,
   Trace_Error,
+  Sighash,
+  ActionAddress,
+  Balance,
+  RefundAddress,
 ]
 type fieldSelection = {
   block: array<blockField>,
