@@ -543,8 +543,13 @@ let make = (
     let body = serializeQuery(query)
     let escapedBody = String.replaceAll(body, "\"", "\\\"")
 
+    let authHeader = switch bearerToken {
+    | Some(token) => `\n  -H "Authorization: Bearer ${token}" \\`
+    | None => ""
+    }
+
     `curl -X POST "${url}" \\
-  -H "Content-Type: application/json" \\
+  -H "Content-Type: application/json" \\${authHeader}
   -d "${escapedBody}"`
   }
 

@@ -1,2 +1,2 @@
 @react.component
-let make: unit => React.element
+let make: (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => React.element
