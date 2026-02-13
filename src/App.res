@@ -5,16 +5,10 @@ open QueryStructure
 open UrlEncoder
 
 @react.component
-let make = () => {
-  // Token state management
-  let (bearerToken, setBearerToken) = React.useState(() => AuthToken.getToken())
-
-  let handleTokenSubmit = (token: string) => {
-    if AuthToken.saveToken(token) {
-      setBearerToken(_ => Some(token))
-    }
-  }
-
+let make = (
+  ~bearerToken: option<string>,
+  ~onTokenSubmit: string => unit,
+) => {
   let (query, setQuery) = React.useState(() => {
     // Try to load query from URL first, fallback to default
     switch UrlEncoder.getUrlStateFromUrl() {
@@ -567,7 +561,7 @@ let make = () => {
   <>
     // Show token prompt if no valid token
     {!AuthToken.isValidToken(bearerToken)
-      ? <TokenPrompt onTokenSubmit={handleTokenSubmit} />
+      ? <TokenPrompt onTokenSubmit={onTokenSubmit} />
       : React.null}
 
     <main className="flex-1 overflow-hidden bg-slate-50">

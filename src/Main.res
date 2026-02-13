@@ -73,7 +73,7 @@ module AppWrapper = {
           </div>
         </div>
       </header>
-      <App />
+      <App bearerToken onTokenSubmit={handleTokenUpdate} />
       <footer className="bg-white border-t border-slate-200 mt-auto">
         <div className="px-6 lg:px-8 py-3">
           <div className="flex items-center justify-center text-xs text-slate-500">
