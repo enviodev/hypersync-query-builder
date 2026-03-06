@@ -1,19 +1,12 @@
 open QueryStructure
 open Fetch
 
-type activeTab = QueryJson | QueryLogic | Results
+type activeTab = QueryJson | Results
 type resultsView = Raw | Table
 type rawMode = Plain | Interactive
 
 @react.component
-let make = (
-  ~query: query,
-  ~selectedChainName: option<string>,
-  ~executeSignal: int,
-  ~bearerToken: option<string>,
-  ~customUrl: option<string>,
-  ~availableChains: array<ChainSelector.chain>,
-) => {
+let make = (~query: query, ~executeSignal: int) => {
   let (activeTab, setActiveTab) = React.useState(() => QueryJson)
   let (isExecuting, setIsExecuting) = React.useState(() => false)
   let (queryResult, setQueryResult) = React.useState(() => None)
@@ -37,258 +30,71 @@ let make = (
   React.useEffect1(() => {
     if isFirstRender.current {
       isFirstRender.current = false
-    } // Only switch to QueryJson if we're on the Results tab
-    else if activeTab === Results {
+    } else if activeTab === Results {
       setActiveTab(_ => QueryJson)
     }
     None
   }, [query])
 
-  // executeSignal will be handled after executeQuery is defined
-
-  // Helper function to check if selected chain supports traces
-  let selectedChainSupportsTraces = () => {
-    switch selectedChainName {
-    | Some(chainName) =>
-      // Find the selected chain in the available chains list (fetched from API or default)
-      let selectedChain = availableChains->Array.find(chain => chain.name === chainName)
-      switch selectedChain {
-      | Some(chain) => ChainSelector.chainSupportsTraces(chain)
-      | None => false
-      }
-    | None => false
-    }
-  }
-
-  // Normalise a custom URL so it always has a scheme and ends with /query
-  let normalizeCustomUrl = (raw: string) => {
-    // 1. Ensure https:// prefix
-    let withScheme = if String.startsWith(raw, "https://") || String.startsWith(raw, "http://") {
-      raw
-    } else {
-      "https://" ++ raw
-    }
-    // 2. Strip trailing slashes
-    let trimmed = {
-      let s = ref(withScheme)
-      while String.endsWith(s.contents, "/") {
-        s := String.slice(s.contents, ~start=0, ~end=String.length(s.contents) - 1)
-      }
-      s.contents
-    }
-
-    // 3. Ensure it ends with /query
-    if String.endsWith(trimmed, "/query") {
-      trimmed
-    } else {
-      trimmed ++ "/query"
-    }
-  }
-
-  // Helper function to generate the correct URL for the selected chain
   let generateChainUrl = () => {
-    // Use custom URL if provided
-    switch customUrl {
-    | Some(url) if String.length(url) > 0 => normalizeCustomUrl(url)
-    | _ =>
-      switch selectedChainName {
-      | Some(chainName) =>
-        let selectedChain = availableChains->Array.find(chain => chain.name === chainName)
-        switch selectedChain {
-        | Some(chain) =>
-          if ChainSelector.chainSupportsTraces(chain) {
-            `https://${Int.toString(chain.chain_id)}-traces.hypersync.xyz/query`
-          } else {
-            `https://${Int.toString(chain.chain_id)}.hypersync.xyz/query`
-          }
-        | None => ""
-        }
-      | None => ""
-      }
-    }
+    "https://solana-test.hypersync.xyz/query"
   }
 
-  let serializeLogFilter = (logFilter: logSelection) => {
-    let addressJson = switch logFilter.address {
-    | Some(addresses) if Array.length(addresses) > 0 =>
-      let addressesStr = Array.map(addresses, addr => `"${addr}"`)->Array.join(", ")
-      `"address": [${addressesStr}]`
-    | _ => ""
-    }
-
-    let topicsJson = switch logFilter.topics {
-    | Some(topics) if Array.length(topics) > 0 =>
-      let topicsStr = Array.map(topics, topicArray => {
-        let topicStr = Array.map(topicArray, topic => `"${topic}"`)->Array.join(", ")
-        `[${topicStr}]`
-      })->Array.join(", ")
-      `"topics": [${topicsStr}]`
-    | _ => ""
-    }
-
-    let parts = [addressJson, topicsJson]->Array.filter(part => part !== "")
-    let content = Array.join(parts, ", ")
-    `{${content}}`
-  }
-
-  let serializeTransactionFilter = (transactionFilter: transactionSelection) => {
-    let fromJson = switch transactionFilter.from_ {
-    | Some(froms) if Array.length(froms) > 0 =>
-      let fromsStr = Array.map(froms, addr => `"${addr}"`)->Array.join(", ")
-      Some(`"from": [${fromsStr}]`)
+  let serializeInstructionFilter = (filter: instructionSelection) => {
+    let programIdJson = switch filter.program_id {
+    | Some(ids) if Array.length(ids) > 0 =>
+      let idsStr = Array.map(ids, id => `"${id}"`)->Array.join(", ")
+      Some(`"program_id": [${idsStr}]`)
     | _ => None
     }
 
-    let toJson = switch transactionFilter.to_ {
-    | Some(tos) if Array.length(tos) > 0 =>
-      let tosStr = Array.map(tos, addr => `"${addr}"`)->Array.join(", ")
-      Some(`"to": [${tosStr}]`)
+    let d1Json = switch filter.d1 {
+    | Some(vals) if Array.length(vals) > 0 =>
+      let valsStr = Array.map(vals, v => `"${v}"`)->Array.join(", ")
+      Some(`"d1": [${valsStr}]`)
     | _ => None
     }
 
-    let sighashJson = switch transactionFilter.sighash {
-    | Some(sighashes) if Array.length(sighashes) > 0 =>
-      let sighashesStr = Array.map(sighashes, sighash => `"${sighash}"`)->Array.join(", ")
-      Some(`"sighash": [${sighashesStr}]`)
+    let d8Json = switch filter.d8 {
+    | Some(vals) if Array.length(vals) > 0 =>
+      let valsStr = Array.map(vals, v => `"${v}"`)->Array.join(", ")
+      Some(`"d8": [${valsStr}]`)
     | _ => None
     }
 
-    let statusJson = switch transactionFilter.status {
-    | Some(status) => Some(`"status": ${Int.toString(status)}`)
+    let a0Json = switch filter.a0 {
+    | Some(vals) if Array.length(vals) > 0 =>
+      let valsStr = Array.map(vals, v => `"${v}"`)->Array.join(", ")
+      Some(`"a0": [${valsStr}]`)
+    | _ => None
+    }
+
+    let isInnerJson = switch filter.is_inner {
+    | Some(true) => Some(`"is_inner": true`)
+    | Some(false) => Some(`"is_inner": false`)
     | None => None
     }
 
-    let typeJson = switch transactionFilter.type_ {
-    | Some(types) if Array.length(types) > 0 =>
-      let typesStr = Array.map(types, t => Int.toString(t))->Array.join(", ")
-      Some(`"type": [${typesStr}]`)
-    | _ => None
-    }
-
-    let contractAddressJson = switch transactionFilter.contractAddress {
-    | Some(addresses) if Array.length(addresses) > 0 =>
-      let addressesStr = Array.map(addresses, addr => `"${addr}"`)->Array.join(", ")
-      Some(`"contract_address": [${addressesStr}]`)
-    | _ => None
-    }
-
-    let authorizationListJson = switch transactionFilter.authorizationList {
-    | Some(authList) if Array.length(authList) > 0 =>
-      let authListStr = Array.map(authList, auth => {
-        let chainIdPart = switch auth.chainId {
-        | Some(chainIds) if Array.length(chainIds) > 0 =>
-          let chainIdsStr = Array.map(chainIds, id => Int.toString(id))->Array.join(", ")
-          Some(`"chainId": [${chainIdsStr}]`)
-        | _ => None
-        }
-        let addressPart = switch auth.address {
-        | Some(addresses) if Array.length(addresses) > 0 =>
-          let addressesStr = Array.map(addresses, addr => `"${addr}"`)->Array.join(", ")
-          Some(`"address": [${addressesStr}]`)
-        | _ => None
-        }
-        let parts = [chainIdPart, addressPart]->Array.filterMap(x => x)
-        let content = Array.join(parts, ", ")
-        `{${content}}`
-      })->Array.join(", ")
-      Some(`"authorization_list": [${authListStr}]`)
-    | _ => None
-    }
-
-    let allParts =
-      [
-        fromJson,
-        toJson,
-        sighashJson,
-        statusJson,
-        typeJson,
-        contractAddressJson,
-        authorizationListJson,
-      ]->Array.filterMap(x => x)
+    let allParts = [programIdJson, d1Json, d8Json, a0Json, isInnerJson]->Array.filterMap(x => x)
     let content = Array.join(allParts, ", ")
     `{${content}}`
   }
 
-  let serializeBlockFilter = (blockFilter: blockSelection) => {
-    let hashJson = switch blockFilter.hash {
-    | Some(hashes) if Array.length(hashes) > 0 =>
-      let hashesStr = Array.map(hashes, hash => `"${hash}"`)->Array.join(", ")
-      Some(`"hash": [${hashesStr}]`)
+  let serializeTransactionFilter = (filter: transactionSelection) => {
+    let feePayerJson = switch filter.fee_payer {
+    | Some(payers) if Array.length(payers) > 0 =>
+      let payersStr = Array.map(payers, p => `"${p}"`)->Array.join(", ")
+      Some(`"fee_payer": [${payersStr}]`)
     | _ => None
     }
 
-    let minerJson = switch blockFilter.miner {
-    | Some(miners) if Array.length(miners) > 0 =>
-      let minersStr = Array.map(miners, miner => `"${miner}"`)->Array.join(", ")
-      Some(`"miner": [${minersStr}]`)
-    | _ => None
+    let successJson = switch filter.success {
+    | Some(true) => Some(`"success": true`)
+    | Some(false) => Some(`"success": false`)
+    | None => None
     }
 
-    let allParts = [hashJson, minerJson]->Array.filterMap(x => x)
-    let content = Array.join(allParts, ", ")
-    `{${content}}`
-  }
-
-  let serializeTraceFilter = (traceFilter: traceSelection) => {
-    let fromJson = switch traceFilter.from_ {
-    | Some(froms) if Array.length(froms) > 0 =>
-      let fromsStr = Array.map(froms, addr => `"${addr}"`)->Array.join(", ")
-      Some(`"from": [${fromsStr}]`)
-    | _ => None
-    }
-
-    let toJson = switch traceFilter.to_ {
-    | Some(tos) if Array.length(tos) > 0 =>
-      let tosStr = Array.map(tos, addr => `"${addr}"`)->Array.join(", ")
-      Some(`"to": [${tosStr}]`)
-    | _ => None
-    }
-
-    let addressJson = switch traceFilter.address {
-    | Some(addresses) if Array.length(addresses) > 0 =>
-      let addressesStr = Array.map(addresses, addr => `"${addr}"`)->Array.join(", ")
-      Some(`"address": [${addressesStr}]`)
-    | _ => None
-    }
-
-    let callTypeJson = switch traceFilter.callType {
-    | Some(callTypes) if Array.length(callTypes) > 0 =>
-      let callTypesStr = Array.map(callTypes, callType => `"${callType}"`)->Array.join(", ")
-      Some(`"call_type": [${callTypesStr}]`)
-    | _ => None
-    }
-
-    let rewardTypeJson = switch traceFilter.rewardType {
-    | Some(rewardTypes) if Array.length(rewardTypes) > 0 =>
-      let rewardTypesStr = Array.map(rewardTypes, rewardType => `"${rewardType}"`)->Array.join(", ")
-      Some(`"reward_type": [${rewardTypesStr}]`)
-    | _ => None
-    }
-
-    let typeJson = switch traceFilter.type_ {
-    | Some(types) if Array.length(types) > 0 =>
-      let typesStr = Array.map(types, t => `"${t}"`)->Array.join(", ")
-      Some(`"type": [${typesStr}]`)
-    | _ => None
-    }
-
-    let sighashJson = switch traceFilter.sighash {
-    | Some(sighashes) if Array.length(sighashes) > 0 =>
-      let sighashesStr = Array.map(sighashes, sighash => `"${sighash}"`)->Array.join(", ")
-      Some(`"sighash": [${sighashesStr}]`)
-    | _ => None
-    }
-
-    let allParts =
-      [
-        fromJson,
-        toJson,
-        addressJson,
-        callTypeJson,
-        rewardTypeJson,
-        typeJson,
-        sighashJson,
-      ]->Array.filterMap(x => x)
+    let allParts = [feePayerJson, successJson]->Array.filterMap(x => x)
     let content = Array.join(allParts, ", ")
     `{${content}}`
   }
@@ -299,44 +105,37 @@ let make = (
       fieldSelection.transaction,
       FieldSelector.transactionFieldToSnakeCaseString,
     )
-    let logFields = Array.map(fieldSelection.log, FieldSelector.logFieldToSnakeCaseString)
-    let traceFields = Array.map(fieldSelection.trace, FieldSelector.traceFieldToSnakeCaseString)
+    let instructionFields = Array.map(
+      fieldSelection.instruction,
+      FieldSelector.instructionFieldToSnakeCaseString,
+    )
 
     let blockFieldsStr = Array.map(blockFields, field => `"${field}"`)->Array.join(", ")
     let transactionFieldsStr = Array.map(transactionFields, field => `"${field}"`)->Array.join(", ")
-    let logFieldsStr = Array.map(logFields, field => `"${field}"`)->Array.join(", ")
-    let traceFieldsStr = Array.map(traceFields, field => `"${field}"`)->Array.join(", ")
+    let instructionFieldsStr = Array.map(instructionFields, field => `"${field}"`)->Array.join(", ")
 
-    if selectedChainSupportsTraces() {
-      `"field_selection": {
+    `"field_selection": {
     "block": [${blockFieldsStr}],
     "transaction": [${transactionFieldsStr}],
-    "log": [${logFieldsStr}],
-    "trace": [${traceFieldsStr}]
+    "instruction": [${instructionFieldsStr}]
   }`
-    } else {
-      `"field_selection": {
-    "block": [${blockFieldsStr}],
-    "transaction": [${transactionFieldsStr}],
-    "log": [${logFieldsStr}]
-  }`
-    }
   }
 
   let serializeQuery = (query: query) => {
-    let fromBlockPart = `"from_block": ${Int.toString(query.fromBlock)}`
+    let fromSlotPart = `"from_slot": ${Int.toString(query.fromSlot)}`
 
-    let toBlockPart = switch query.toBlock {
-    | Some(toBlock) => Some(`"to_block": ${Int.toString(toBlock)}`)
+    let toSlotPart = switch query.toSlot {
+    | Some(toSlot) => Some(`"to_slot": ${Int.toString(toSlot)}`)
     | None => None
     }
 
-    let logsPart = switch query.logs {
-    | Some(logs) if Array.length(logs) > 0 =>
-      let logsStr = Array.map(logs, serializeLogFilter)->Array.join(",\n    ")
+    let instructionsPart = switch query.instructions {
+    | Some(instructions) if Array.length(instructions) > 0 =>
+      let instructionsStr =
+        Array.map(instructions, serializeInstructionFilter)->Array.join(",\n    ")
       Some(
-        `"logs": [
-    ${logsStr}
+        `"instructions": [
+    ${instructionsStr}
   ]`,
       )
     | _ => None
@@ -352,32 +151,6 @@ let make = (
   ]`,
       )
     | _ => None
-    }
-
-    let blocksPart = switch query.blocks {
-    | Some(blocks) if Array.length(blocks) > 0 =>
-      let blocksStr = Array.map(blocks, serializeBlockFilter)->Array.join(",\n    ")
-      Some(
-        `"blocks": [
-    ${blocksStr}
-  ]`,
-      )
-    | _ => None
-    }
-
-    let tracesPart = if selectedChainSupportsTraces() {
-      switch query.traces {
-      | Some(traces) if Array.length(traces) > 0 =>
-        let tracesStr = Array.map(traces, serializeTraceFilter)->Array.join(",\n    ")
-        Some(
-          `"traces": [
-    ${tracesStr}
-  ]`,
-        )
-      | _ => None
-      }
-    } else {
-      None
     }
 
     let includeAllBlocksPart = switch query.includeAllBlocks {
@@ -398,42 +171,22 @@ let make = (
     | None => None
     }
 
-    let maxNumLogsPart = switch query.maxNumLogs {
-    | Some(max) => Some(`"max_num_logs": ${Int.toString(max)}`)
-    | None => None
-    }
-
-    let maxNumTracesPart = if selectedChainSupportsTraces() {
-      switch query.maxNumTraces {
-      | Some(max) => Some(`"max_num_traces": ${Int.toString(max)}`)
-      | None => None
-      }
-    } else {
-      None
-    }
-
-    let joinModePart = switch query.joinMode {
-    | Some(Default) => Some(`"join_mode": "Default"`)
-    | Some(JoinAll) => Some(`"join_mode": "JoinAll"`)
-    | Some(JoinNothing) => Some(`"join_mode": "JoinNothing"`)
+    let maxNumInstructionsPart = switch query.maxNumInstructions {
+    | Some(max) => Some(`"max_num_instructions": ${Int.toString(max)}`)
     | None => None
     }
 
     let allParts =
       [
-        Some(fromBlockPart),
-        toBlockPart,
-        logsPart,
+        Some(fromSlotPart),
+        toSlotPart,
+        instructionsPart,
         transactionsPart,
-        blocksPart,
-        tracesPart,
         includeAllBlocksPart,
         Some(fieldSelectionPart),
         maxNumBlocksPart,
         maxNumTransactionsPart,
-        maxNumLogsPart,
-        maxNumTracesPart,
-        joinModePart,
+        maxNumInstructionsPart,
       ]->Array.filterMap(x => x)
 
     let content = Array.join(allParts, ",\n  ")
@@ -442,126 +195,106 @@ let make = (
 }`
   }
 
-  // Check if we have a valid URL (either custom or from selected chain)
-  let hasValidUrl = () => {
-    switch customUrl {
-    | Some(url) if String.length(url) > 0 => true
-    | _ => Option.isSome(selectedChainName)
-    }
-  }
+  let hasValidUrl = () => true
 
   let executeQuery = async () => {
-    if hasValidUrl() {
-      setActiveTab(_ => Results)
-      setIsExecuting(_ => true)
-      setQueryError(_ => None)
-      setQueryResult(_ => None)
-      setQueryResultJson(_ => None)
-      setClientMs(_ => None)
-      setServerMs(_ => None)
-      setResponseBytes(_ => None)
-      setSelectedDataset(_ => None)
-      setQueryResultJson(_ => None)
+    setActiveTab(_ => Results)
+    setIsExecuting(_ => true)
+    setQueryError(_ => None)
+    setQueryResult(_ => None)
+    setQueryResultJson(_ => None)
+    setClientMs(_ => None)
+    setServerMs(_ => None)
+    setResponseBytes(_ => None)
+    setSelectedDataset(_ => None)
 
-      try {
-        let url = generateChainUrl()
-        let body = serializeQuery(query)
-        let calcByteLength: string => int = %raw(`(s) => new TextEncoder().encode(s).length`)
-        let t0: float = %raw("performance.now()")
+    try {
+      let url = generateChainUrl()
+      let body = serializeQuery(query)
+      let calcByteLength: string => int = %raw(`(s) => new TextEncoder().encode(s).length`)
+      let t0: float = %raw("performance.now()")
 
-        // Build headers with Authorization token
-        let headers = switch bearerToken {
-        | Some(token) =>
-          Headers.fromObject({
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          })
-        | None =>
-          Headers.fromObject({
-            "Content-Type": "application/json",
-          })
-        }
+      let headers = Headers.fromObject({
+        "Content-Type": "application/json",
+      })
 
-        let requestInit = makeRequestInit({
-          "method": "POST",
-          "body": Body.string(body),
-          "headers": headers,
-        })
+      let requestInit = makeRequestInit({
+        "method": "POST",
+        "body": Body.string(body),
+        "headers": headers,
+      })
 
-        let response = await fetch(url, requestInit)
-        let resultTextRaw = await response->Response.text
-        let t1: float = %raw("performance.now()")
-        let clientElapsed = t1 -. t0
-        setClientMs(_ => Some(Float.toInt(clientElapsed)))
-        setResponseBytes(_ => Some(calcByteLength(resultTextRaw)))
-        let resultJson = try {
-          JSON.parseOrThrow(resultTextRaw)
-        } catch {
-        | _ => JSON.Encode.string(resultTextRaw)
-        }
-
-        if response->Response.ok {
-          // Convert JSON back to string for display purposes
-          try {
-            let resultText = JSON.stringify(resultJson, ~space=2)
-            setQueryResult(_ => Some(resultText))
-            setQueryResultJson(_ => Some(resultJson))
-            // server duration if present
-            let serverDurationMs =
-              resultJson
-              ->JSON.Decode.object
-              ->Option.flatMap(dict => Dict.get(dict, "total_execution_time"))
-              ->Option.flatMap(JSON.Decode.float)
-              ->Option.map(Float.toInt)
-            setServerMs(_ => serverDurationMs)
-          } catch {
-          | e =>
-            Console.log(e)
-            setQueryError(_ => Some("Caught exception - during stringify of json"))
-          }
-          // ->Option.getOr("Invalid JSON response")
-        } else {
-          let errorText = await response->Response.text
-          setQueryError(_ => Some(`HTTP ${Int.toString(response->Response.status)}: ${errorText}`))
-        }
+      let response = await fetch(url, requestInit)
+      let resultTextRaw = await response->Response.text
+      let t1: float = %raw("performance.now()")
+      let clientElapsed = t1 -. t0
+      setClientMs(_ => Some(Float.toInt(clientElapsed)))
+      setResponseBytes(_ => Some(calcByteLength(resultTextRaw)))
+      let resultJson = try {
+        JSON.parseOrThrow(resultTextRaw)
       } catch {
-      | _ => setQueryError(_ => Some("Network error occurred"))
+      | _ => JSON.Encode.string(resultTextRaw)
       }
 
-      setIsExecuting(_ => false)
+      if response->Response.ok {
+        try {
+          let resultText = JSON.stringify(resultJson, ~space=2)
+          setQueryResult(_ => Some(resultText))
+          setQueryResultJson(_ => Some(resultJson))
+          let serverDurationMs =
+            resultJson
+            ->JSON.Decode.object
+            ->Option.flatMap(dict => Dict.get(dict, "total_execution_time"))
+            ->Option.flatMap(JSON.Decode.float)
+            ->Option.map(Float.toInt)
+          setServerMs(_ => serverDurationMs)
+        } catch {
+        | e =>
+          Console.log(e)
+          setQueryError(_ => Some("Caught exception - during stringify of json"))
+        }
+      } else {
+        setQueryError(_ => Some(`HTTP ${Int.toString(response->Response.status)}: ${resultTextRaw}`))
+      }
+    } catch {
+    | _ =>
+      setQueryError(_ => Some(
+        "Network error occurred. Could not reach the Solana HyperSync server at solana-test.hypersync.xyz",
+      ))
     }
+
+    setIsExecuting(_ => false)
   }
 
   // Trigger execute when the inline button is pressed in the parent
   React.useEffect1(() => {
-    executeQuery()->ignore
+    if executeSignal > 0 {
+      executeQuery()->ignore
+    }
     None
   }, [executeSignal])
 
   let generateCurlCommand = (query: query) => {
-    let url = generateChainUrl()
     let body = serializeQuery(query)
     let escapedBody = String.replaceAll(body, "\"", "\\\"")
 
-    `curl -X POST "${url}" \\
+    `curl -X POST "https://solana-test.hypersync.xyz/query" \\
   -H "Content-Type: application/json" \\
   -d "${escapedBody}"`
   }
 
   let copyCurlToClipboard = () => {
-    if hasValidUrl() {
-      let curlCommand = generateCurlCommand(query)
-      let copyToClipboard: string => unit = %raw(`(curlCommand) => {
-        navigator.clipboard.writeText(curlCommand).then(() => {
-          console.log('cURL command copied to clipboard');
-        }).catch(err => {
-          console.error('Failed to copy: ', err);
-        })
-      }`)
-      copyToClipboard(curlCommand)
-      setCopiedCurl(_ => true)
-      let _: timeoutId = setTimeout(() => setCopiedCurl(_ => false), 2000)
-    }
+    let curlCommand = generateCurlCommand(query)
+    let copyToClipboard: string => unit = %raw(`(curlCommand) => {
+      navigator.clipboard.writeText(curlCommand).then(() => {
+        console.log('cURL command copied to clipboard');
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+      })
+    }`)
+    copyToClipboard(curlCommand)
+    setCopiedCurl(_ => true)
+    let _: timeoutId = setTimeout(() => setCopiedCurl(_ => false), 2000)
   }
 
   let copyJsonToClipboard = () => {
@@ -600,7 +333,7 @@ let make = (
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'hypersync-query.json';
+      a.download = 'solana-hypersync-query.json';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -625,7 +358,6 @@ let make = (
   }
 
   // ---- Table helpers (analysis, sorting, formatting) ----
-  // Determine column data types from sample rows
   let analyzeColumns: array<dict<string>> => dict<string> = %raw(`(flatRows) => {
     const isNumeric = (v) => typeof v === 'string' && /^-?\d+(?:\.\d+)?$/.test(v.trim());
     const isHex = (v) => typeof v === 'string' && /^0x[0-9a-fA-F]{6,}$/.test(v);
@@ -651,7 +383,6 @@ let make = (
     return out;
   }`)
 
-  // Sort rows by a column (stable-ish)
   let sortFlatRows: (
     array<dict<string>>,
     string,
@@ -675,67 +406,27 @@ let make = (
       return arr;
     }`)
 
-  // Truncate long values moderately in the middle for readability
-  let _truncateMiddle: string => string = %raw(`(s) => {
-    if (typeof s !== 'string') return String(s ?? '');
-    const max = 24;
-    if (s.length <= max) return s;
-    const head = s.slice(0, 10);
-    const tail = s.slice(-8);
-    return head + '…' + tail;
-  }`)
-
   let copyText: string => unit = %raw(`(text) => {
     navigator.clipboard && navigator.clipboard.writeText(text).catch(() => {});
   }`)
 
-  // Dataset detection and extraction
-  let _detectDatasetNames: JSON.t => array<string> = %raw(`(data) => {
-    const names = new Set();
-    const scanObject = (obj) => {
+  let getCoreDatasetNames: JSON.t => array<string> = %raw(`(data) => {
+    const keys = ['instructions','transactions','blocks'];
+    const found = new Set();
+    const scan = (obj) => {
       if (!obj || typeof obj !== 'object') return;
-      const preferred = ['logs','transactions','blocks','traces','rows','results','items'];
-      for (const k of Object.keys(obj)) {
-        const v = obj[k];
-        if (Array.isArray(v)) names.add(k);
-      }
-      // Special-case nested arrays under data
-      if (Array.isArray(obj.data)) {
-        const arr = obj.data;
-        if (arr.length && typeof arr[0] === 'object') {
-          for (const k of Object.keys(arr[0])) {
-            if (Array.isArray(arr[0][k])) names.add(k);
-          }
-        } else {
-          names.add('data');
-        }
-      }
-      // order by preference then alpha
-      const list = Array.from(names);
-      list.sort((a,b) => {
-        const ia = preferred.indexOf(a);
-        const ib = preferred.indexOf(b);
-        if (ia !== -1 || ib !== -1) return (ia === -1 ? 1 : ia) - (ib === -1 ? 1 : ib);
-        return a.localeCompare(b);
-      });
-      return list;
+      for (const k of keys) if (Array.isArray(obj[k])) found.add(k);
     };
     if (Array.isArray(data)) {
-      if (data.length === 0) return [];
-      if (typeof data[0] === 'object') {
-        // gather keys across elements
-        const keys = new Set();
-        for (const el of data) {
-          if (el && typeof el === 'object') {
-            for (const k of Object.keys(el)) if (Array.isArray(el[k])) keys.add(k);
-          }
-        }
-        if (keys.size) return Array.from(keys).sort();
-      }
-      return ['data'];
+      for (const el of data) scan(el);
+    } else if (data && typeof data === 'object') {
+      scan(data);
+      if (Array.isArray(data.data)) for (const el of data.data) scan(el);
     }
-    if (data && typeof data === 'object') return scanObject(data);
-    return [];
+    const out = Array.from(found);
+    const order = (a,b) => keys.indexOf(a) - keys.indexOf(b);
+    out.sort(order);
+    return out;
   }`)
 
   let getDatasetRowsByName: (JSON.t, string) => array<JSON.t> = %raw(`(data, name) => {
@@ -768,10 +459,8 @@ let make = (
     return (Math.round(b/104857.6)/10) + ' MB';
   }`)
 
-  // Fixed column width for all columns to prevent overlap
-  let fixedColumnWidth = "200px" // Fixed width that guarantees no overlap
+  let fixedColumnWidth = "200px"
 
-  // Improved truncation for very long values
   let smartTruncate = (text: string, maxLength: int): string => {
     if String.length(text) <= maxLength {
       text
@@ -783,7 +472,7 @@ let make = (
     }
   }
 
-  // Collapsible JSON renderer using <details/summary>
+  // Collapsible JSON renderer
   let rec renderJsonNode = (label: string, node: JSON.t, depth: int): React.element => {
     let indent = if depth > 0 {
       "ml-4"
@@ -841,39 +530,6 @@ let make = (
     }
   }
 
-  // Return only core dataset names in order of preference
-  let getCoreDatasetNames: JSON.t => array<string> = %raw(`(data) => {
-    const keys = ['logs','transactions','blocks','traces'];
-    const found = new Set();
-    const scan = (obj) => {
-      if (!obj || typeof obj !== 'object') return;
-      for (const k of keys) if (Array.isArray(obj[k])) found.add(k);
-    };
-    if (Array.isArray(data)) {
-      for (const el of data) scan(el);
-    } else if (data && typeof data === 'object') {
-      scan(data);
-      if (Array.isArray(data.data)) for (const el of data.data) scan(el);
-    }
-    const out = Array.from(found);
-    const order = (a,b) => keys.indexOf(a) - keys.indexOf(b);
-    out.sort(order);
-    return out;
-  }`)
-
-  // ---- Table helpers (JS interop) ----
-  // Pick an array from common response shapes
-  let _pickFirstArrayDataset: JSON.t => array<JSON.t> = %raw(`(data) => {
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === 'object') {
-      const preferred = ['rows','data','results','logs','transactions','blocks','traces','items'];
-      for (const k of preferred) { if (Array.isArray(data[k])) return data[k]; }
-      for (const k in data) { if (Array.isArray(data[k])) return data[k]; }
-    }
-    return [];
-  }`)
-
-  // Flatten nested objects; stringify arrays
   let flattenRows: array<JSON.t> => array<dict<string>> = %raw(`(rows) => {
     const flattenObject = (obj, prefix) => {
       const out = {};
@@ -898,7 +554,6 @@ let make = (
     return rows.map(r => flattenObject(r, ''));
   }`)
 
-  // Detect columns from first N rows
   let detectColumns: array<dict<string>> => array<string> = %raw(`(flatRows) => {
     const cols = new Set();
     for (let i = 0; i < flatRows.length && i < 200; i++) {
@@ -908,7 +563,6 @@ let make = (
     return Array.from(cols).sort();
   }`)
 
-  // Build CSV from flattened rows
   let rowsToCsv: array<dict<string>> => string = %raw(`(flatRows) => {
     const cols = (() => {
       const s = new Set();
@@ -918,7 +572,7 @@ let make = (
     const esc = (v) => {
       if (v == null) return '';
       const s = String(v);
-      if (s.includes('"') || s.includes(',') || s.includes('\n')) return '"' + s.replaceAll('"','""') + '"';
+      if (s.includes('"') || s.includes(',') || s.includes('\\n')) return '"' + s.replaceAll('"','""') + '"';
       return s;
     };
     const lines = [cols.join(',')];
@@ -926,7 +580,7 @@ let make = (
       const r = flatRows[i];
       lines.push(cols.map(c => esc(r[c])).join(','));
     }
-    return lines.join('\n');
+    return lines.join('\\n');
   }`)
 
   let copyCsvToClipboard = (csvText: string) => {
@@ -944,7 +598,7 @@ let make = (
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'hypersync-results.csv';
+      a.download = 'solana-hypersync-results.csv';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -959,15 +613,13 @@ let make = (
       <p className="text-sm text-slate-600">
         {"View your query structure and results"->React.string}
       </p>
-      {hasValidUrl()
-        ? <div className="mt-3">
-            <span
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
-            >
-              {`Query URL: ${generateChainUrl()}`->React.string}
-            </span>
-          </div>
-        : React.null}
+      <div className="mt-3">
+        <span
+          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
+        >
+          {`Query URL: ${generateChainUrl()}`->React.string}
+        </span>
+      </div>
     </div>
 
     // Tab Navigation
@@ -983,15 +635,6 @@ let make = (
               : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}
         >
           {"Query JSON"->React.string}
-        </button>
-        <button
-          onClick={_ => setActiveTab(_ => QueryLogic)}
-          className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
-              QueryLogic
-              ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}
-        >
-          {"Query Logic"->React.string}
         </button>
         <button
           onClick={_ => setActiveTab(_ => Results)}
@@ -1172,8 +815,6 @@ let make = (
           </pre>
         </div>
 
-      | QueryLogic => <QueryLogic query={query} tracesSupported={selectedChainSupportsTraces()} />
-
       | Results =>
         <div>
           {switch (queryResult, queryError, isExecuting) {
@@ -1333,7 +974,6 @@ let make = (
               | Table =>
                 switch queryResultJson {
                 | Some(json) => {
-                    // Dataset selection and rows
                     let datasetNames = getCoreDatasetNames(json)
                     let effectiveDataset = switch selectedDataset {
                     | Some(name) => name
@@ -1556,24 +1196,20 @@ let make = (
               <p className="text-slate-500">
                 {"Execute query to see results here..."->React.string}
               </p>
-              {hasValidUrl()
-                ? <div className="mt-4 flex justify-center space-x-2">
-                    <button
-                      onClick={_ => copyCurlToClipboard()}
-                      className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
-                    >
-                      {"Copy cURL"->React.string}
-                    </button>
-                    <button
-                      onClick={_ => executeQuery()->ignore}
-                      className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
-                    >
-                      {"Execute Query"->React.string}
-                    </button>
-                  </div>
-                : <div className="mt-4 text-sm text-orange-600">
-                    {"Please select a chain or enter a custom URL to execute queries"->React.string}
-                  </div>}
+              <div className="mt-4 flex justify-center space-x-2">
+                <button
+                  onClick={_ => copyCurlToClipboard()}
+                  className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+                >
+                  {"Copy cURL"->React.string}
+                </button>
+                <button
+                  onClick={_ => executeQuery()->ignore}
+                  className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+                >
+                  {"Execute Query"->React.string}
+                </button>
+              </div>
             </div>
           }}
         </div>

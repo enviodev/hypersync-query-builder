@@ -15,7 +15,7 @@ let make = (~query: QueryStructure.query, ~onQueryChange: QueryStructure.query =
             {"Advanced Options"->React.string}
           </h3>
           <p className="text-sm text-gray-600 mt-1">
-            {"Configure advanced query parameters like block ranges, join modes, and limits"->React.string}
+            {"Configure advanced query parameters like slot ranges and limits"->React.string}
           </p>
         </div>
         <svg
@@ -33,23 +33,23 @@ let make = (~query: QueryStructure.query, ~onQueryChange: QueryStructure.query =
 
     {isExpanded
       ? <div className="p-6 space-y-6">
-          // Block Range
+          // Slot Range
           <div>
             <h4 className="text-md font-medium text-gray-900 mb-3">
-              {"Block Range"->React.string}
+              {"Slot Range"->React.string}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {"From Block"->React.string}
+                  {"From Slot"->React.string}
                 </label>
                 <input
                   type_="number"
-                  value={Int.toString(query.fromBlock)}
+                  value={Int.toString(query.fromSlot)}
                   onChange={e => {
                     let target = ReactEvent.Form.target(e)
                     let value = target["value"]
-                    onQueryChange({...query, fromBlock: Int.fromString(value)->Option.getOr(0)})
+                    onQueryChange({...query, fromSlot: Int.fromString(value)->Option.getOr(0)})
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0"
@@ -57,12 +57,12 @@ let make = (~query: QueryStructure.query, ~onQueryChange: QueryStructure.query =
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {"To Block (Optional)"->React.string}
+                  {"To Slot (Optional)"->React.string}
                 </label>
                 <input
                   type_="number"
-                  value={switch query.toBlock {
-                  | Some(block) => Int.toString(block)
+                  value={switch query.toSlot {
+                  | Some(slot) => Int.toString(slot)
                   | None => ""
                   }}
                   onChange={e => {
@@ -70,74 +70,13 @@ let make = (~query: QueryStructure.query, ~onQueryChange: QueryStructure.query =
                     let value = target["value"]
                     onQueryChange({
                       ...query,
-                      toBlock: value === "" ? None : Int.fromString(value),
+                      toSlot: value === "" ? None : Int.fromString(value),
                     })
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Latest block"
+                  placeholder="Latest slot"
                 />
               </div>
-            </div>
-          </div>
-
-          // Join Mode
-          <div>
-            <h4 className="text-md font-medium text-gray-900 mb-3">
-              {"Join Mode"->React.string}
-            </h4>
-            <p className="text-sm text-gray-600 mb-3">
-              {"Controls how data from different sources (logs, transactions, blocks) are related"->React.string}
-            </p>
-            <div className="space-y-2">
-              <label className="flex items-center">
-                <input
-                  type_="radio"
-                  name="joinMode"
-                  checked={switch query.joinMode {
-                  | Some(Default) => true
-                  | Some(_) => false
-                  | None => true
-                  }}
-                  onChange={_ => onQueryChange({...query, joinMode: Some(Default)})}
-                  className="text-blue-600 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  <strong> {"Default"->React.string} </strong>
-                  {" - Standard join behavior (recommended)"->React.string}
-                </span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type_="radio"
-                  name="joinMode"
-                  checked={switch query.joinMode {
-                  | Some(JoinAll) => true
-                  | _ => false
-                  }}
-                  onChange={_ => onQueryChange({...query, joinMode: Some(JoinAll)})}
-                  className="text-blue-600 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  <strong> {"Join All"->React.string} </strong>
-                  {" - Include all relationships between data"->React.string}
-                </span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type_="radio"
-                  name="joinMode"
-                  checked={switch query.joinMode {
-                  | Some(JoinNothing) => true
-                  | _ => false
-                  }}
-                  onChange={_ => onQueryChange({...query, joinMode: Some(JoinNothing)})}
-                  className="text-blue-600 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  <strong> {"Join Nothing"->React.string} </strong>
-                  {" - Return data without relationships"->React.string}
-                </span>
-              </label>
             </div>
           </div>
 
@@ -222,11 +161,11 @@ let make = (~query: QueryStructure.query, ~onQueryChange: QueryStructure.query =
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {"Max Logs"->React.string}
+                  {"Max Instructions"->React.string}
                 </label>
                 <input
                   type_="number"
-                  value={switch query.maxNumLogs {
+                  value={switch query.maxNumInstructions {
                   | Some(num) => Int.toString(num)
                   | None => ""
                   }}
@@ -235,7 +174,7 @@ let make = (~query: QueryStructure.query, ~onQueryChange: QueryStructure.query =
                     let value = target["value"]
                     onQueryChange({
                       ...query,
-                      maxNumLogs: value === "" ? None : Int.fromString(value),
+                      maxNumInstructions: value === "" ? None : Int.fromString(value),
                     })
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

@@ -13,5 +13,13 @@ export default defineConfig({
   },
   css: {
     postcss: './postcss.config.js'
+  },
+  server: {
+    proxy: {
+      '/query': {
+        target: 'https://solana-test.hypersync.xyz',
+        changeOrigin: true,
+      }
+    }
   }
 })

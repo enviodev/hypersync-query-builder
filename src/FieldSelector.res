@@ -1,11 +1,9 @@
 open QueryStructure
-open TagSelector
 
 type activeSection =
   | Block
   | Transaction
-  | Log
-  | Trace
+  | Instruction
 
 let snakeToCamel = (input: string): string =>
   Js.String.split("_", input)
@@ -36,20 +34,19 @@ let camelToSnake = (input: string): string => {
 
 let blockFieldToSnakeCaseString = (field: blockField) => Obj.magic(field)
 let transactionFieldToSnakeCaseString = (field: transactionField) => Obj.magic(field)
-let logFieldToSnakeCaseString = (field: logField) => Obj.magic(field)
-let traceFieldToSnakeCaseString = (field: traceField) => Obj.magic(field)
+let instructionFieldToSnakeCaseString = (field: instructionField) => Obj.magic(field)
 
 let blockFieldToCamelCaseString = field => snakeToCamel(blockFieldToSnakeCaseString(field))
 let transactionFieldToCamelCaseString = field =>
   snakeToCamel(transactionFieldToSnakeCaseString(field))
-let logFieldToCamelCaseString = field => snakeToCamel(logFieldToSnakeCaseString(field))
-let traceFieldToCamelCaseString = field => snakeToCamel(traceFieldToSnakeCaseString(field))
+let instructionFieldToCamelCaseString = field =>
+  snakeToCamel(instructionFieldToSnakeCaseString(field))
 
 let blockFieldToDisplayString = field => snakeToTitle(blockFieldToSnakeCaseString(field))
 let transactionFieldToDisplayString = field =>
   snakeToTitle(transactionFieldToSnakeCaseString(field))
-let logFieldToDisplayString = field => snakeToTitle(logFieldToSnakeCaseString(field))
-let traceFieldToDisplayString = field => snakeToTitle(traceFieldToSnakeCaseString(field))
+let instructionFieldToDisplayString = field =>
+  snakeToTitle(instructionFieldToSnakeCaseString(field))
 
 let blockFieldOptions = Array.map(QueryStructure.allBlockFields, field => (
   field,
@@ -61,22 +58,13 @@ let transactionFieldOptions = Array.map(QueryStructure.allTransactionFields, fie
   snakeToTitle(transactionFieldToSnakeCaseString(field)),
 ))
 
-let logFieldOptions = Array.map(QueryStructure.allLogFields, field => (
+let instructionFieldOptions = Array.map(QueryStructure.allInstructionFields, field => (
   field,
-  snakeToTitle(logFieldToSnakeCaseString(field)),
-))
-
-let traceFieldOptions = Array.map(QueryStructure.allTraceFields, field => (
-  field,
-  snakeToTitle(traceFieldToSnakeCaseString(field)),
+  snakeToTitle(instructionFieldToSnakeCaseString(field)),
 ))
 
 @react.component
-let make = (
-  ~fieldSelection: fieldSelection,
-  ~onFieldSelectionChange: fieldSelection => unit,
-  ~tracesSupported: bool,
-) => {
+let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelection => unit) => {
   let (active, setActive) = React.useState(() => None)
   let selectionPanelRef = React.useRef(Nullable.null)
 
@@ -106,8 +94,8 @@ let make = (
   let updateBlockFields = newFields => onFieldSelectionChange({...fieldSelection, block: newFields})
   let updateTransactionFields = newFields =>
     onFieldSelectionChange({...fieldSelection, transaction: newFields})
-  let updateLogFields = newFields => onFieldSelectionChange({...fieldSelection, log: newFields})
-  let updateTraceFields = newFields => onFieldSelectionChange({...fieldSelection, trace: newFields})
+  let updateInstructionFields = newFields =>
+    onFieldSelectionChange({...fieldSelection, instruction: newFields})
 
   let selectAllBlockFields = () => {
     let allFields = Array.map(blockFieldOptions, ((field, _)) => field)
@@ -127,22 +115,13 @@ let make = (
     onFieldSelectionChange({...fieldSelection, transaction: []})
   }
 
-  let selectAllLogFields = () => {
-    let allFields = Array.map(logFieldOptions, ((field, _)) => field)
-    onFieldSelectionChange({...fieldSelection, log: allFields})
+  let selectAllInstructionFields = () => {
+    let allFields = Array.map(instructionFieldOptions, ((field, _)) => field)
+    onFieldSelectionChange({...fieldSelection, instruction: allFields})
   }
 
-  let clearAllLogFields = () => {
-    onFieldSelectionChange({...fieldSelection, log: []})
-  }
-
-  let selectAllTraceFields = () => {
-    let allFields = Array.map(traceFieldOptions, ((field, _)) => field)
-    onFieldSelectionChange({...fieldSelection, trace: allFields})
-  }
-
-  let clearAllTraceFields = () => {
-    onFieldSelectionChange({...fieldSelection, trace: []})
+  let clearAllInstructionFields = () => {
+    onFieldSelectionChange({...fieldSelection, instruction: []})
   }
 
   <div className="bg-white rounded-lg shadow p-6 mb-8">
@@ -156,16 +135,7 @@ let make = (
     </div>
 
     {
-      let gridClass = switch active {
-      | None =>
-        `grid grid-cols-1 lg:grid-cols-2 ${tracesSupported
-            ? "xl:grid-cols-4"
-            : "xl:grid-cols-3"} gap-6`
-      | Some(_) =>
-        `grid grid-cols-1 lg:grid-cols-2 ${tracesSupported
-            ? "xl:grid-cols-4"
-            : "xl:grid-cols-3"} gap-6`
-      }
+      let gridClass = `grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6`
 
       <div className={gridClass}>
         // Block Fields
@@ -211,7 +181,7 @@ let make = (
           <TagSelector
             title=""
             placeholder="Add field..."
-            options={blockFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+            options={blockFieldOptions->Array.map(((v, l)) => {TagSelector.value: v, label: l})}
             selectedValues={fieldSelection.block}
             onSelectionChange={updateBlockFields}
             showInput={false}
@@ -266,7 +236,10 @@ let make = (
           <TagSelector
             title=""
             placeholder="Add field..."
-            options={transactionFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+            options={transactionFieldOptions->Array.map(((v, l)) => {
+              TagSelector.value: v,
+              label: l,
+            })}
             selectedValues={fieldSelection.transaction}
             onSelectionChange={updateTransactionFields}
             showInput={false}
@@ -278,20 +251,20 @@ let make = (
           </div>
         </div>
 
-        // Log Fields
+        // Instruction Fields
         <div className="border border-gray-200 rounded-lg p-4">
           <div className="mb-3">
-            <h4 className="font-medium text-gray-900"> {"Log Fields"->React.string} </h4>
+            <h4 className="font-medium text-gray-900"> {"Instruction Fields"->React.string} </h4>
             {
-              let selectedCount = Array.length(fieldSelection.log)
-              let totalCount = Array.length(logFieldOptions)
+              let selectedCount = Array.length(fieldSelection.instruction)
+              let totalCount = Array.length(instructionFieldOptions)
               let allSelected = selectedCount == totalCount
               let noneSelected = selectedCount == 0
               <div className="mt-2 flex items-center gap-3">
                 {allSelected
                   ? React.null
                   : <button
-                      onClick={_ => selectAllLogFields()}
+                      onClick={_ => selectAllInstructionFields()}
                       className="text-xs text-blue-600 hover:text-blue-700"
                     >
                       {"All"->React.string}
@@ -299,7 +272,7 @@ let make = (
                 {noneSelected
                   ? React.null
                   : <button
-                      onClick={_ => clearAllLogFields()}
+                      onClick={_ => clearAllInstructionFields()}
                       className="text-xs text-red-600 hover:text-red-700"
                     >
                       {"Clear"->React.string}
@@ -309,7 +282,7 @@ let make = (
                   : <>
                       <span className="text-gray-300"> {"·"->React.string} </span>
                       <button
-                        onClick={_ => setActive(_ => Some(Log))}
+                        onClick={_ => setActive(_ => Some(Instruction))}
                         className="text-xs text-gray-700 hover:text-gray-900"
                       >
                         {"Add fields"->React.string}
@@ -321,74 +294,20 @@ let make = (
           <TagSelector
             title=""
             placeholder="Add field..."
-            options={logFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
-            selectedValues={fieldSelection.log}
-            onSelectionChange={updateLogFields}
+            options={instructionFieldOptions->Array.map(((v, l)) => {
+              TagSelector.value: v,
+              label: l,
+            })}
+            selectedValues={fieldSelection.instruction}
+            onSelectionChange={updateInstructionFields}
             showInput={false}
           />
           <div className="mt-3 pt-3 border-t border-gray-100">
             <div className="text-xs text-gray-500">
-              {`${Int.toString(Array.length(fieldSelection.log))} selected`->React.string}
+              {`${Int.toString(Array.length(fieldSelection.instruction))} selected`->React.string}
             </div>
           </div>
         </div>
-
-        // Trace Fields
-        {tracesSupported
-          ? <div className="border border-gray-200 rounded-lg p-4">
-              <div className="mb-3">
-                <h4 className="font-medium text-gray-900"> {"Trace Fields"->React.string} </h4>
-                {
-                  let selectedCount = Array.length(fieldSelection.trace)
-                  let totalCount = Array.length(traceFieldOptions)
-                  let allSelected = selectedCount == totalCount
-                  let noneSelected = selectedCount == 0
-                  <div className="mt-2 flex items-center gap-3">
-                    {allSelected
-                      ? React.null
-                      : <button
-                          onClick={_ => selectAllTraceFields()}
-                          className="text-xs text-blue-600 hover:text-blue-700"
-                        >
-                          {"All"->React.string}
-                        </button>}
-                    {noneSelected
-                      ? React.null
-                      : <button
-                          onClick={_ => clearAllTraceFields()}
-                          className="text-xs text-red-600 hover:text-red-700"
-                        >
-                          {"Clear"->React.string}
-                        </button>}
-                    {allSelected
-                      ? React.null
-                      : <>
-                          <span className="text-gray-300"> {"·"->React.string} </span>
-                          <button
-                            onClick={_ => setActive(_ => Some(Trace))}
-                            className="text-xs text-gray-700 hover:text-gray-900"
-                          >
-                            {"Add fields"->React.string}
-                          </button>
-                        </>}
-                  </div>
-                }
-              </div>
-              <TagSelector
-                title=""
-                placeholder="Add field..."
-                options={traceFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
-                selectedValues={fieldSelection.trace}
-                onSelectionChange={updateTraceFields}
-                showInput={false}
-              />
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <div className="text-xs text-gray-500">
-                  {`${Int.toString(Array.length(fieldSelection.trace))} selected`->React.string}
-                </div>
-              </div>
-            </div>
-          : React.null}
       </div>
     }
 
@@ -420,22 +339,12 @@ let make = (
               </button>
               <button
                 className={"text-sm px-3 py-1 rounded " ++ (
-                  section == Log ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50"
+                  section == Instruction ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50"
                 )}
-                onClick={_ => setActive(_ => Some(Log))}
+                onClick={_ => setActive(_ => Some(Instruction))}
               >
-                {"Log"->React.string}
+                {"Instruction"->React.string}
               </button>
-              {tracesSupported
-                ? <button
-                    className={"text-sm px-3 py-1 rounded " ++ (
-                      section == Trace ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50"
-                    )}
-                    onClick={_ => setActive(_ => Some(Trace))}
-                  >
-                    {"Trace"->React.string}
-                  </button>
-                : React.null}
             </div>
             <button
               className="text-sm text-gray-500 hover:text-gray-700"
@@ -451,7 +360,7 @@ let make = (
           <TagSelector
             title=""
             placeholder="Search block fields..."
-            options={blockFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+            options={blockFieldOptions->Array.map(((v, l)) => {TagSelector.value: v, label: l})}
             selectedValues={fieldSelection.block}
             onSelectionChange={updateBlockFields}
             onOpen={() => ()}
@@ -463,7 +372,10 @@ let make = (
           <TagSelector
             title=""
             placeholder="Search transaction fields..."
-            options={transactionFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
+            options={transactionFieldOptions->Array.map(((v, l)) => {
+              TagSelector.value: v,
+              label: l,
+            })}
             selectedValues={fieldSelection.transaction}
             onSelectionChange={updateTransactionFields}
             onOpen={() => ()}
@@ -471,25 +383,16 @@ let make = (
             forceOpen={true}
             showSelectedChips={false}
           />
-        | Log =>
+        | Instruction =>
           <TagSelector
             title=""
-            placeholder="Search log fields..."
-            options={logFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
-            selectedValues={fieldSelection.log}
-            onSelectionChange={updateLogFields}
-            onOpen={() => ()}
-            onClose={() => ()}
-            forceOpen={true}
-            showSelectedChips={false}
-          />
-        | Trace =>
-          <TagSelector
-            title=""
-            placeholder="Search trace fields..."
-            options={traceFieldOptions->Array.map(((v, l)) => {value: v, label: l})}
-            selectedValues={fieldSelection.trace}
-            onSelectionChange={updateTraceFields}
+            placeholder="Search instruction fields..."
+            options={instructionFieldOptions->Array.map(((v, l)) => {
+              TagSelector.value: v,
+              label: l,
+            })}
+            selectedValues={fieldSelection.instruction}
+            onSelectionChange={updateInstructionFields}
             onOpen={() => ()}
             onClose={() => ()}
             forceOpen={true}

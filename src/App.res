@@ -2,98 +2,38 @@
 %%raw(`import './tailwind.css'`)
 
 open QueryStructure
-open UrlEncoder
+
+type preset = {
+  title: string,
+  description: string,
+  apply: unit => unit,
+}
 
 @react.component
 let make = () => {
-  // Token state management
-  let (bearerToken, setBearerToken) = React.useState(() => AuthToken.getToken())
-
-  let handleTokenSubmit = (token: string) => {
-    if AuthToken.saveToken(token) {
-      setBearerToken(_ => Some(token))
-    }
-  }
-
   let (query, setQuery) = React.useState(() => {
-    // Try to load query from URL first, fallback to default
     switch UrlEncoder.getUrlStateFromUrl() {
     | Some(urlState) => urlState.query
     | None => {
-        fromBlock: 0,
-        toBlock: None,
-        logs: None,
+        fromSlot: 0,
+        toSlot: None,
+        instructions: None,
         transactions: None,
-        traces: None,
-        blocks: None,
         includeAllBlocks: None,
         fieldSelection: {
           block: [],
           transaction: [],
-          log: [],
-          trace: [],
+          instruction: [],
         },
         maxNumBlocks: Some(10),
         maxNumTransactions: Some(10),
-        maxNumLogs: Some(10),
-        maxNumTraces: None,
-        joinMode: None,
+        maxNumInstructions: Some(10),
       }
     }
   })
 
-  let (selectedChainName, setSelectedChainName) = React.useState(() => {
-    // Try to load selectedChainName from URL first, fallback to eth by default
-    switch UrlEncoder.getUrlStateFromUrl() {
-    | Some(urlState) =>
-      switch urlState.selectedChainName {
-      | Some(name) => Some(name)
-      | None => Some("eth")
-      }
-    | None => Some("eth")
-    }
-  })
-  let (customUrl, setCustomUrl) = React.useState(() => None)
-  let (availableChains, setAvailableChains) = React.useState(() => ChainSelector.defaultChains)
   let (expandedFilterKey, setExpandedFilterKey) = React.useState(() => None)
   let (executeSignal, setExecuteSignal) = React.useState(() => 0)
-
-  // Quick Start shared address (used by address-based presets)
-  let (quickStartAddress, setQuickStartAddress) = React.useState(() => "")
-
-  let padLeftZeros = (hex: string, totalLen: int): string => {
-    let len = String.length(hex)
-    if len >= totalLen {
-      hex
-    } else {
-      let zeros = Belt.Array.makeBy(totalLen - len, _ => "0")->Array.join("")
-      zeros ++ hex
-    }
-  }
-
-  let encodeAddressToTopic = (addr: string): option<string> => {
-    if !(addr->String.startsWith("0x")) || String.length(addr) !== 42 {
-      None
-    } else {
-      let hex = String.substring(addr, ~start=2)->String.toLowerCase
-      let padded = padLeftZeros(hex, 64)
-      Some("0x" ++ padded)
-    }
-  }
-
-  // Helper function to check if selected chain supports traces
-  let selectedChainSupportsTraces = () => {
-    switch selectedChainName {
-    | Some(chainName) =>
-      // Find the selected chain in the available chains list (fetched from API or default)
-      let selectedChain = availableChains->Array.find(chain => chain.name === chainName)
-      switch selectedChain {
-      | Some(chain) => ChainSelector.chainSupportsTraces(chain)
-      | None => false
-      }
-    | None => false
-    }
-  }
 
   let toggleFilter = key =>
     setExpandedFilterKey(prev =>
@@ -109,319 +49,435 @@ let make = () => {
     )
 
   let resetBuilder = () => {
-    setSelectedChainName(_ => Some("eth"))
-    setQuickStartAddress(_ => "")
     setExpandedFilterKey(_ => None)
     setQuery(_ => {
-      fromBlock: 0,
-      toBlock: None,
-      logs: None,
+      fromSlot: 0,
+      toSlot: None,
+      instructions: None,
       transactions: None,
-      traces: None,
-      blocks: None,
       includeAllBlocks: None,
       fieldSelection: {
         block: [],
         transaction: [],
-        log: [],
-        trace: [],
+        instruction: [],
       },
       maxNumBlocks: Some(10),
       maxNumTransactions: Some(10),
-      maxNumLogs: Some(10),
-      maxNumTraces: None,
-      joinMode: None,
+      maxNumInstructions: Some(10),
     })
   }
 
-  // Quick-start templates
-  let applyPresetErc20Transfers = () => {
-    // ERC20 Transfer event signature
-    let transferTopic0 = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+  // Preset: Block metadata across a slot range
+  let applyPresetBlocks = () => {
     let preset: query = {
-      ...query,
-      logs: Some([{address: None, topics: Some([[transferTopic0]])}]),
+      fromSlot: 382505500,
+      toSlot: Some(382505505),
+      instructions: None,
       transactions: None,
-      blocks: None,
-      traces: None,
+      includeAllBlocks: Some(true),
       fieldSelection: {
-        block: [],
-        transaction: [
-          // transactionField
-          BlockHash,
-          From,
-          To,
-          Value,
-          Status,
-        ],
-        log: [
-          // logField
-          Address,
-          Topic0,
-          Topic1,
-          Topic2,
-          Topic3,
-          TransactionHash,
-          BlockNumber,
-        ],
-        trace: [],
+        block: [Slot, Blockhash, BlockTime, BlockHeight],
+        transaction: [],
+        instruction: [],
       },
       maxNumBlocks: Some(10),
-      maxNumTransactions: Some(10),
-      maxNumLogs: Some(10),
-      maxNumTraces: None,
-      joinMode: query.joinMode,
+      maxNumTransactions: None,
+      maxNumInstructions: None,
     }
     setQuery(_ => preset)
-    setExpandedFilterKey(_ => Some("log-0"))
-    // Select a sensible default network if none selected
-    setSelectedChainName(prev =>
-      switch prev {
-      | Some(_) => prev
-      | None => Some("eth")
-      }
-    )
+    setExpandedFilterKey(_ => None)
   }
 
-  let applyPresetFailedTransactions = () => {
+  // Preset: Jupiter v6 aggregator swaps
+  let applyPresetJupiter = () => {
     let preset: query = {
-      ...query,
-      logs: None,
-      transactions: Some([
+      fromSlot: 382505500,
+      toSlot: Some(382505510),
+      instructions: Some([
         {
-          from_: None,
-          to_: None,
-          sighash: None,
-          status: Some(0),
-          type_: None,
-          contractAddress: None,
-          authorizationList: None,
+          program_id: Some(["JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"]),
+          d1: None,
+          d8: None,
+          a0: None,
+          is_inner: None,
         },
       ]),
-      traces: None,
-      blocks: None,
+      transactions: None,
+      includeAllBlocks: None,
       fieldSelection: {
         block: [],
-        transaction: [Hash, From, To, Value, GasUsed, Status],
-        log: [],
-        trace: [],
+        transaction: [],
+        instruction: [Slot, TransactionIndex, ProgramId, D8, Accounts, A0, Data, IsInner],
       },
-      maxNumBlocks: Some(10),
-      maxNumTransactions: Some(10),
-      maxNumLogs: Some(10),
-      maxNumTraces: None,
-      joinMode: query.joinMode,
+      maxNumBlocks: None,
+      maxNumTransactions: None,
+      maxNumInstructions: Some(50),
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("instruction-0"))
+  }
+
+  // Preset: Raydium AMM v4 — pool swaps and liquidity
+  let applyPresetRaydium = () => {
+    let preset: query = {
+      fromSlot: 382505500,
+      toSlot: Some(382505510),
+      instructions: Some([
+        {
+          program_id: Some(["675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"]),
+          d1: None,
+          d8: None,
+          a0: None,
+          is_inner: None,
+        },
+      ]),
+      transactions: None,
+      includeAllBlocks: None,
+      fieldSelection: {
+        block: [],
+        transaction: [],
+        instruction: [Slot, TransactionIndex, ProgramId, D1, Accounts, A0, Data, IsInner],
+      },
+      maxNumBlocks: None,
+      maxNumTransactions: None,
+      maxNumInstructions: Some(50),
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("instruction-0"))
+  }
+
+  // Preset: Pump.fun bonding curve token launches
+  let applyPresetPumpFun = () => {
+    let preset: query = {
+      fromSlot: 382505500,
+      toSlot: Some(382505510),
+      instructions: Some([
+        {
+          program_id: Some(["6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"]),
+          d1: None,
+          d8: None,
+          a0: None,
+          is_inner: None,
+        },
+      ]),
+      transactions: None,
+      includeAllBlocks: None,
+      fieldSelection: {
+        block: [],
+        transaction: [],
+        instruction: [Slot, TransactionIndex, ProgramId, D8, Accounts, A0, Data, IsInner],
+      },
+      maxNumBlocks: None,
+      maxNumTransactions: None,
+      maxNumInstructions: Some(50),
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("instruction-0"))
+  }
+
+  // Preset: SPL Token Program — transfers, mints, burns
+  let applyPresetTokenProgram = () => {
+    let preset: query = {
+      fromSlot: 382505500,
+      toSlot: Some(382505502),
+      instructions: Some([
+        {
+          program_id: Some(["TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"]),
+          d1: None,
+          d8: None,
+          a0: None,
+          is_inner: None,
+        },
+      ]),
+      transactions: None,
+      includeAllBlocks: None,
+      fieldSelection: {
+        block: [],
+        transaction: [],
+        instruction: [Slot, TransactionIndex, ProgramId, D1, Accounts, A0],
+      },
+      maxNumBlocks: None,
+      maxNumTransactions: None,
+      maxNumInstructions: Some(50),
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("instruction-0"))
+  }
+
+  // Preset: System Program — SOL transfers and account creation
+  let applyPresetSystemProgram = () => {
+    let preset: query = {
+      fromSlot: 382505500,
+      toSlot: Some(382505502),
+      instructions: Some([
+        {
+          program_id: Some(["11111111111111111111111111111111"]),
+          d1: None,
+          d8: None,
+          a0: None,
+          is_inner: None,
+        },
+      ]),
+      transactions: None,
+      includeAllBlocks: None,
+      fieldSelection: {
+        block: [],
+        transaction: [],
+        instruction: [Slot, TransactionIndex, ProgramId, D1, Accounts, A0, Data],
+      },
+      maxNumBlocks: None,
+      maxNumTransactions: None,
+      maxNumInstructions: Some(50),
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("instruction-0"))
+  }
+
+  // Preset: Jupiter OR Raydium — cross-DEX activity via OR filter
+  let applyPresetDexOr = () => {
+    let preset: query = {
+      fromSlot: 382505500,
+      toSlot: Some(382505510),
+      instructions: Some([
+        {
+          program_id: Some(["JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"]),
+          d1: None,
+          d8: None,
+          a0: None,
+          is_inner: None,
+        },
+        {
+          program_id: Some(["675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"]),
+          d1: None,
+          d8: None,
+          a0: None,
+          is_inner: None,
+        },
+      ]),
+      transactions: None,
+      includeAllBlocks: None,
+      fieldSelection: {
+        block: [],
+        transaction: [],
+        instruction: [Slot, TransactionIndex, ProgramId, D1, D8, Accounts, IsInner],
+      },
+      maxNumBlocks: None,
+      maxNumTransactions: None,
+      maxNumInstructions: Some(100),
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("instruction-0"))
+  }
+
+  // Preset: Top-level instructions only — exclude CPI inner calls
+  let applyPresetOuterOnly = () => {
+    let preset: query = {
+      fromSlot: 382505500,
+      toSlot: Some(382505501),
+      instructions: Some([
+        {
+          program_id: None,
+          d1: None,
+          d8: None,
+          a0: None,
+          is_inner: Some(false),
+        },
+      ]),
+      transactions: None,
+      includeAllBlocks: None,
+      fieldSelection: {
+        block: [],
+        transaction: [],
+        instruction: [Slot, TransactionIndex, ProgramId, IsInner, D1],
+      },
+      maxNumBlocks: None,
+      maxNumTransactions: None,
+      maxNumInstructions: Some(100),
+    }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("instruction-0"))
+  }
+
+  // Preset: Successful transactions
+  let applyPresetSuccessfulTxns = () => {
+    let preset: query = {
+      fromSlot: 382505500,
+      toSlot: Some(382505502),
+      instructions: None,
+      transactions: Some([
+        {
+          fee_payer: None,
+          success: Some(true),
+        },
+      ]),
+      includeAllBlocks: None,
+      fieldSelection: {
+        block: [],
+        transaction: [Slot, TransactionIndex, Signatures, FeePayer, Success, Fee],
+        instruction: [],
+      },
+      maxNumBlocks: None,
+      maxNumTransactions: Some(50),
+      maxNumInstructions: None,
     }
     setQuery(_ => preset)
     setExpandedFilterKey(_ => Some("transaction-0"))
-    // Select a sensible default network if none selected
-    setSelectedChainName(prev =>
-      switch prev {
-      | Some(_) => prev
-      | None => Some("eth")
-      }
-    )
   }
 
-  // Additional Quick-start templates inspired by docs
-  // https://docs.envio.dev/docs/HyperSync/hypersync-curl-examples#get-all-erc-20-transfers-for-an-address
-  let applyPresetErc20TransfersForAddress = () => {
-    // Example address from docs; users can override via Quick Start Address
-    let defaultAddr = "0x1e037f97d730Cc881e77F01E409D828b0bb14de0"
-    let addr = if (
-      quickStartAddress->String.startsWith("0x") && String.length(quickStartAddress) === 42
-    ) {
-      quickStartAddress
-    } else {
-      defaultAddr
-    }
-    // 32-byte topic-encoded address
-    let addrTopic = encodeAddressToTopic(addr)->Option.getOr("")
-    let transferTopic0 = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+  // Preset: Failed transactions
+  let applyPresetFailedTxns = () => {
     let preset: query = {
-      ...query,
-      fromBlock: 0,
-      logs: Some([
-        {address: None, topics: Some([[transferTopic0], [], [addrTopic]])},
-        {address: None, topics: Some([[transferTopic0], [addrTopic], []])},
-      ]),
+      fromSlot: 382505500,
+      toSlot: Some(382505502),
+      instructions: None,
       transactions: Some([
         {
-          from_: Some([addr]),
-          to_: None,
-          sighash: None,
-          status: None,
-          type_: None,
-          contractAddress: None,
-          authorizationList: None,
-        },
-        {
-          from_: None,
-          to_: Some([addr]),
-          sighash: None,
-          status: None,
-          type_: None,
-          contractAddress: None,
-          authorizationList: None,
+          fee_payer: None,
+          success: Some(false),
         },
       ]),
-      blocks: None,
-      traces: None,
+      includeAllBlocks: None,
       fieldSelection: {
-        block: [Number, Timestamp, Hash],
-        log: [
-          BlockNumber,
-          LogIndex,
-          TransactionIndex,
-          Data,
-          Address,
-          Topic0,
-          Topic1,
-          Topic2,
-          Topic3,
-        ],
-        transaction: [BlockNumber, TransactionIndex, Hash, From, To, Value, Input],
-        trace: [],
+        block: [],
+        transaction: [Slot, TransactionIndex, Signatures, FeePayer, Success, Err],
+        instruction: [],
       },
-      maxNumBlocks: Some(10),
-      maxNumTransactions: Some(10),
-      maxNumLogs: Some(10),
-      maxNumTraces: None,
-      joinMode: query.joinMode,
-    }
-    setQuery(_ => preset)
-    setExpandedFilterKey(_ => Some("log-0"))
-    setSelectedChainName(prev =>
-      switch prev {
-      | Some(_) => prev
-      | None => Some("eth")
-      }
-    )
-  }
-
-  // https://docs.envio.dev/docs/HyperSync/hypersync-curl-examples#get-all-transactions-for-an-address
-  let applyPresetAddressTransactions = () => {
-    let defaultAddr = "0x1e037f97d730Cc881e77F01E409D828b0bb14de0"
-    let addr = if (
-      quickStartAddress->String.startsWith("0x") && String.length(quickStartAddress) === 42
-    ) {
-      quickStartAddress
-    } else {
-      defaultAddr
-    }
-    let preset: query = {
-      ...query,
-      fromBlock: 15362000,
-      logs: None,
-      transactions: Some([
-        {
-          from_: Some([addr]),
-          to_: None,
-          sighash: None,
-          status: None,
-          type_: None,
-          contractAddress: None,
-          authorizationList: None,
-        },
-        {
-          from_: None,
-          to_: Some([addr]),
-          sighash: None,
-          status: None,
-          type_: None,
-          contractAddress: None,
-          authorizationList: None,
-        },
-      ]),
-      blocks: None,
-      traces: None,
-      fieldSelection: {
-        block: [Number, Timestamp, Hash],
-        transaction: [BlockNumber, TransactionIndex, Hash, From, To],
-        log: [],
-        trace: [],
-      },
-      maxNumBlocks: Some(10),
-      maxNumTransactions: Some(10),
-      maxNumLogs: Some(10),
-      maxNumTraces: None,
-      joinMode: query.joinMode,
+      maxNumBlocks: None,
+      maxNumTransactions: Some(50),
+      maxNumInstructions: None,
     }
     setQuery(_ => preset)
     setExpandedFilterKey(_ => Some("transaction-0"))
-    setSelectedChainName(prev =>
-      switch prev {
-      | Some(_) => prev
-      | None => Some("eth")
-      }
-    )
   }
 
-  // Update URL when query or selectedChainName changes
-  React.useEffect1(() => {
-    UrlEncoder.updateUrlWithState({query, selectedChainName})
-    None
-  }, [(query, selectedChainName)])
-
-  // Clear trace-related data when a non-traces network is selected
-  React.useEffect1(() => {
-    switch selectedChainName {
-    | Some(chainName) =>
-      let selectedChain = availableChains->Array.find(chain => chain.name === chainName)
-      switch selectedChain {
-      | Some(chain) =>
-        if !ChainSelector.chainSupportsTraces(chain) {
-          // Clear trace filters and field selections when traces are not supported
-          setQuery(prev => {
-            ...prev,
-            traces: None,
-            fieldSelection: {
-              ...prev.fieldSelection,
-              trace: [],
-            },
-          })
-        }
-      | None => ()
-      }
-    | None => ()
+  // Preset: Orca Whirlpool — concentrated liquidity swaps
+  let applyPresetOrca = () => {
+    let preset: query = {
+      fromSlot: 382505500,
+      toSlot: Some(382505510),
+      instructions: Some([
+        {
+          program_id: Some(["whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"]),
+          d1: None,
+          d8: None,
+          a0: None,
+          is_inner: None,
+        },
+      ]),
+      transactions: None,
+      includeAllBlocks: None,
+      fieldSelection: {
+        block: [],
+        transaction: [],
+        instruction: [Slot, TransactionIndex, ProgramId, D8, Accounts, A0, Data, IsInner],
+      },
+      maxNumBlocks: None,
+      maxNumTransactions: None,
+      maxNumInstructions: Some(50),
     }
+    setQuery(_ => preset)
+    setExpandedFilterKey(_ => Some("instruction-0"))
+  }
+
+  let presets = [
+    {
+      title: "Block Metadata",
+      description: "Slot, blockhash, time across a 5-slot range",
+      apply: applyPresetBlocks,
+    },
+    {
+      title: "Jupiter v6",
+      description: "DEX aggregator swaps (JUP6Lkb...)",
+      apply: applyPresetJupiter,
+    },
+    {
+      title: "Raydium AMM v4",
+      description: "AMM pool swaps & liquidity (675kPX9...)",
+      apply: applyPresetRaydium,
+    },
+    {
+      title: "Pump.fun",
+      description: "Bonding curve token launches (6EF8rre...)",
+      apply: applyPresetPumpFun,
+    },
+    {
+      title: "Orca Whirlpool",
+      description: "Concentrated liquidity swaps (whirLbM...)",
+      apply: applyPresetOrca,
+    },
+    {
+      title: "SPL Token Program",
+      description: "Token transfers, mints & burns",
+      apply: applyPresetTokenProgram,
+    },
+    {
+      title: "System Program",
+      description: "SOL transfers & account creation",
+      apply: applyPresetSystemProgram,
+    },
+    {
+      title: "Jupiter OR Raydium",
+      description: "Cross-DEX activity via OR filter",
+      apply: applyPresetDexOr,
+    },
+    {
+      title: "Outer Only",
+      description: "Top-level instructions, no CPI inner calls",
+      apply: applyPresetOuterOnly,
+    },
+    {
+      title: "Successful Txns",
+      description: "Filter transactions by success=true",
+      apply: applyPresetSuccessfulTxns,
+    },
+    {
+      title: "Failed Txns",
+      description: "Inspect failed transactions & errors",
+      apply: applyPresetFailedTxns,
+    },
+  ]
+
+  // Update URL when query changes
+  React.useEffect1(() => {
+    UrlEncoder.updateUrlWithState({query, selectedChainName: None})
     None
-  }, [selectedChainName])
+  }, [query])
 
   let updateFieldSelection = (newFieldSelection: fieldSelection) => {
     setQuery(prev => {...prev, fieldSelection: newFieldSelection})
   }
 
-  let addLogFilter = () => {
-    let newIndex = query.logs->Option.getOr([])->Array.length
-    let newLogFilter: logSelection = {
-      address: None,
-      topics: None,
+  let addInstructionFilter = () => {
+    let newIndex = query.instructions->Option.getOr([])->Array.length
+    let newFilter: instructionSelection = {
+      program_id: None,
+      d1: None,
+      d8: None,
+      a0: None,
+      is_inner: None,
     }
     setQuery(prev => {
       ...prev,
-      logs: Some(Array.concat(prev.logs->Option.getOr([]), [newLogFilter])),
+      instructions: Some(Array.concat(prev.instructions->Option.getOr([]), [newFilter])),
     })
-    setExpandedFilterKey(_ => Some(`log-${Int.toString(newIndex)}`))
+    setExpandedFilterKey(_ => Some(`instruction-${Int.toString(newIndex)}`))
   }
 
-  let updateLogFilter = (index: int, newFilter: logSelection) => {
+  let updateInstructionFilter = (index: int, newFilter: instructionSelection) => {
     setQuery(prev => {
-      let currentLogs = prev.logs->Option.getOr([])
-      let updatedLogs = Array.mapWithIndex(currentLogs, (filter, i) =>
-        i === index ? newFilter : filter
-      )
-      {...prev, logs: Some(updatedLogs)}
+      let current = prev.instructions->Option.getOr([])
+      let updated = Array.mapWithIndex(current, (filter, i) => i === index ? newFilter : filter)
+      {...prev, instructions: Some(updated)}
     })
   }
 
-  let removeLogFilter = (index: int) => {
+  let removeInstructionFilter = (index: int) => {
     setQuery(prev => {
-      let currentLogs = prev.logs->Option.getOr([])
-      let updatedLogs = Belt.Array.keepWithIndex(currentLogs, (_, i) => i !== index)
-      {...prev, logs: Array.length(updatedLogs) > 0 ? Some(updatedLogs) : None}
+      let current = prev.instructions->Option.getOr([])
+      let updated = Belt.Array.keepWithIndex(current, (_, i) => i !== index)
+      {...prev, instructions: Array.length(updated) > 0 ? Some(updated) : None}
     })
-    let key = `log-${Int.toString(index)}`
+    let key = `instruction-${Int.toString(index)}`
     setExpandedFilterKey(prev =>
       if prev === Some(key) {
         None
@@ -433,39 +489,32 @@ let make = () => {
 
   let addTransactionFilter = () => {
     let newIndex = query.transactions->Option.getOr([])->Array.length
-    let newTransactionFilter: transactionSelection = {
-      from_: None,
-      to_: None,
-      sighash: None,
-      status: None,
-      type_: None,
-      contractAddress: None,
-      authorizationList: None,
+    let newFilter: transactionSelection = {
+      fee_payer: None,
+      success: None,
     }
     setQuery(prev => {
       ...prev,
-      transactions: Some(Array.concat(prev.transactions->Option.getOr([]), [newTransactionFilter])),
+      transactions: Some(Array.concat(prev.transactions->Option.getOr([]), [newFilter])),
     })
     setExpandedFilterKey(_ => Some(`transaction-${Int.toString(newIndex)}`))
   }
 
   let updateTransactionFilter = (index: int, newFilter: transactionSelection) => {
     setQuery(prev => {
-      let currentTransactions = prev.transactions->Option.getOr([])
-      let updatedTransactions = Array.mapWithIndex(currentTransactions, (filter, i) =>
-        i === index ? newFilter : filter
-      )
-      {...prev, transactions: Some(updatedTransactions)}
+      let current = prev.transactions->Option.getOr([])
+      let updated = Array.mapWithIndex(current, (filter, i) => i === index ? newFilter : filter)
+      {...prev, transactions: Some(updated)}
     })
   }
 
   let removeTransactionFilter = (index: int) => {
     setQuery(prev => {
-      let currentTransactions = prev.transactions->Option.getOr([])
-      let updatedTransactions = Belt.Array.keepWithIndex(currentTransactions, (_, i) => i !== index)
+      let current = prev.transactions->Option.getOr([])
+      let updated = Belt.Array.keepWithIndex(current, (_, i) => i !== index)
       {
         ...prev,
-        transactions: Array.length(updatedTransactions) > 0 ? Some(updatedTransactions) : None,
+        transactions: Array.length(updated) > 0 ? Some(updated) : None,
       }
     })
     let key = `transaction-${Int.toString(index)}`
@@ -478,119 +527,27 @@ let make = () => {
     )
   }
 
-  let addBlockFilter = () => {
-    let newIndex = query.blocks->Option.getOr([])->Array.length
-    let newBlockFilter: blockSelection = {
-      hash: None,
-      miner: None,
-    }
-    setQuery(prev => {
-      ...prev,
-      blocks: Some(Array.concat(prev.blocks->Option.getOr([]), [newBlockFilter])),
-    })
-    setExpandedFilterKey(_ => Some(`block-${Int.toString(newIndex)}`))
-  }
-
-  let updateBlockFilter = (index: int, newFilter: blockSelection) => {
-    setQuery(prev => {
-      let currentBlocks = prev.blocks->Option.getOr([])
-      let updatedBlocks = Array.mapWithIndex(currentBlocks, (filter, i) =>
-        i === index ? newFilter : filter
-      )
-      {...prev, blocks: Some(updatedBlocks)}
-    })
-  }
-
-  let removeBlockFilter = (index: int) => {
-    setQuery(prev => {
-      let currentBlocks = prev.blocks->Option.getOr([])
-      let updatedBlocks = Belt.Array.keepWithIndex(currentBlocks, (_, i) => i !== index)
-      {...prev, blocks: Array.length(updatedBlocks) > 0 ? Some(updatedBlocks) : None}
-    })
-    let key = `block-${Int.toString(index)}`
-    setExpandedFilterKey(prev =>
-      if prev === Some(key) {
-        None
-      } else {
-        prev
-      }
-    )
-  }
-
-  let addTraceFilter = () => {
-    let newIndex = query.traces->Option.getOr([])->Array.length
-    let newTraceFilter: traceSelection = {
-      from_: None,
-      to_: None,
-      address: None,
-      callType: None,
-      rewardType: None,
-      type_: None,
-      sighash: None,
-    }
-    setQuery(prev => {
-      ...prev,
-      traces: Some(Array.concat(prev.traces->Option.getOr([]), [newTraceFilter])),
-    })
-    setExpandedFilterKey(_ => Some(`trace-${Int.toString(newIndex)}`))
-  }
-
-  let updateTraceFilter = (index: int, newFilter: traceSelection) => {
-    setQuery(prev => {
-      let currentTraces = prev.traces->Option.getOr([])
-      let updatedTraces = Array.mapWithIndex(currentTraces, (filter, i) =>
-        i === index ? newFilter : filter
-      )
-      {...prev, traces: Some(updatedTraces)}
-    })
-  }
-
-  let removeTraceFilter = (index: int) => {
-    setQuery(prev => {
-      let currentTraces = prev.traces->Option.getOr([])
-      let updatedTraces = Belt.Array.keepWithIndex(currentTraces, (_, i) => i !== index)
-      {
-        ...prev,
-        traces: Array.length(updatedTraces) > 0 ? Some(updatedTraces) : None,
-      }
-    })
-    let key = `trace-${Int.toString(index)}`
-    setExpandedFilterKey(prev =>
-      if prev === Some(key) {
-        None
-      } else {
-        prev
-      }
-    )
-  }
-
-  <>
-    // Show token prompt if no valid token
-    {!AuthToken.isValidToken(bearerToken)
-      ? <TokenPrompt onTokenSubmit={handleTokenSubmit} />
-      : React.null}
-
-    <main className="flex-1 overflow-hidden bg-slate-50">
-      <div className="h-full flex flex-col lg:flex-row">
-        // Left Column - Query Builder
-        <div className="w-full lg:w-1/2 overflow-y-auto">
-          <div className="p-6 lg:p-4 lg:pr-2">
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-1">
-                  {"Create Your Query"->React.string}
-                </h2>
-                <p className="text-sm text-slate-600">
-                  {"Build and test HyperSync queries with a visual interface"->React.string}
-                </p>
-              </div>
-              <button
-                onClick={_ => resetBuilder()}
-                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors"
-              >
-                {"Reset"->React.string}
-              </button>
+  <main className="flex-1 overflow-hidden bg-slate-50">
+    <div className="h-full flex flex-col lg:flex-row">
+      // Left Column - Query Builder
+      <div className="w-full lg:w-1/2 overflow-y-auto">
+        <div className="p-6 lg:p-4 lg:pr-2">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-1">
+                {"Create Your Query"->React.string}
+              </h2>
+              <p className="text-sm text-slate-600">
+                {"Build and test Solana HyperSync queries with a visual interface"->React.string}
+              </p>
             </div>
+            <button
+              onClick={_ => resetBuilder()}
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors"
+            >
+              {"Reset"->React.string}
+            </button>
+          </div>
 
           <div className="space-y-6">
             // Section 1: Configuration
@@ -598,39 +555,12 @@ let make = () => {
               <div className="flex items-center mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-slate-900">
-                    {"Choose Your Config"->React.string}
+                    {"Configuration"->React.string}
                   </h3>
                   <p className="text-sm text-slate-600">
-                    {"Select your blockchain network and configure query settings"->React.string}
+                    {"Configure slot range and query limits"->React.string}
                   </p>
                 </div>
-                {switch selectedChainName {
-                | Some(chainName) =>
-                  <div className="ml-auto">
-                    <span
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                      {chainName->React.string}
-                    </span>
-                  </div>
-                | None => React.null
-                }}
-              </div>
-
-              // Chain Selection
-              <div className="mb-6">
-                <ChainSelector
-                  selectedChainName={selectedChainName}
-                  onChainSelect={chainName => {
-                    setSelectedChainName(_ => Some(chainName))
-                    setCustomUrl(_ => None)
-                  }}
-                  customUrl={customUrl}
-                  onCustomUrlChange={Some(url => {
-                    setCustomUrl(_ => Some(url))
-                    setSelectedChainName(_ => None)
-                  })}
-                  onChainsLoaded={Some(chains => setAvailableChains(_ => chains))}
-                />
               </div>
 
               // Advanced Options
@@ -644,50 +574,25 @@ let make = () => {
                       {"Quick start"->React.string}
                     </h4>
                     <p className="text-xs text-slate-600">
-                      {"Start from a popular template"->React.string}
+                      {"Start from an example Solana query"->React.string}
                     </p>
                   </div>
                 </div>
-                <div className="mb-2 flex items-center gap-2">
-                  <input
-                    type_="text"
-                    value={quickStartAddress}
-                    onChange={e => {
-                      let target = ReactEvent.Form.target(e)
-                      setQuickStartAddress(_ => target["value"])
-                    }}
-                    placeholder="Address for address-based presets (0x...)"
-                    className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-colors"
-                  />
-                  <span className="text-[11px] text-slate-500">
-                    {if String.length(quickStartAddress) == 0 {
-                      "Using a random example address: 0x1e03…4de0"
-                    } else {
-                      "Using your address for address-based presets"
-                    }->React.string}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={_ => applyPresetErc20Transfers()}
-                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
-                    {"ERC20 Transfers (logs)"->React.string}
-                  </button>
-                  <button
-                    onClick={_ => applyPresetFailedTransactions()}
-                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
-                    {"Failed Transactions"->React.string}
-                  </button>
-                  <button
-                    onClick={_ => applyPresetErc20TransfersForAddress()}
-                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
-                    {"ERC20 Transfers for Address"->React.string}
-                  </button>
-                  <button
-                    onClick={_ => applyPresetAddressTransactions()}
-                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
-                    {"All Txns for Address"->React.string}
-                  </button>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
+                  {presets->Array.mapWithIndex((p, i) =>
+                    <button
+                      key={Int.toString(i)}
+                      onClick={_ => p.apply()}
+                      className="flex flex-col items-start px-3 py-2 text-left rounded-lg border border-slate-200 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+                    >
+                      <span className="text-xs font-semibold text-slate-800">
+                        {p.title->React.string}
+                      </span>
+                      <span className="text-[10px] text-slate-500 leading-tight mt-0.5">
+                        {p.description->React.string}
+                      </span>
+                    </button>
+                  )->React.array}
                 </div>
               </div>
             </div>
@@ -701,41 +606,22 @@ let make = () => {
                   </h3>
                   <p className="text-sm text-slate-600">
                     {"Define what data you want to retrieve: "->React.string}
-                    <span className="font-medium"> {"logs"->React.string} </span>
-                    {", "->React.string}
+                    <span className="font-medium"> {"instructions"->React.string} </span>
+                    {" and "->React.string}
                     <span className="font-medium"> {"transactions"->React.string} </span>
-                    {", "->React.string}
-                    <span className="font-medium"> {"blocks"->React.string} </span>
-                    <span className="text-xs text-slate-500">
-                      {" (traces available on select networks - reach out to team if interested)"->React.string}
-                    </span>
                   </p>
                 </div>
-                {Array.length(query.logs->Option.getOr([])) > 0 ||
-                Array.length(query.transactions->Option.getOr([])) > 0 ||
-                Array.length(query.blocks->Option.getOr([])) > 0 || (
-                  selectedChainSupportsTraces()
-                    ? Array.length(query.traces->Option.getOr([])) > 0
-                    : false
-                )
+                {Array.length(query.instructions->Option.getOr([])) > 0 ||
+                  Array.length(query.transactions->Option.getOr([])) > 0
                   ? <div className="ml-auto">
                       <span
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
+                      >
                         {`${Int.toString(
-                            Array.length(query.logs->Option.getOr([])) +
-                            Array.length(query.transactions->Option.getOr([])) +
-                            Array.length(query.blocks->Option.getOr([])) + (
-                              selectedChainSupportsTraces()
-                                ? Array.length(query.traces->Option.getOr([]))
-                                : 0
-                            ),
-                          )} filter${Array.length(query.logs->Option.getOr([])) +
-                          Array.length(query.transactions->Option.getOr([])) +
-                          Array.length(query.blocks->Option.getOr([])) + (
-                            selectedChainSupportsTraces()
-                              ? Array.length(query.traces->Option.getOr([]))
-                              : 0
-                          ) === 1
+                            Array.length(query.instructions->Option.getOr([])) +
+                            Array.length(query.transactions->Option.getOr([])),
+                          )} filter${Array.length(query.instructions->Option.getOr([])) +
+                          Array.length(query.transactions->Option.getOr([])) === 1
                             ? ""
                             : "s"}`->React.string}
                       </span>
@@ -746,13 +632,12 @@ let make = () => {
               <div className="mb-8">
                 <div className="flex flex-wrap gap-3">
                   <button
-                    onClick={_ => addLogFilter()}
-                    className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                    onClick={_ => addInstructionFilter()}
+                    className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+                  >
                     <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24">
+                      className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -760,16 +645,15 @@ let make = () => {
                         d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                       />
                     </svg>
-                    {"Add Log Filter"->React.string}
+                    {"Add Instruction Filter"->React.string}
                   </button>
                   <button
                     onClick={_ => addTransactionFilter()}
-                    className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                    className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors"
+                  >
                     <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24">
+                      className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -779,65 +663,28 @@ let make = () => {
                     </svg>
                     {"Add Transaction Filter"->React.string}
                   </button>
-                  <button
-                    onClick={_ => addBlockFilter()}
-                    className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    </svg>
-                    {"Add Block Filter"->React.string}
-                  </button>
-                  {selectedChainSupportsTraces()
-                    ? <button
-                        onClick={_ => addTraceFilter()}
-                        className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
-                        <svg
-                          className="w-4 h-4 mr-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                          />
-                        </svg>
-                        {"Add Trace Filter"->React.string}
-                      </button>
-                    : React.null}
                 </div>
               </div>
 
               // Active Filters Display
-              {Array.length(query.logs->Option.getOr([])) > 0 ||
-              Array.length(query.transactions->Option.getOr([])) > 0 ||
-              Array.length(query.blocks->Option.getOr([])) > 0 || (
-                selectedChainSupportsTraces()
-                  ? Array.length(query.traces->Option.getOr([])) > 0
-                  : false
-              )
+              {Array.length(query.instructions->Option.getOr([])) > 0 ||
+                Array.length(query.transactions->Option.getOr([])) > 0
                 ? <div className="mt-6 relative z-0">
                     <div className="grid gap-4">
-                      // Log Filters
-                      {Array.mapWithIndex(query.logs->Option.getOr([]), (logFilter, index) =>
-                        <LogFilter
-                          key={`log-${Int.toString(index)}`}
-                          filterState={logFilter}
-                          onFilterChange={newFilter => updateLogFilter(index, newFilter)}
-                          onRemove={() => removeLogFilter(index)}
+                      // Instruction Filters
+                      {Array.mapWithIndex(query.instructions->Option.getOr([]), (
+                        instrFilter,
+                        index,
+                      ) =>
+                        <InstructionFilter
+                          key={`instruction-${Int.toString(index)}`}
+                          filterState={instrFilter}
+                          onFilterChange={newFilter => updateInstructionFilter(index, newFilter)}
+                          onRemove={() => removeInstructionFilter(index)}
                           filterIndex={index}
-                          isExpanded={expandedFilterKey === Some(`log-${Int.toString(index)}`)}
-                          onToggleExpand={() => toggleFilter(`log-${Int.toString(index)}`)}
+                          isExpanded={expandedFilterKey ===
+                            Some(`instruction-${Int.toString(index)}`)}
+                          onToggleExpand={() => toggleFilter(`instruction-${Int.toString(index)}`)}
                         />
                       )->React.array}
 
@@ -857,46 +704,19 @@ let make = () => {
                           onToggleExpand={() => toggleFilter(`transaction-${Int.toString(index)}`)}
                         />
                       )->React.array}
-
-                      // Block Filters
-                      {Array.mapWithIndex(query.blocks->Option.getOr([]), (blockFilter, index) =>
-                        <BlockFilter
-                          key={`block-${Int.toString(index)}`}
-                          filterState={blockFilter}
-                          onFilterChange={newFilter => updateBlockFilter(index, newFilter)}
-                          onRemove={() => removeBlockFilter(index)}
-                          filterIndex={index}
-                          isExpanded={expandedFilterKey === Some(`block-${Int.toString(index)}`)}
-                          onToggleExpand={() => toggleFilter(`block-${Int.toString(index)}`)}
-                        />
-                      )->React.array}
-
-                      // Trace Filters
-                      {selectedChainSupportsTraces()
-                        ? Array.mapWithIndex(query.traces->Option.getOr([]), (traceFilter, index) =>
-                            <TraceFilter
-                              key={`trace-${Int.toString(index)}`}
-                              filterState={traceFilter}
-                              onFilterChange={newFilter => updateTraceFilter(index, newFilter)}
-                              onRemove={() => removeTraceFilter(index)}
-                              filterIndex={index}
-                              isExpanded={expandedFilterKey ===
-                                Some(`trace-${Int.toString(index)}`)}
-                              onToggleExpand={() => toggleFilter(`trace-${Int.toString(index)}`)}
-                            />
-                          )->React.array
-                        : React.null}
                     </div>
                   </div>
                 : <div className="mt-6">
                     <div
-                      className="text-center py-8 border-2 border-dashed border-slate-300 rounded-lg">
+                      className="text-center py-8 border-2 border-dashed border-slate-300 rounded-lg"
+                    >
                       <div className="text-slate-400 mb-3">
                         <svg
                           className="w-8 h-8 mx-auto"
                           fill="none"
                           stroke="currentColor"
-                          viewBox="0 0 24 24">
+                          viewBox="0 0 24 24"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -928,25 +748,22 @@ let make = () => {
                 </div>
                 {Array.length(query.fieldSelection.block) > 0 ||
                 Array.length(query.fieldSelection.transaction) > 0 ||
-                Array.length(query.fieldSelection.log) > 0 ||
-                Array.length(query.fieldSelection.trace) > 0
+                Array.length(query.fieldSelection.instruction) > 0
                   ? <div className="ml-auto">
                       <span
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
+                      >
                         {`${Int.toString(
                             Array.length(query.fieldSelection.block) +
                             Array.length(query.fieldSelection.transaction) +
-                            Array.length(query.fieldSelection.log) +
-                            Array.length(query.fieldSelection.trace),
+                            Array.length(query.fieldSelection.instruction),
                           )} fields`->React.string}
                       </span>
                     </div>
                   : React.null}
               </div>
               <FieldSelector
-                fieldSelection={query.fieldSelection}
-                onFieldSelectionChange={updateFieldSelection}
-                tracesSupported={selectedChainSupportsTraces()}
+                fieldSelection={query.fieldSelection} onFieldSelectionChange={updateFieldSelection}
               />
             </div>
           </div>
@@ -968,22 +785,15 @@ let make = () => {
             <div className="flex items-center">
               <button
                 onClick={_ => setExecuteSignal(prev => prev + 1)}
-                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-slate-700 hover:bg-slate-800 rounded-lg border border-slate-700 transition-colors">
+                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-slate-700 hover:bg-slate-800 rounded-lg border border-slate-700 transition-colors"
+              >
                 {"Execute Query"->React.string}
               </button>
             </div>
           </div>
-          <QueryResults
-            query={query}
-            selectedChainName={selectedChainName}
-            executeSignal={executeSignal}
-            bearerToken={bearerToken}
-            customUrl={customUrl}
-            availableChains={availableChains}
-          />
+          <QueryResults query={query} executeSignal={executeSignal} />
         </div>
       </div>
     </div>
-    </main>
-  </>
+  </main>
 }

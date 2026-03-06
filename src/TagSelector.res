@@ -76,7 +76,8 @@ let make = (
         let prev = highlightIndex - 1
         setHighlightIndex(_ => prev < 0 ? 0 : prev)
       }
-    | "Escape" => if !forceOpen_ {
+    | "Escape" =>
+      if !forceOpen_ {
         setIsOpen(_ => false)
         switch onClose {
         | Some(cb) => cb()

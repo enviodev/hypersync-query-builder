@@ -1,45 +1,30 @@
 open QueryStructure
-// open RescriptReactRouter
 
-// External bindings for Web API using proper ReScript patterns
 @val external window: 'a = "window"
 
-// Access window.location properties using @get
 @get external location: 'a => 'b = "location"
 @get external search: 'a => string = "search"
 @get external origin: 'a => string = "origin"
 @get external pathname: 'a => string = "pathname"
 
-// Access window.history methods using @send
 @get external history: 'a => 'b = "history"
 @send external pushState: ('a, 'b, string, string) => unit = "pushState"
 
-// Type for the complete state that includes both query and selectedChainName
 type urlState = {
   query: query,
   selectedChainName: option<string>,
 }
 
-// ============================================================================
-// Compression utilities using pako for base64url encoding
-// ============================================================================
-
-// Import pako for compression
 %%raw(`import * as pako from 'pako'`)
 
-// Compress JSON string to base64url format using pako deflate
 let compressToBase64Url: string => string = %raw(`
   function(jsonString) {
-    // Compress with deflate
     const compressed = pako.deflate(jsonString);
-    // Convert Uint8Array to binary string
     let binary = '';
     for (let i = 0; i < compressed.length; i++) {
       binary += String.fromCharCode(compressed[i]);
     }
-    // Convert to base64
     const base64 = btoa(binary);
-    // Convert to base64url (URL-safe)
     return base64
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
@@ -47,26 +32,20 @@ let compressToBase64Url: string => string = %raw(`
   }
 `)
 
-// Decompress base64url string back to JSON string using pako inflate
 let decompressFromBase64Url: string => option<string> = %raw(`
   function(encoded) {
     try {
-      // Convert base64url to base64
       let base64 = encoded
         .replace(/-/g, '+')
         .replace(/_/g, '/');
-      // Add padding if needed
       while (base64.length % 4) {
         base64 += '=';
       }
-      // Decode base64 to binary string
       const binary = atob(base64);
-      // Convert binary string to Uint8Array
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) {
         bytes[i] = binary.charCodeAt(i);
       }
-      // Decompress with inflate
       const jsonString = pako.inflate(bytes, { to: 'string' });
       return jsonString;
     } catch (e) {
@@ -75,7 +54,6 @@ let decompressFromBase64Url: string => option<string> = %raw(`
   }
 `)
 
-// Check if a string looks like old URL-encoded JSON (starts with %7B which is "{")
 let isLegacyUrlEncoded: string => bool = %raw(`
   function(str) {
     return str.startsWith('%7B') || str.startsWith('%7b') || str.startsWith('{');
@@ -88,7 +66,6 @@ let serializeBlockField = (field: blockField): string =>
 
 let deserializeBlockField = (str: string): option<blockField> => {
   let snake = FieldSelector.camelToSnake(str)
-
   Array.find(QueryStructure.allBlockFields, f =>
     FieldSelector.blockFieldToSnakeCaseString(f) == snake
   )
@@ -104,223 +81,147 @@ let deserializeTransactionField = (str: string): option<transactionField> => {
   )
 }
 
-let serializeLogField = (field: logField): string => FieldSelector.logFieldToCamelCaseString(field)
+let serializeInstructionField = (field: instructionField): string =>
+  FieldSelector.instructionFieldToCamelCaseString(field)
 
-let deserializeLogField = (str: string): option<logField> => {
+let deserializeInstructionField = (str: string): option<instructionField> => {
   let snake = FieldSelector.camelToSnake(str)
-  Array.find(QueryStructure.allLogFields, f =>
-    FieldSelector.logFieldToSnakeCaseString(f) == snake
-  )
-}
-
-let serializeTraceField = (field: traceField): string =>
-  FieldSelector.traceFieldToCamelCaseString(field)
-
-let deserializeTraceField = (str: string): option<traceField> => {
-  let snake = FieldSelector.camelToSnake(str)
-  Array.find(QueryStructure.allTraceFields, f =>
-    FieldSelector.traceFieldToSnakeCaseString(f) == snake
+  Array.find(QueryStructure.allInstructionFields, f =>
+    FieldSelector.instructionFieldToSnakeCaseString(f) == snake
   )
 }
 
 let serializeUrlState = (state: urlState): string => {
-  let json = Js.Json.object_(
-    Js.Dict.fromArray([
+  let json = JSON.Encode.object(
+    Dict.fromArray([
       (
         "query",
-        Js.Json.object_(
-          Js.Dict.fromArray([
-            ("fromBlock", Js.Json.number(Int.toFloat(state.query.fromBlock))),
+        JSON.Encode.object(
+          Dict.fromArray([
+            ("fromSlot", JSON.Encode.float(Int.toFloat(state.query.fromSlot))),
             (
-              "toBlock",
-              switch state.query.toBlock {
-              | Some(value) => Js.Json.number(Int.toFloat(value))
-              | None => Js.Json.null
+              "toSlot",
+              switch state.query.toSlot {
+              | Some(value) => JSON.Encode.float(Int.toFloat(value))
+              | None => JSON.Encode.null
               },
             ),
             (
               "maxNumBlocks",
               switch state.query.maxNumBlocks {
-              | Some(value) => Js.Json.number(Int.toFloat(value))
-              | None => Js.Json.null
+              | Some(value) => JSON.Encode.float(Int.toFloat(value))
+              | None => JSON.Encode.null
               },
             ),
             (
               "maxNumTransactions",
               switch state.query.maxNumTransactions {
-              | Some(value) => Js.Json.number(Int.toFloat(value))
-              | None => Js.Json.null
+              | Some(value) => JSON.Encode.float(Int.toFloat(value))
+              | None => JSON.Encode.null
               },
             ),
             (
-              "maxNumLogs",
-              switch state.query.maxNumLogs {
-              | Some(value) => Js.Json.number(Int.toFloat(value))
-              | None => Js.Json.null
+              "maxNumInstructions",
+              switch state.query.maxNumInstructions {
+              | Some(value) => JSON.Encode.float(Int.toFloat(value))
+              | None => JSON.Encode.null
               },
             ),
             (
-              "joinMode",
-              switch state.query.joinMode {
-              | Some(Default) => Js.Json.string("Default")
-              | Some(JoinAll) => Js.Json.string("JoinAll")
-              | Some(JoinNothing) => Js.Json.string("JoinNothing")
-              | None => Js.Json.null
+              "includeAllBlocks",
+              switch state.query.includeAllBlocks {
+              | Some(value) => JSON.Encode.bool(value)
+              | None => JSON.Encode.null
               },
             ),
             (
-              "logs",
-              switch state.query.logs {
-              | Some(logs) =>
-                Js.Json.array(
-                  logs->Array.map(log => {
-                    let addressJson = switch log.address {
-                    | Some(addresses) => Js.Json.array(addresses->Array.map(Js.Json.string))
-                    | None => Js.Json.null
+              "instructions",
+              switch state.query.instructions {
+              | Some(instructions) =>
+                JSON.Encode.array(
+                  instructions->Array.map(instr => {
+                    let programIdJson = switch instr.program_id {
+                    | Some(ids) => JSON.Encode.array(ids->Array.map(JSON.Encode.string))
+                    | None => JSON.Encode.null
                     }
-                    let topicsJson = switch log.topics {
-                    | Some(topics) =>
-                      Js.Json.array(
-                        topics->Array.map(topicArray =>
-                          Js.Json.array(topicArray->Array.map(Js.Json.string))
-                        ),
-                      )
-                    | None => Js.Json.null
+                    let d1Json = switch instr.d1 {
+                    | Some(vals) => JSON.Encode.array(vals->Array.map(JSON.Encode.string))
+                    | None => JSON.Encode.null
                     }
-                    Js.Json.object_(
-                      Js.Dict.fromArray([("address", addressJson), ("topics", topicsJson)]),
+                    let d8Json = switch instr.d8 {
+                    | Some(vals) => JSON.Encode.array(vals->Array.map(JSON.Encode.string))
+                    | None => JSON.Encode.null
+                    }
+                    let a0Json = switch instr.a0 {
+                    | Some(vals) => JSON.Encode.array(vals->Array.map(JSON.Encode.string))
+                    | None => JSON.Encode.null
+                    }
+                    let isInnerJson = switch instr.is_inner {
+                    | Some(value) => JSON.Encode.bool(value)
+                    | None => JSON.Encode.null
+                    }
+                    JSON.Encode.object(
+                      Dict.fromArray([
+                        ("program_id", programIdJson),
+                        ("d1", d1Json),
+                        ("d8", d8Json),
+                        ("a0", a0Json),
+                        ("is_inner", isInnerJson),
+                      ]),
                     )
                   }),
                 )
-              | None => Js.Json.null
+              | None => JSON.Encode.null
               },
             ),
             (
               "transactions",
               switch state.query.transactions {
               | Some(transactions) =>
-                Js.Json.array(
-                  transactions->Array.map(transaction => {
-                    let fromJson = switch transaction.from_ {
-                    | Some(froms) => Js.Json.array(froms->Array.map(Js.Json.string))
-                    | None => Js.Json.null
+                JSON.Encode.array(
+                  transactions->Array.map(txn => {
+                    let feePayerJson = switch txn.fee_payer {
+                    | Some(payers) => JSON.Encode.array(payers->Array.map(JSON.Encode.string))
+                    | None => JSON.Encode.null
                     }
-                    let toJson = switch transaction.to_ {
-                    | Some(tos) => Js.Json.array(tos->Array.map(Js.Json.string))
-                    | None => Js.Json.null
+                    let successJson = switch txn.success {
+                    | Some(value) => JSON.Encode.bool(value)
+                    | None => JSON.Encode.null
                     }
-                    let sighashJson = switch transaction.sighash {
-                    | Some(sighashes) => Js.Json.array(sighashes->Array.map(Js.Json.string))
-                    | None => Js.Json.null
-                    }
-                    let statusJson = switch transaction.status {
-                    | Some(status) => Js.Json.number(Int.toFloat(status))
-                    | None => Js.Json.null
-                    }
-                    let typeJson = switch transaction.type_ {
-                    | Some(types) =>
-                      Js.Json.array(types->Array.map(t => Js.Json.number(Int.toFloat(t))))
-                    | None => Js.Json.null
-                    }
-                    let contractAddressJson = switch transaction.contractAddress {
-                    | Some(addresses) => Js.Json.array(addresses->Array.map(Js.Json.string))
-                    | None => Js.Json.null
-                    }
-                    let authorizationListJson = switch transaction.authorizationList {
-                    | Some(authorizations) =>
-                      Js.Json.array(
-                        authorizations->Array.map(auth => {
-                          let authChainIdJson = switch auth.chainId {
-                          | Some(chainIds) =>
-                            Js.Json.array(
-                              chainIds->Array.map(chainId => Js.Json.number(Int.toFloat(chainId))),
-                            )
-                          | None => Js.Json.null
-                          }
-                          let authAddressJson = switch auth.address {
-                          | Some(addresses) => Js.Json.array(addresses->Array.map(Js.Json.string))
-                          | None => Js.Json.null
-                          }
-                          Js.Json.object_(
-                            Js.Dict.fromArray([
-                              ("chainId", authChainIdJson),
-                              ("address", authAddressJson),
-                            ]),
-                          )
-                        }),
-                      )
-                    | None => Js.Json.null
-                    }
-                    Js.Json.object_(
-                      Js.Dict.fromArray([
-                        ("from_", fromJson),
-                        ("to_", toJson),
-                        ("sighash", sighashJson),
-                        ("status", statusJson),
-                        ("type_", typeJson),
-                        ("contractAddress", contractAddressJson),
-                        ("authorizationList", authorizationListJson),
-                      ]),
+                    JSON.Encode.object(
+                      Dict.fromArray([("fee_payer", feePayerJson), ("success", successJson)]),
                     )
                   }),
                 )
-              | None => Js.Json.null
-              },
-            ),
-            (
-              "blocks",
-              switch state.query.blocks {
-              | Some(blocks) =>
-                Js.Json.array(
-                  blocks->Array.map(block => {
-                    let hashJson = switch block.hash {
-                    | Some(hashes) => Js.Json.array(hashes->Array.map(Js.Json.string))
-                    | None => Js.Json.null
-                    }
-                    let minerJson = switch block.miner {
-                    | Some(miners) => Js.Json.array(miners->Array.map(Js.Json.string))
-                    | None => Js.Json.null
-                    }
-                    Js.Json.object_(Js.Dict.fromArray([("hash", hashJson), ("miner", minerJson)]))
-                  }),
-                )
-              | None => Js.Json.null
+              | None => JSON.Encode.null
               },
             ),
             (
               "fieldSelection",
-              Js.Json.object_(
-                Js.Dict.fromArray([
+              JSON.Encode.object(
+                Dict.fromArray([
                   (
                     "block",
-                    Js.Json.array(
+                    JSON.Encode.array(
                       state.query.fieldSelection.block
                       ->Array.map(serializeBlockField)
-                      ->Array.map(Js.Json.string),
+                      ->Array.map(JSON.Encode.string),
                     ),
                   ),
                   (
                     "transaction",
-                    Js.Json.array(
+                    JSON.Encode.array(
                       state.query.fieldSelection.transaction
                       ->Array.map(serializeTransactionField)
-                      ->Array.map(Js.Json.string),
+                      ->Array.map(JSON.Encode.string),
                     ),
                   ),
                   (
-                    "log",
-                    Js.Json.array(
-                      state.query.fieldSelection.log
-                      ->Array.map(serializeLogField)
-                      ->Array.map(Js.Json.string),
-                    ),
-                  ),
-                  (
-                    "trace",
-                    Js.Json.array(
-                      state.query.fieldSelection.trace
-                      ->Array.map(serializeTraceField)
-                      ->Array.map(Js.Json.string),
+                    "instruction",
+                    JSON.Encode.array(
+                      state.query.fieldSelection.instruction
+                      ->Array.map(serializeInstructionField)
+                      ->Array.map(JSON.Encode.string),
                     ),
                   ),
                 ]),
@@ -332,166 +233,116 @@ let serializeUrlState = (state: urlState): string => {
       (
         "selectedChainName",
         switch state.selectedChainName {
-        | Some(value) => Js.Json.string(value)
-        | None => Js.Json.null
+        | Some(value) => JSON.Encode.string(value)
+        | None => JSON.Encode.null
         },
       ),
     ]),
   )
-  Js.Json.stringify(json)
+  JSON.stringify(json)
+}
+
+// Helper to decode an optional string array from JSON
+let decodeOptionalStringArray = (obj: dict<JSON.t>, key: string): option<array<string>> => {
+  switch Dict.get(obj, key) {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(arr) => Some(arr->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
+      | None => None
+      }
+    }
+  | None => None
+  }
+}
+
+// Helper to decode an optional bool from JSON
+let decodeOptionalBool = (obj: dict<JSON.t>, key: string): option<bool> => {
+  switch Dict.get(obj, key) {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.bool(value) {
+      | Some(b) => Some(b)
+      | None => None
+      }
+    }
+  | None => None
+  }
+}
+
+// Helper to decode an optional number from JSON
+let decodeOptionalInt = (obj: dict<JSON.t>, key: string): option<int> => {
+  switch Dict.get(obj, key) {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.float(value) {
+      | Some(num) => Some(Float.toInt(num))
+      | None => None
+      }
+    }
+  | None => None
+  }
 }
 
 let deserializeUrlState = (jsonString: string): option<urlState> => {
-  switch Js.Json.parseExn(jsonString) {
+  switch JSON.parseOrThrow(jsonString) {
   | json => {
-      let obj = Js.Json.decodeObject(json)
+      let obj = JSON.Decode.object(json)
       switch obj {
       | Some(obj) => {
-          let getField = (fieldName: string) => Js.Dict.get(obj, fieldName)
+          let getField = (fieldName: string) => Dict.get(obj, fieldName)
 
-          // Parse query object
           let queryJson = switch getField("query") {
           | Some(value) => value
-          | None => Js.Json.null
+          | None => JSON.Encode.null
           }
 
-          let queryObj = switch Js.Json.decodeObject(queryJson) {
+          let queryObj = switch JSON.Decode.object(queryJson) {
           | Some(queryObj) => queryObj
-          | None => Js.Dict.empty()
+          | None => Dict.make()
           }
 
-          let getQueryField = (fieldName: string) => Js.Dict.get(queryObj, fieldName)
-
-          let fromBlock = switch getQueryField("fromBlock") {
+          let fromSlot = switch Dict.get(queryObj, "fromSlot") {
           | Some(value) =>
-            switch Js.Json.decodeNumber(value) {
+            switch JSON.Decode.float(value) {
             | Some(num) => Float.toInt(num)
             | None => 0
             }
           | None => 0
           }
 
-          let toBlock = switch getQueryField("toBlock") {
-          | Some(value) =>
-            switch Js.Json.decodeNull(value) {
-            | Some(_) => None
-            | None =>
-              switch Js.Json.decodeNumber(value) {
-              | Some(num) => Some(Float.toInt(num))
-              | None => None
-              }
-            }
-          | None => None
-          }
+          let toSlot = decodeOptionalInt(queryObj, "toSlot")
+          let maxNumBlocks = decodeOptionalInt(queryObj, "maxNumBlocks")
+          let maxNumTransactions = decodeOptionalInt(queryObj, "maxNumTransactions")
+          let maxNumInstructions = decodeOptionalInt(queryObj, "maxNumInstructions")
+          let includeAllBlocks = decodeOptionalBool(queryObj, "includeAllBlocks")
 
-          let maxNumBlocks = switch getQueryField("maxNumBlocks") {
+          let instructions = switch Dict.get(queryObj, "instructions") {
           | Some(value) =>
-            switch Js.Json.decodeNull(value) {
+            switch JSON.Decode.null(value) {
             | Some(_) => None
             | None =>
-              switch Js.Json.decodeNumber(value) {
-              | Some(num) => Some(Float.toInt(num))
-              | None => None
-              }
-            }
-          | None => None
-          }
-
-          let maxNumTransactions = switch getQueryField("maxNumTransactions") {
-          | Some(value) =>
-            switch Js.Json.decodeNull(value) {
-            | Some(_) => None
-            | None =>
-              switch Js.Json.decodeNumber(value) {
-              | Some(num) => Some(Float.toInt(num))
-              | None => None
-              }
-            }
-          | None => None
-          }
-
-          let maxNumLogs = switch getQueryField("maxNumLogs") {
-          | Some(value) =>
-            switch Js.Json.decodeNull(value) {
-            | Some(_) => None
-            | None =>
-              switch Js.Json.decodeNumber(value) {
-              | Some(num) => Some(Float.toInt(num))
-              | None => None
-              }
-            }
-          | None => None
-          }
-
-          let joinMode = switch getQueryField("joinMode") {
-          | Some(value) =>
-            switch Js.Json.decodeNull(value) {
-            | Some(_) => None
-            | None =>
-              switch Js.Json.decodeString(value) {
-              | Some("Default") => Some(Default)
-              | Some("JoinAll") => Some(JoinAll)
-              | Some("JoinNothing") => Some(JoinNothing)
-              | Some(_) => None
-              | None => None
-              }
-            }
-          | None => None
-          }
-
-          let logs = switch getQueryField("logs") {
-          | Some(value) =>
-            switch Js.Json.decodeNull(value) {
-            | Some(_) => None
-            | None =>
-              switch Js.Json.decodeArray(value) {
+              switch JSON.Decode.array(value) {
               | Some(array) => {
-                  let decodedLogs =
+                  let decoded =
                     array
-                    ->Array.map(Js.Json.decodeObject)
+                    ->Array.map(JSON.Decode.object)
                     ->Array.filterMap(x => x)
-                    ->Array.map(log => {
-                      let address = switch Js.Dict.get(log, "address") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeArray(value) {
-                          | Some(addresses) =>
-                            Some(
-                              addresses->Array.map(Js.Json.decodeString)->Array.filterMap(x => x),
-                            )
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let topics = switch Js.Dict.get(log, "topics") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeArray(value) {
-                          | Some(topicsArray) => {
-                              let decodedTopics =
-                                topicsArray
-                                ->Array.map(Js.Json.decodeArray)
-                                ->Array.filterMap(x => x)
-                                ->Array.map(topicArray =>
-                                  topicArray
-                                  ->Array.map(Js.Json.decodeString)
-                                  ->Array.filterMap(x => x)
-                                )
-                              Some(decodedTopics)
-                            }
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      {address, topics}
+                    ->Array.map(instr => {
+                      let program_id = decodeOptionalStringArray(instr, "program_id")
+                      let d1 = decodeOptionalStringArray(instr, "d1")
+                      let d8 = decodeOptionalStringArray(instr, "d8")
+                      let a0 = decodeOptionalStringArray(instr, "a0")
+                      let is_inner = decodeOptionalBool(instr, "is_inner")
+                      {program_id, d1, d8, a0, is_inner}
                     })
-                  Some(decodedLogs)
+                  Some(decoded)
                 }
               | None => None
               }
@@ -499,163 +350,23 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
           | None => None
           }
 
-          let transactions = switch getQueryField("transactions") {
+          let transactions = switch Dict.get(queryObj, "transactions") {
           | Some(value) =>
-            switch Js.Json.decodeNull(value) {
+            switch JSON.Decode.null(value) {
             | Some(_) => None
             | None =>
-              switch Js.Json.decodeArray(value) {
+              switch JSON.Decode.array(value) {
               | Some(array) => {
-                  let decodedTransactions =
+                  let decoded =
                     array
-                    ->Array.map(Js.Json.decodeObject)
+                    ->Array.map(JSON.Decode.object)
                     ->Array.filterMap(x => x)
-                    ->Array.map(transaction => {
-                      let from_ = switch Js.Dict.get(transaction, "from_") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeArray(value) {
-                          | Some(froms) =>
-                            Some(froms->Array.map(Js.Json.decodeString)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let to_ = switch Js.Dict.get(transaction, "to_") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeArray(value) {
-                          | Some(tos) =>
-                            Some(tos->Array.map(Js.Json.decodeString)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let sighash = switch Js.Dict.get(transaction, "sighash") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeArray(value) {
-                          | Some(sighashes) =>
-                            Some(
-                              sighashes->Array.map(Js.Json.decodeString)->Array.filterMap(x => x),
-                            )
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let status = switch Js.Dict.get(transaction, "status") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeNumber(value) {
-                          | Some(num) => Some(Float.toInt(num))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let type_ = switch Js.Dict.get(transaction, "type_") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeArray(value) {
-                          | Some(types) =>
-                            Some(
-                              types
-                              ->Array.map(Js.Json.decodeNumber)
-                              ->Array.filterMap(x => x)
-                              ->Array.map(t => Float.toInt(t)),
-                            )
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let contractAddress = switch Js.Dict.get(transaction, "contractAddress") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeArray(value) {
-                          | Some(addresses) =>
-                            Some(
-                              addresses->Array.map(Js.Json.decodeString)->Array.filterMap(x => x),
-                            )
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let authorizationList = switch Js.Dict.get(transaction, "authorizationList") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeArray(value) {
-                          | Some(authorizations) => {
-                              let decodedAuthorizations =
-                                authorizations
-                                ->Array.map(Js.Json.decodeObject)
-                                ->Array.filterMap(x => x)
-                                ->Array.map(auth => {
-                                  let chainId = switch Js.Dict.get(auth, "chainId") {
-                                  | Some(value) =>
-                                    switch Js.Json.decodeNull(value) {
-                                    | Some(_) => None
-                                    | None =>
-                                      switch Js.Json.decodeArray(value) {
-                                      | Some(chainIds) =>
-                                        Some(
-                                          chainIds
-                                          ->Array.map(Js.Json.decodeNumber)
-                                          ->Array.filterMap(x => x)
-                                          ->Array.map(chainId => Float.toInt(chainId)),
-                                        )
-                                      | None => None
-                                      }
-                                    }
-                                  | None => None
-                                  }
-                                  let address = switch Js.Dict.get(auth, "address") {
-                                  | Some(value) =>
-                                    switch Js.Json.decodeNull(value) {
-                                    | Some(_) => None
-                                    | None =>
-                                      switch Js.Json.decodeArray(value) {
-                                      | Some(addresses) =>
-                                        Some(
-                                          addresses
-                                          ->Array.map(Js.Json.decodeString)
-                                          ->Array.filterMap(x => x),
-                                        )
-                                      | None => None
-                                      }
-                                    }
-                                  | None => None
-                                  }
-                                  {chainId, address}
-                                })
-                              Some(decodedAuthorizations)
-                            }
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      {from_, to_, sighash, status, type_, contractAddress, authorizationList}
+                    ->Array.map(txn => {
+                      let fee_payer = decodeOptionalStringArray(txn, "fee_payer")
+                      let success = decodeOptionalBool(txn, "success")
+                      {fee_payer, success}
                     })
-                  Some(decodedTransactions)
+                  Some(decoded)
                 }
               | None => None
               }
@@ -663,79 +374,29 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
           | None => None
           }
 
-          let blocks = switch getQueryField("blocks") {
-          | Some(value) =>
-            switch Js.Json.decodeNull(value) {
-            | Some(_) => None
-            | None =>
-              switch Js.Json.decodeArray(value) {
-              | Some(array) => {
-                  let decodedBlocks =
-                    array
-                    ->Array.map(Js.Json.decodeObject)
-                    ->Array.filterMap(x => x)
-                    ->Array.map(block => {
-                      let hash = switch Js.Dict.get(block, "hash") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeArray(value) {
-                          | Some(hashes) =>
-                            Some(hashes->Array.map(Js.Json.decodeString)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let miner = switch Js.Dict.get(block, "miner") {
-                      | Some(value) =>
-                        switch Js.Json.decodeNull(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch Js.Json.decodeArray(value) {
-                          | Some(miners) =>
-                            Some(miners->Array.map(Js.Json.decodeString)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      {hash, miner}
-                    })
-                  Some(decodedBlocks)
-                }
-              | None => None
-              }
-            }
-          | None => None
-          }
-
-          let fieldSelectionJson = switch getQueryField("fieldSelection") {
+          let fieldSelectionJson = switch Dict.get(queryObj, "fieldSelection") {
           | Some(value) => value
-          | None => Js.Json.null
+          | None => JSON.Encode.null
           }
 
-          let fieldSelectionObj = switch Js.Json.decodeObject(fieldSelectionJson) {
+          let fieldSelectionObj = switch JSON.Decode.object(fieldSelectionJson) {
           | Some(fieldSelectionObj) => fieldSelectionObj
-          | None => Js.Dict.empty()
+          | None => Dict.make()
           }
 
-          let getFieldSelectionField = (fieldName: string) =>
-            Js.Dict.get(fieldSelectionObj, fieldName)
+          let getFieldSelectionField = (fieldName: string) => Dict.get(fieldSelectionObj, fieldName)
 
           let blockFields = switch getFieldSelectionField("block") {
           | Some(value) =>
-            switch Js.Json.decodeArray(value) {
-            | Some(array) => {
-                let decodedFields =
-                  array
-                  ->Array.map(Js.Json.decodeString)
-                  ->Array.filterMap(x => x)
-                  ->Array.map(deserializeBlockField)
-                  ->Array.filterMap(x => x)
-                Some(decodedFields)
-              }
+            switch JSON.Decode.array(value) {
+            | Some(array) =>
+              Some(
+                array
+                ->Array.map(JSON.Decode.string)
+                ->Array.filterMap(x => x)
+                ->Array.map(deserializeBlockField)
+                ->Array.filterMap(x => x),
+              )
             | None => None
             }
           | None => None
@@ -743,50 +404,31 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
 
           let transactionFields = switch getFieldSelectionField("transaction") {
           | Some(value) =>
-            switch Js.Json.decodeArray(value) {
-            | Some(array) => {
-                let decodedFields =
-                  array
-                  ->Array.map(Js.Json.decodeString)
-                  ->Array.filterMap(x => x)
-                  ->Array.map(deserializeTransactionField)
-                  ->Array.filterMap(x => x)
-                Some(decodedFields)
-              }
+            switch JSON.Decode.array(value) {
+            | Some(array) =>
+              Some(
+                array
+                ->Array.map(JSON.Decode.string)
+                ->Array.filterMap(x => x)
+                ->Array.map(deserializeTransactionField)
+                ->Array.filterMap(x => x),
+              )
             | None => None
             }
           | None => None
           }
 
-          let logFields = switch getFieldSelectionField("log") {
+          let instructionFields = switch getFieldSelectionField("instruction") {
           | Some(value) =>
-            switch Js.Json.decodeArray(value) {
-            | Some(array) => {
-                let decodedFields =
-                  array
-                  ->Array.map(Js.Json.decodeString)
-                  ->Array.filterMap(x => x)
-                  ->Array.map(deserializeLogField)
-                  ->Array.filterMap(x => x)
-                Some(decodedFields)
-              }
-            | None => None
-            }
-          | None => None
-          }
-
-          let traceFields = switch getFieldSelectionField("trace") {
-          | Some(value) =>
-            switch Js.Json.decodeArray(value) {
-            | Some(array) => {
-                let decodedFields =
-                  array
-                  ->Array.map(Js.Json.decodeString)
-                  ->Array.filterMap(x => x)
-                  ->Array.map(deserializeTraceField)
-                  ->Array.filterMap(x => x)
-                Some(decodedFields)
-              }
+            switch JSON.Decode.array(value) {
+            | Some(array) =>
+              Some(
+                array
+                ->Array.map(JSON.Decode.string)
+                ->Array.filterMap(x => x)
+                ->Array.map(deserializeInstructionField)
+                ->Array.filterMap(x => x),
+              )
             | None => None
             }
           | None => None
@@ -795,33 +437,27 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
           let fieldSelection = {
             block: blockFields->Option.getOr([]),
             transaction: transactionFields->Option.getOr([]),
-            log: logFields->Option.getOr([]),
-            trace: traceFields->Option.getOr([]),
+            instruction: instructionFields->Option.getOr([]),
           }
 
           let query = {
-            fromBlock,
-            toBlock,
-            logs,
+            fromSlot,
+            toSlot,
+            instructions,
             transactions,
-            traces: None,
-            blocks,
-            includeAllBlocks: None,
+            includeAllBlocks,
             fieldSelection,
             maxNumBlocks,
             maxNumTransactions,
-            maxNumLogs,
-            maxNumTraces: None,
-            joinMode,
+            maxNumInstructions,
           }
 
-          // Parse selectedChainName
           let selectedChainName = switch getField("selectedChainName") {
           | Some(value) =>
-            switch Js.Json.decodeNull(value) {
+            switch JSON.Decode.null(value) {
             | Some(_) => None
             | None =>
-              switch Js.Json.decodeString(value) {
+              switch JSON.Decode.string(value) {
               | Some(name) => Some(name)
               | None => None
               }
@@ -841,22 +477,18 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
   }
 }
 
-// Encode state to compressed base64url format
 let encodeUrlStateToUrl = (state: urlState): string => {
   let jsonString = serializeUrlState(state)
   compressToBase64Url(jsonString)
 }
 
-// Decode state from URL, with backwards compatibility for old URL-encoded format
 let decodeUrlStateFromUrl = (encodedString: string): option<urlState> => {
-  // First, try the new compressed base64url format
   switch decompressFromBase64Url(encodedString) {
   | Some(jsonString) => deserializeUrlState(jsonString)
   | None =>
-    // Fall back to legacy URL-encoded format for backwards compatibility
     if isLegacyUrlEncoded(encodedString) {
       try {
-        let decodedString = Js.Global.decodeURIComponent(encodedString)
+        let decodedString = decodeURIComponent(encodedString)
         deserializeUrlState(decodedString)
       } catch {
       | _ => None
@@ -868,13 +500,11 @@ let decodeUrlStateFromUrl = (encodedString: string): option<urlState> => {
 }
 
 let getUrlStateFromUrl = (): option<urlState> => {
-  // Get the search string from window.location using proper bindings
   let locationObj = location(window)
   let searchStr = search(locationObj)
 
-  // Simple URL parameter parsing without Js.Url
-  if Js.String2.startsWith(searchStr, "?q=") {
-    let encodedQuery = Js.String2.substring(searchStr, ~from=3, ~to_=Js.String2.length(searchStr))
+  if String.startsWith(searchStr, "?q=") {
+    let encodedQuery = String.substring(searchStr, ~start=3, ~end=String.length(searchStr))
     decodeUrlStateFromUrl(encodedQuery)
   } else {
     None
@@ -889,55 +519,4 @@ let updateUrlWithState = (state: urlState) => {
   let newUrl = originStr ++ pathnameStr ++ "?q=" ++ encodedState
   let historyObj = history(window)
   pushState(historyObj, null, "", newUrl)
-}
-
-/* let getUrlStateFromUrl = (): option<urlState> => {
-  let url = RescriptReactRouter.dangerouslyGetInitialUrl()
-  let searchStr = url.search
-  let params = searchStr->Js.String.split("&")
-  switch Array.find(params, p => Js.String.startsWith(p, "q=")) {
-  | Some(param) =>
-    let encodedQuery = Js.String2.sliceToEnd(param, ~from=2)
-    decodeUrlStateFromUrl(encodedQuery)
-  | None => None
-  }
-}
-
-let updateUrlWithState = (state: urlState) => {
-  let encodedState = encodeUrlStateToUrl(state)
-  RescriptReactRouter.push("/?q=" ++ encodedState)
-} */
-
-// Backward compatibility functions for existing code
-let serializeQuery = (query: query): string => {
-  serializeUrlState({query, selectedChainName: None})
-}
-
-let deserializeQuery = (jsonString: string): option<query> => {
-  switch deserializeUrlState(jsonString) {
-  | Some(state) => Some(state.query)
-  | None => None
-  }
-}
-
-let encodeQueryToUrl = (query: query): string => {
-  encodeUrlStateToUrl({query, selectedChainName: None})
-}
-
-let decodeQueryFromUrl = (encodedString: string): option<query> => {
-  switch decodeUrlStateFromUrl(encodedString) {
-  | Some(state) => Some(state.query)
-  | None => None
-  }
-}
-
-let getQueryFromUrl = (): option<query> => {
-  switch getUrlStateFromUrl() {
-  | Some(state) => Some(state.query)
-  | None => None
-  }
-}
-
-let updateUrlWithQuery = (query: query) => {
-  updateUrlWithState({query, selectedChainName: None})
 }
