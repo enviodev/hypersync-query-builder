@@ -37,7 +37,7 @@ let make = (~query: query, ~executeSignal: int) => {
   }, [query])
 
   let generateChainUrl = () => {
-    "https://solana-test.hypersync.xyz/query"
+    "/query"
   }
 
   let serializeInstructionFilter = (filter: instructionSelection) => {
@@ -280,7 +280,7 @@ let make = (~query: query, ~executeSignal: int) => {
 
     `curl -X POST "https://solana-test.hypersync.xyz/query" \\
   -H "Content-Type: application/json" \\
-  -d "${escapedBody}"`
+  -d '${escapedBody}'`
   }
 
   let copyCurlToClipboard = () => {

@@ -3,5 +3,11 @@
   "installCommand": "pnpm install --frozen-lockfile --prod=false && pnpm remove rescript-test && npx rescript clean",
   "buildCommand": "pnpm run build:site",
   "outputDirectory": "dist",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- src rescript.json vite.config* package.json pnpm-lock.yaml"
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- src rescript.json vite.config* package.json pnpm-lock.yaml",
+  "rewrites": [
+    {
+      "source": "/query",
+      "destination": "https://solana-test.hypersync.xyz/query"
+    }
+  ]
 }
