@@ -4,7 +4,7 @@
 
 A React component library and standalone web app for visually building [HyperSync](https://docs.envio.dev/docs/HyperSync/overview) queries. Construct complex blockchain data queries through an intuitive UI without writing code.
 
-Live at [builder.hypersync.xyz](https://builder.hypersync.xyz).
+Live at [builder.hypersync.xyz](http://builder.hypersync.xyz).
 
 ## What is HyperSync?
 
@@ -81,7 +81,7 @@ See the full component API in the [source README](./README.md).
 - [HyperSync Docs](https://docs.envio.dev/docs/HyperSync/overview)
 - [Query Reference](https://docs.envio.dev/docs/HyperSync/hypersync-query)
 - [Supported Networks](https://docs.envio.dev/docs/HyperSync/hypersync-supported-networks)
-- [Live Query Builder](https://builder.hypersync.xyz)
+- [Live Query Builder](http://builder.hypersync.xyz)
 
 ## License
 
