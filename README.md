@@ -63,7 +63,7 @@ import {
 } from 'hypersync-query-builder-component';
 ```
 
-See the full component API in the [source README](./README.md).
+
 
 ## Requirements
 
