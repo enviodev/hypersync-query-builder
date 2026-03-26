@@ -1,61 +1,59 @@
-# HyperSync Query Builder Component
+# HyperSync Query Builder
 
-A React component library for building blockchain queries with HyperSync. This interactive query builder provides an intuitive UI for constructing complex blockchain queries with support for logs, transactions, and blocks filtering.
+[![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289da?logo=discord&logoColor=white)](https://discord.com/invite/envio)
+
+A React component library and standalone web app for visually building [HyperSync](https://docs.envio.dev/docs/HyperSync/overview) queries. Construct complex blockchain data queries through an intuitive UI without writing code.
+
+Live at [builder.hypersync.xyz](https://builder.hypersync.xyz).
+
+## What is HyperSync?
+
+[HyperSync](https://docs.envio.dev/docs/HyperSync/overview) is Envio's high-performance blockchain data retrieval layer, a purpose-built alternative to JSON-RPC endpoints that offers up to 2000x faster data access across 70+ EVM-compatible networks.
 
 ## Features
 
-- 🎯 **Interactive Query Building**: Build complex blockchain queries through an intuitive UI
-- 🔗 **Multi-Chain Support**: Query data from different blockchain networks
-- 🔍 **Advanced Filtering**: Filter logs, transactions, and blocks with granular control
-- 📊 **Field Selection**: Choose exactly which fields to return in your queries
-- ⚙️ **Advanced Options**: Configure query limits, join modes, and more
-- 📋 **Query Export**: Generate ready-to-use cURL commands and JSON queries
-- 🚀 **Real-time Execution**: Execute queries directly from the UI
+- **Visual query building**: Construct HyperSync queries through a UI instead of writing JSON by hand
+- **Multi-chain support**: Select from all networks supported by HyperSync
+- **Log, transaction, and block filtering**: Configure filters for any combination of data types
+- **Field selection**: Choose exactly which fields to return in your queries
+- **Query export**: Generate ready-to-use cURL commands and JSON queries to copy into your code
+- **Real-time execution**: Run queries directly from the UI and inspect the response
 
-## Use as standalone website
+## Use as Standalone Website
 
 ```bash
 pnpm i
 pnpm dev
 ```
 
-Other useful commands:
-- `pnpm res:build` - build the ReScript code
-- `pnpm res:clean` - clean the ReScript build
-- `pnpm res:dev` - watch for changes in the ReScript code and rebuild
-- `pnpm dev` - run the development server
-- `pnpm build:site` - build the site
+Other commands:
 
-## Installation (as library)
+- `pnpm res:build` - build the ReScript source
+- `pnpm res:dev` - watch and rebuild ReScript on changes
+- `pnpm build:site` - build the production site
+
+## Use as a React Library
+
+### Installation
 
 ```bash
 npm install hypersync-query-builder-component
 ```
 
-## Basic Usage In React
+### Basic Usage
 
 ```jsx
-import React from 'react';
 import { HyperSyncQueryBuilder } from 'hypersync-query-builder-component';
 import 'hypersync-query-builder-component/styles';
 
 function App() {
-  return (
-    <div className="App">
-      <HyperSyncQueryBuilder />
-    </div>
-  );
+  return <HyperSyncQueryBuilder />;
 }
-
-export default App;
 ```
 
-## Advanced Usage
-
-### Using Individual Components
+### Individual Components
 
 ```jsx
-import React, { useState } from 'react';
 import {
   ChainSelector,
   QueryResults,
@@ -63,249 +61,34 @@ import {
   TransactionFilter,
   FieldSelector
 } from 'hypersync-query-builder-component';
-
-function CustomQueryBuilder() {
-  const [selectedChainId, setSelectedChainId] = useState(null);
-  const [query, setQuery] = useState({
-    fromBlock: 0,
-    toBlock: null,
-    logs: [],
-    transactions: [],
-    blocks: [],
-    fieldSelection: {
-      block: [],
-      transaction: [],
-      log: [],
-      trace: []
-    }
-  });
-
-  return (
-    <div>
-      <ChainSelector 
-        selectedChainId={selectedChainId}
-        onChainSelect={setSelectedChainId}
-      />
-      
-      <FieldSelector 
-        fieldSelection={query.fieldSelection}
-        onFieldSelectionChange={(newFieldSelection) => 
-          setQuery(prev => ({ ...prev, fieldSelection: newFieldSelection }))
-        }
-      />
-      
-      <QueryResults 
-        query={query}
-        selectedChainId={selectedChainId}
-      />
-    </div>
-  );
-}
 ```
 
-### Working with Query Data
 
-```jsx
-import React, { useState } from 'react';
-import { HyperSyncQueryBuilder, QueryResults } from 'hypersync-query-builder-component';
-
-function QueryWithCallback() {
-  const [generatedQuery, setGeneratedQuery] = useState(null);
-
-  // The component provides the query structure via its internal state
-  // Access to query data is available through the QueryResults component
-  
-  return (
-    <div>
-      <HyperSyncQueryBuilder />
-      {/* The query structure and results are managed internally */}
-    </div>
-  );
-}
-```
-
-## Component API
-
-### HyperSyncQueryBuilder (Main Component)
-
-The main component that includes the full query building interface.
-
-```jsx
-<HyperSyncQueryBuilder />
-```
-
-**Props**: None (manages all state internally)
-
-### ChainSelector
-
-Component for selecting blockchain networks.
-
-```jsx
-<ChainSelector 
-  selectedChainId={number}
-  onChainSelect={(chainId) => void}
-/>
-```
-
-### QueryResults
-
-Component for displaying query JSON and execution results.
-
-```jsx
-<QueryResults 
-  query={QueryObject}
-  selectedChainId={number}
-/>
-```
-
-### LogFilter
-
-Component for configuring log filtering.
-
-```jsx
-<LogFilter
-  filterState={LogSelection}
-  onFilterChange={(filter) => void}
-  onRemove={() => void}
-  filterIndex={number}
-/>
-```
-
-### TransactionFilter
-
-Component for configuring transaction filtering.
-
-```jsx
-<TransactionFilter
-  filterState={TransactionSelection}
-  onFilterChange={(filter) => void}
-  onRemove={() => void}
-  filterIndex={number}
-/>
-```
-
-### BlockFilter
-
-Component for configuring block filtering.
-
-```jsx
-<BlockFilter
-  filterState={BlockSelection}
-  onFilterChange={(filter) => void}
-  onRemove={() => void}
-  filterIndex={number}
-/>
-```
-
-### FieldSelector
-
-Component for selecting which fields to return. Selected fields appear as tags and can be searched from a dropdown.
-
-```jsx
-<FieldSelector
-  fieldSelection={FieldSelection}
-  onFieldSelectionChange={(fieldSelection) => void}
-/>
-```
-
-## Type Definitions
-
-The package includes comprehensive TypeScript definitions:
-
-```typescript
-interface Query {
-  fromBlock: number;
-  toBlock?: number;
-  logs?: LogSelection[];
-  transactions?: TransactionSelection[];
-  traces?: TraceSelection[];
-  blocks?: BlockSelection[];
-  includeAllBlocks?: boolean;
-  fieldSelection: FieldSelection;
-  maxNumBlocks?: number;
-  maxNumTransactions?: number;
-  maxNumLogs?: number;
-  maxNumTraces?: number;
-  joinMode?: JoinMode;
-}
-
-interface LogSelection {
-  address?: string[];
-  topics?: string[][];
-}
-
-interface TransactionSelection {
-  from_?: string[];
-  to_?: string[];
-  sighash?: string[];
-  status?: number;
-  kind?: number[];
-  contractAddress?: string[];
-  authorizationList?: AuthorizationSelection[];
-}
-
-// ... and many more
-```
-
-## Styling
-
-The component comes with built-in Tailwind CSS styles. Import the styles in your application:
-
-```jsx
-import 'hypersync-query-builder-component/styles';
-```
-
-## Supported Chains
-
-The component supports all chains available through HyperSync, including:
-- Ethereum
-- Polygon
-- BSC
-- Avalanche
-- Arbitrum
-- Optimism
-- And many more...
-
-## Integration with Docusaurus
-
-This component is perfect for interactive documentation. Here's how to integrate it with Docusaurus:
-
-```jsx
-// In your MDX file or React component
-import { HyperSyncQueryBuilder } from 'hypersync-query-builder-component';
-import 'hypersync-query-builder-component/styles';
-
-export default function InteractiveQueryBuilder() {
-  return (
-    <div style={{ margin: '20px 0' }}>
-      <h2>Try the Query Builder</h2>
-      <HyperSyncQueryBuilder />
-    </div>
-  );
-}
-```
 
 ## Requirements
 
-- React 16.8+ (hooks support required)
+- React 16.8 or newer
 - Modern browser with ES6 support
 
-## Contributing
+## Built With
 
-This component is built with ReScript and compiled to JavaScript. The source code uses:
-- ReScript for type-safe functional programming
-- React for the UI layer
-- Tailwind CSS for styling
-- Vite for building and bundling
+- [ReScript](https://rescript-lang.org) - type-safe functional source language
+- React - UI layer
+- Tailwind CSS - styling
+- Vite - build tooling
+
+## Documentation
+
+- [HyperSync Docs](https://docs.envio.dev/docs/HyperSync/overview)
+- [Query Reference](https://docs.envio.dev/docs/HyperSync/hypersync-query)
+- [Supported Networks](https://docs.envio.dev/docs/HyperSync/hypersync-supported-networks)
+- [Live Query Builder](https://builder.hypersync.xyz)
 
 ## License
 
 MIT
 
-## About HyperSync
+## Support
 
-HyperSync is a high-performance blockchain indexing solution by Envio. Learn more at [envio.dev](https://envio.dev).
-
----
-
-Built with ❤️ by the Envio team
+- [Discord community](https://discord.com/invite/envio)
+- [Envio Docs](https://docs.envio.dev)
