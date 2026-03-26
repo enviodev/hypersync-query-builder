@@ -4,11 +4,11 @@
 
 A React component library and standalone web app for visually building [HyperSync](https://docs.envio.dev/docs/HyperSync/overview) queries. Construct complex blockchain data queries through an intuitive UI without writing code.
 
-Live at [builder.hypersync.xyz](http://builder.hypersync.xyz).
+Live at [builder.hypersync.xyz](https://builder.hypersync.xyz).
 
 ## What is HyperSync?
 
-[HyperSync](https://docs.envio.dev/docs/HyperSync/overview) is Envio's high-performance blockchain data retrieval layer - a purpose-built alternative to JSON-RPC endpoints that offers up to 2000x faster data access across 70+ EVM-compatible networks.
+[HyperSync](https://docs.envio.dev/docs/HyperSync/overview) is Envio's high-performance blockchain data retrieval layer, a purpose-built alternative to JSON-RPC endpoints that offers up to 2000x faster data access across 70+ EVM-compatible networks.
 
 ## Features
 
@@ -27,6 +27,7 @@ pnpm dev
 ```
 
 Other commands:
+
 - `pnpm res:build` - build the ReScript source
 - `pnpm res:dev` - watch and rebuild ReScript on changes
 - `pnpm build:site` - build the production site
@@ -81,7 +82,7 @@ See the full component API in the [source README](./README.md).
 - [HyperSync Docs](https://docs.envio.dev/docs/HyperSync/overview)
 - [Query Reference](https://docs.envio.dev/docs/HyperSync/hypersync-query)
 - [Supported Networks](https://docs.envio.dev/docs/HyperSync/hypersync-supported-networks)
-- [Live Query Builder](http://builder.hypersync.xyz)
+- [Live Query Builder](https://builder.hypersync.xyz)
 
 ## License
 
