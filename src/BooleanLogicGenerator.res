@@ -12,12 +12,13 @@ let isEmptyFilter = (filterState: filterState) => {
 
 // Helper function to check if a transaction filter is empty
 let isEmptyTransactionFilter = (filterState: QueryStructure.transactionSelection) => {
-  let {from_, to_, sighash, status, type_, contractAddress, authorizationList} = filterState
+  let {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
   let typeArray = type_->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
+  let hashArray = hash->Option.getOr([])
   let authArray = authorizationList->Option.getOr([])
 
   Array.length(fromArray) === 0 &&
@@ -26,6 +27,7 @@ let isEmptyTransactionFilter = (filterState: QueryStructure.transactionSelection
   Option.isNone(status) &&
   Array.length(typeArray) === 0 &&
   Array.length(contractAddressArray) === 0 &&
+  Array.length(hashArray) === 0 &&
   Array.length(authArray) === 0
 }
 
@@ -538,6 +540,7 @@ let generateMultiTransactionBooleanHierarchy = (
                   status: None,
                   type_: None,
                   contractAddress: None,
+                  hash: None,
                   authorizationList: None,
                 },
               ],

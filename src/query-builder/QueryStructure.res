@@ -22,6 +22,7 @@ type transactionSelection = {
   status: option<int>,
   type_: option<array<int>>,
   contractAddress: option<array<string>>,
+  hash: option<array<string>>,
   authorizationList: option<array<authorizationSelection>>,
 }
 

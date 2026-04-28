@@ -25,6 +25,7 @@ test("generateMultiTransactionFilterDescription - single empty filter", () => {
       status: None,
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
   ])
@@ -41,6 +42,7 @@ test("generateMultiTransactionFilterDescription - single filter with from", () =
       status: None,
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
   ])
@@ -57,6 +59,7 @@ test("generateMultiTransactionFilterDescription - two filters with OR logic", ()
       status: None,
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
     {
@@ -66,6 +69,7 @@ test("generateMultiTransactionFilterDescription - two filters with OR logic", ()
       status: None,
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
   ])
@@ -86,6 +90,7 @@ test("generateMultiTransactionFilterDescription - complex ERC20 scenario", () =>
       status: Some(1),
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
     // ERC20 Approval
@@ -96,6 +101,7 @@ test("generateMultiTransactionFilterDescription - complex ERC20 scenario", () =>
       status: Some(1),
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
   ])
@@ -127,6 +133,7 @@ test("generateMultiTransactionBooleanHierarchy - single empty filter", () => {
       status: None,
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
   ])
@@ -143,6 +150,7 @@ test("generateMultiTransactionBooleanHierarchy - single non-empty filter", () =>
       status: None,
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
   ])
@@ -159,6 +167,7 @@ test("generateMultiTransactionBooleanHierarchy - two simple filters", () => {
       status: None,
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
     {
@@ -168,6 +177,7 @@ test("generateMultiTransactionBooleanHierarchy - two simple filters", () => {
       status: None,
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
   ])
@@ -186,6 +196,7 @@ test("generateMultiTransactionBooleanHierarchy - DEX multi-router scenario", () 
       status: Some(1),
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
     // Uniswap V3 Router
@@ -196,6 +207,7 @@ test("generateMultiTransactionBooleanHierarchy - DEX multi-router scenario", () 
       status: Some(1),
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     },
   ])

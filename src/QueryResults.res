@@ -172,6 +172,13 @@ let make = (
     | _ => None
     }
 
+    let hashJson = switch transactionFilter.hash {
+    | Some(hashes) if Array.length(hashes) > 0 =>
+      let hashesStr = Array.map(hashes, h => `"${h}"`)->Array.join(", ")
+      Some(`"hash": [${hashesStr}]`)
+    | _ => None
+    }
+
     let authorizationListJson = switch transactionFilter.authorizationList {
     | Some(authList) if Array.length(authList) > 0 =>
       let authListStr = Array.map(authList, auth => {
@@ -203,6 +210,7 @@ let make = (
         statusJson,
         typeJson,
         contractAddressJson,
+        hashJson,
         authorizationListJson,
       ]->Array.filterMap(x => x)
     let content = Array.join(allParts, ", ")

@@ -17,6 +17,7 @@ let make = (
   let (newStatus, setNewStatus) = React.useState(() => "")
   let (newType, setNewType) = React.useState(() => "")
   let (newContractAddress, setNewContractAddress) = React.useState(() => "")
+  let (newHash, setNewHash) = React.useState(() => "")
 
   // Example filter states
   let eip7702Example: transactionFilterState = {
@@ -26,6 +27,7 @@ let make = (
     status: None,
     type_: Some([4]),
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
 
@@ -36,6 +38,7 @@ let make = (
     status: Some(0),
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
 
@@ -46,6 +49,7 @@ let make = (
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
 
@@ -56,6 +60,21 @@ let make = (
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
+    authorizationList: None,
+  }
+
+  let lookupByHashExample: transactionFilterState = {
+    from_: None,
+    to_: None,
+    sighash: None,
+    status: None,
+    type_: None,
+    contractAddress: None,
+    hash: Some([
+      "0x653a4532b6daf38b36e26794be5c27da1253811cfb1b422159232fd1aed68e40",
+      "0x45b366153d0b2decc91c1fef8b5dc9c4bb0a0d1d2d01daa4bbd26d06029b6ebc",
+    ]),
     authorizationList: None,
   }
 
@@ -73,6 +92,10 @@ let make = (
 
   let setApproveCallExample = () => {
     onFilterChange(approveCallExample)
+  }
+
+  let setLookupByHashExample = () => {
+    onFilterChange(lookupByHashExample)
   }
 
   let addFrom = () => {
@@ -187,6 +210,25 @@ let make = (
     })
   }
 
+  let addHash = () => {
+    if newHash !== "" && newHash->String.startsWith("0x") {
+      onFilterChange({
+        ...filterState,
+        hash: Some(Array.concat(filterState.hash->Option.getOr([]), [newHash])),
+      })
+      setNewHash(_ => "")
+    }
+  }
+
+  let removeHash = index => {
+    let currentArray = filterState.hash->Option.getOr([])
+    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+    onFilterChange({
+      ...filterState,
+      hash: Array.length(newArray) > 0 ? Some(newArray) : None,
+    })
+  }
+
   let _transactionSelectionToStruct = (): option<transactionSelection> => {
     Some(filterState)
   }
@@ -204,7 +246,7 @@ let make = (
   }
 
   let generateCodeBlock = () => {
-    let {from_, to_, sighash, status, type_, contractAddress} = filterState
+    let {from_, to_, sighash, status, type_, contractAddress, hash} = filterState
 
     let fromStr = switch from_ {
     | Some(fromArray) if Array.length(fromArray) > 0 => {
@@ -266,10 +308,27 @@ let make = (
     | _ => ""
     }
 
+    let hashStr = switch hash {
+    | Some(hashArray) if Array.length(hashArray) > 0 => {
+        let hashList =
+          hashArray
+          ->Array.map(h => `    "${h}"`)
+          ->Array.join(",\n")
+        `  "hash": [\n${hashList}\n  ]`
+      }
+    | _ => ""
+    }
+
     let parts =
-      [fromStr, toStr, sighashStr, statusStr, typeStr, contractAddressStr]->Array.filterMap(str =>
-        str !== "" ? Some(str) : None
-      )
+      [
+        fromStr,
+        toStr,
+        sighashStr,
+        statusStr,
+        typeStr,
+        contractAddressStr,
+        hashStr,
+      ]->Array.filterMap(str => str !== "" ? Some(str) : None)
     if Array.length(parts) > 0 {
       `{\n${Array.join(parts, ",\n")}\n}`
     } else {
@@ -283,7 +342,8 @@ let make = (
     Array.length(filterState.sighash->Option.getOr([])) > 0 ||
     Option.isSome(filterState.status) ||
     Array.length(filterState.type_->Option.getOr([])) > 0 ||
-    Array.length(filterState.contractAddress->Option.getOr([])) > 0
+    Array.length(filterState.contractAddress->Option.getOr([])) > 0 ||
+    Array.length(filterState.hash->Option.getOr([])) > 0
 
   <div
     className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
@@ -354,6 +414,11 @@ let make = (
               onClick={_ => setApproveCallExample()}
               className="px-2.5 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
               {"Approve EOA Calls"->React.string}
+            </button>
+            <button
+              onClick={_ => setLookupByHashExample()}
+              className="px-2.5 py-1 bg-amber-600 text-white text-xs font-medium rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500">
+              {"Lookup by Hash"->React.string}
             </button>
           </div>
 
@@ -606,6 +671,51 @@ let make = (
                   <button
                     onClick={_ => removeContractAddress(index)}
                     className="text-red-600 hover:text-red-800 text-sm">
+                    {"Remove"->React.string}
+                  </button>
+                </div>
+              )->React.array}
+            </div>
+          </div>
+
+          // Transaction Hashes
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {"Transaction Hashes"->React.string}
+            </label>
+            <div className="flex space-x-2 mb-3">
+              <input
+                type_="text"
+                value={newHash}
+                onChange={e => {
+                  let target = ReactEvent.Form.target(e)
+                  setNewHash(_ => target["value"])
+                }}
+                placeholder="0x..."
+                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <button
+                onClick={_ => addHash()}
+                disabled={String.length(newHash) == 0 || !(newHash->String.startsWith("0x"))}
+                className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                {(
+                  Array.length(filterState.hash->Option.getOr([])) > 0
+                    ? "Add (via OR) Hash"
+                    : "Add Hash"
+                )->React.string}
+              </button>
+            </div>
+            <div className="space-y-2">
+              {Array.mapWithIndex(filterState.hash->Option.getOr([]), (h, index) =>
+                <div
+                  key={Int.toString(index)}
+                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                  <span className="text-sm font-mono text-gray-800 truncate">
+                    {h->React.string}
+                  </span>
+                  <button
+                    onClick={_ => removeHash(index)}
+                    className="text-red-600 hover:text-red-800 text-sm ml-2 shrink-0">
                     {"Remove"->React.string}
                   </button>
                 </div>

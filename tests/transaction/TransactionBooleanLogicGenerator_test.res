@@ -10,6 +10,7 @@ test("generateEnglishDescription - empty transaction filter", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -24,6 +25,7 @@ test("generateEnglishDescription - single from address", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -38,6 +40,7 @@ test("generateEnglishDescription - multiple from addresses", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -52,6 +55,7 @@ test("generateEnglishDescription - single to address", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -66,6 +70,7 @@ test("generateEnglishDescription - multiple to addresses", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -80,6 +85,7 @@ test("generateEnglishDescription - single sighash", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -94,6 +100,7 @@ test("generateEnglishDescription - multiple sighashes", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -111,6 +118,7 @@ test("generateEnglishDescription - successful status", () => {
     status: Some(1),
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -125,6 +133,7 @@ test("generateEnglishDescription - failed status", () => {
     status: Some(0),
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -139,6 +148,7 @@ test("generateEnglishDescription - single type", () => {
     status: None,
     type_: Some([2]),
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -153,6 +163,7 @@ test("generateEnglishDescription - multiple types", () => {
     status: None,
     type_: Some([0, 2]),
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -167,6 +178,7 @@ test("generateEnglishDescription - single contract address", () => {
     status: None,
     type_: None,
     contractAddress: Some(["0xA0b86a33E6441c8C06DD2F1ea9D25E4A7BB9A74e"]),
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -184,6 +196,7 @@ test("generateEnglishDescription - complex transaction filter", () => {
     status: Some(1),
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateEnglishDescription(state)
@@ -201,6 +214,7 @@ test("generateBooleanHierarchy - empty transaction filter", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateBooleanHierarchy(state)
@@ -215,6 +229,7 @@ test("generateBooleanHierarchy - single from address", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateBooleanHierarchy(state)
@@ -229,6 +244,7 @@ test("generateBooleanHierarchy - multiple from addresses", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateBooleanHierarchy(state)
@@ -244,6 +260,7 @@ test("generateBooleanHierarchy - from and to addresses", () => {
     status: None,
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateBooleanHierarchy(state)
@@ -259,6 +276,7 @@ test("generateBooleanHierarchy - complex transaction with multiple conditions", 
     status: Some(1),
     type_: Some([2]),
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateBooleanHierarchy(state)
@@ -274,6 +292,7 @@ test("generateBooleanHierarchy - ERC20 transfer transaction", () => {
     status: Some(1),
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateBooleanHierarchy(state)
@@ -289,6 +308,7 @@ test("generateBooleanHierarchy - DEX swap transaction", () => {
     status: Some(1),
     type_: None,
     contractAddress: None,
+    hash: None,
     authorizationList: None,
   }
   let result = generateBooleanHierarchy(state)

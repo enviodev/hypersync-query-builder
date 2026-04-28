@@ -189,6 +189,7 @@ let make = (
           status: Some(0),
           type_: None,
           contractAddress: None,
+          hash: None,
           authorizationList: None,
         },
       ]),
@@ -247,6 +248,7 @@ let make = (
           status: None,
           type_: None,
           contractAddress: None,
+          hash: None,
           authorizationList: None,
         },
         {
@@ -256,6 +258,7 @@ let make = (
           status: None,
           type_: None,
           contractAddress: None,
+          hash: None,
           authorizationList: None,
         },
       ]),
@@ -315,6 +318,7 @@ let make = (
           status: None,
           type_: None,
           contractAddress: None,
+          hash: None,
           authorizationList: None,
         },
         {
@@ -324,6 +328,7 @@ let make = (
           status: None,
           type_: None,
           contractAddress: None,
+          hash: None,
           authorizationList: None,
         },
       ]),
@@ -434,6 +439,7 @@ let make = (
       status: None,
       type_: None,
       contractAddress: None,
+      hash: None,
       authorizationList: None,
     }
     setQuery(prev => {
