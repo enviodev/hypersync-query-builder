@@ -1,12 +1,13 @@
 type transactionFilterState = QueryStructure.transactionSelection
 
 let generateEnglishDescription = (filterState: transactionFilterState) => {
-  let {from_, to_, sighash, status, type_, contractAddress, authorizationList} = filterState
+  let {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
   let typeArray = type_->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
+  let hashArray = hash->Option.getOr([])
   let authArray = authorizationList->Option.getOr([])
 
   let hasAnyFilter =
@@ -16,6 +17,7 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
     Option.isSome(status) ||
     Array.length(typeArray) > 0 ||
     Array.length(contractAddressArray) > 0 ||
+    Array.length(hashArray) > 0 ||
     Array.length(authArray) > 0
 
   if !hasAnyFilter {
@@ -99,6 +101,17 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
       parts->Array.push(contractCondition)->ignore
     }
 
+    // Hash condition
+    if Array.length(hashArray) > 0 {
+      let hashCondition = if Array.length(hashArray) === 1 {
+        `the transaction hash is ${Array.getUnsafe(hashArray, 0)}`
+      } else {
+        let hashList = Array.join(hashArray, " OR ")
+        `the transaction hash is ${hashList}`
+      }
+      parts->Array.push(hashCondition)->ignore
+    }
+
     // Authorization list condition
     if Array.length(authArray) > 0 {
       let authCondition = if Array.length(authArray) === 1 {
@@ -118,12 +131,13 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
 }
 
 let generateBooleanHierarchy = (filterState: transactionFilterState) => {
-  let {from_, to_, sighash, status, type_, contractAddress, authorizationList} = filterState
+  let {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
   let typeArray = type_->Option.getOr([])
   let contractAddressArray = contractAddress->Option.getOr([])
+  let hashArray = hash->Option.getOr([])
   let authArray = authorizationList->Option.getOr([])
 
   let hasAnyFilter =
@@ -133,6 +147,7 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     Option.isSome(status) ||
     Array.length(typeArray) > 0 ||
     Array.length(contractAddressArray) > 0 ||
+    Array.length(hashArray) > 0 ||
     Array.length(authArray) > 0
 
   if !hasAnyFilter {
@@ -158,6 +173,9 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     }
     if Array.length(contractAddressArray) > 0 {
       conditions->Array.push("contractAddress")->ignore
+    }
+    if Array.length(hashArray) > 0 {
+      conditions->Array.push("hash")->ignore
     }
     if Array.length(authArray) > 0 {
       conditions->Array.push("authorizationList")->ignore
@@ -329,6 +347,36 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
             "├── "
           }
           lines->Array.push(`${addrPrefix}${addr}`)->ignore
+        })
+      }
+      conditionIndex := conditionIndex.contents + 1
+    }
+
+    // Hash
+    if Array.length(hashArray) > 0 {
+      let isLast = conditionIndex.contents === Array.length(conditions) - 1
+      let prefix = hasMultipleConditions ? isLast ? "└── " : "├── " : ""
+
+      if Array.length(hashArray) === 1 {
+        lines->Array.push(`${prefix}hash = ${Array.getUnsafe(hashArray, 0)}`)->ignore
+      } else {
+        lines->Array.push(`${prefix}OR (hash)`)->ignore
+        Array.forEachWithIndex(hashArray, (h, i) => {
+          let isLastHash = i === Array.length(hashArray) - 1
+          let hashPrefix = if hasMultipleConditions {
+            if isLast {
+              isLastHash ? "    └── " : "    ├── "
+            } else if isLastHash {
+              "│   └── "
+            } else {
+              "│   ├── "
+            }
+          } else if isLastHash {
+            "└── "
+          } else {
+            "├── "
+          }
+          lines->Array.push(`${hashPrefix}${h}`)->ignore
         })
       }
       conditionIndex := conditionIndex.contents + 1

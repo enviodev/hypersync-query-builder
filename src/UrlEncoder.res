@@ -226,6 +226,10 @@ let serializeUrlState = (state: urlState): string => {
                     | Some(addresses) => Js.Json.array(addresses->Array.map(Js.Json.string))
                     | None => Js.Json.null
                     }
+                    let hashJson = switch transaction.hash {
+                    | Some(hashes) => Js.Json.array(hashes->Array.map(Js.Json.string))
+                    | None => Js.Json.null
+                    }
                     let authorizationListJson = switch transaction.authorizationList {
                     | Some(authorizations) =>
                       Js.Json.array(
@@ -259,6 +263,7 @@ let serializeUrlState = (state: urlState): string => {
                         ("status", statusJson),
                         ("type_", typeJson),
                         ("contractAddress", contractAddressJson),
+                        ("hash", hashJson),
                         ("authorizationList", authorizationListJson),
                       ]),
                     )
@@ -597,6 +602,19 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
                         }
                       | None => None
                       }
+                      let hash = switch Js.Dict.get(transaction, "hash") {
+                      | Some(value) =>
+                        switch Js.Json.decodeNull(value) {
+                        | Some(_) => None
+                        | None =>
+                          switch Js.Json.decodeArray(value) {
+                          | Some(hashes) =>
+                            Some(hashes->Array.map(Js.Json.decodeString)->Array.filterMap(x => x))
+                          | None => None
+                          }
+                        }
+                      | None => None
+                      }
                       let authorizationList = switch Js.Dict.get(transaction, "authorizationList") {
                       | Some(value) =>
                         switch Js.Json.decodeNull(value) {
@@ -653,7 +671,7 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
                         }
                       | None => None
                       }
-                      {from_, to_, sighash, status, type_, contractAddress, authorizationList}
+                      {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList}
                     })
                   Some(decodedTransactions)
                 }
