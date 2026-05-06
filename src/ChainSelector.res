@@ -17,14 +17,13 @@ type rawChainJson = {
 
 @module("./generated_chains.json") external rawChainsJson: array<rawChainJson> = "default"
 
-let defaultChains: array<chain> =
-  rawChainsJson->Array.map((raw): chain => {
-    name: raw.name,
-    tier: raw.tier,
-    chain_id: raw.chain_id,
-    ecosystem: raw.ecosystem,
-    additional_features: raw.additional_features->Nullable.toOption,
-  })
+let defaultChains: array<chain> = rawChainsJson->Array.map((raw): chain => {
+  name: raw.name,
+  tier: raw.tier,
+  chain_id: raw.chain_id,
+  ecosystem: raw.ecosystem,
+  additional_features: raw.additional_features->Nullable.toOption,
+})
 
 // Tier visuals removed from UI; no color mapping needed
 
@@ -105,13 +104,17 @@ let fetchChains = async () => {
 
             // Only include chains with valid data
             if name !== "" && chain_id !== 0 {
-              Some(({
-                name,
-                tier,
-                chain_id,
-                ecosystem,
-                additional_features,
-              }: chain))
+              Some(
+                (
+                  {
+                    name,
+                    tier,
+                    chain_id,
+                    ecosystem,
+                    additional_features,
+                  }: chain
+                ),
+              )
             } else {
               None
             }

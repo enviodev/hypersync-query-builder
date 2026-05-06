@@ -7,10 +7,7 @@ let systemProgramId = "11111111111111111111111111111111"
 let computeBudgetProgramId = "ComputeBudget111111111111111111111111111111"
 
 @react.component
-let make = (
-  ~bearerToken: option<string>,
-  ~onTokenSubmit: string => unit,
-) => {
+let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
   let defaultQuery = (): query => {
     fromSlot: 0,
     toSlot: None,
@@ -247,7 +244,8 @@ let make = (
               className="w-5 h-5 text-amber-600"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -257,9 +255,7 @@ let make = (
             </svg>
           </div>
           <div className="flex-1 text-sm text-amber-900">
-            <p className="font-semibold mb-1">
-              {"Solana support is experimental"->React.string}
-            </p>
+            <p className="font-semibold mb-1"> {"Solana support is experimental"->React.string} </p>
             <p className="mb-1">
               {"This is a preview release. The schema, endpoints, and behavior may change before the official launch. We will be expanding the historical slot range over time as the integration matures."->React.string}
             </p>
@@ -269,7 +265,8 @@ let make = (
                 href="https://discord.com/invite/envio"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-amber-900 underline hover:text-amber-700">
+                className="font-medium text-amber-900 underline hover:text-amber-700"
+              >
                 {"Discord"->React.string}
               </a>
               {"."->React.string}
@@ -293,7 +290,8 @@ let make = (
               </div>
               <button
                 onClick={_ => resetBuilder()}
-                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors">
+                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors"
+              >
                 {"Reset"->React.string}
               </button>
             </div>
@@ -350,7 +348,8 @@ let make = (
                     | Some(h) =>
                       <button
                         onClick={_ => setQuery(prev => {...prev, fromSlot: h - 100})}
-                        className="mt-1 text-xs text-blue-600 hover:text-blue-800">
+                        className="mt-1 text-xs text-blue-600 hover:text-blue-800"
+                      >
                         {`Use head - 100 (${Int.toString(h - 100)})`->React.string}
                       </button>
                     | None => React.null
@@ -382,10 +381,26 @@ let make = (
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                   {[
-                    ("max_num_blocks", query.maxNumBlocks, n => setQuery(prev => {...prev, maxNumBlocks: n})),
-                    ("max_num_transactions", query.maxNumTransactions, n => setQuery(prev => {...prev, maxNumTransactions: n})),
-                    ("max_num_instructions", query.maxNumInstructions, n => setQuery(prev => {...prev, maxNumInstructions: n})),
-                    ("max_num_logs", query.maxNumLogs, n => setQuery(prev => {...prev, maxNumLogs: n})),
+                    (
+                      "max_num_blocks",
+                      query.maxNumBlocks,
+                      n => setQuery(prev => {...prev, maxNumBlocks: n}),
+                    ),
+                    (
+                      "max_num_transactions",
+                      query.maxNumTransactions,
+                      n => setQuery(prev => {...prev, maxNumTransactions: n}),
+                    ),
+                    (
+                      "max_num_instructions",
+                      query.maxNumInstructions,
+                      n => setQuery(prev => {...prev, maxNumInstructions: n}),
+                    ),
+                    (
+                      "max_num_logs",
+                      query.maxNumLogs,
+                      n => setQuery(prev => {...prev, maxNumLogs: n}),
+                    ),
                   ]
                   ->Array.map(((label, value, onSet)) =>
                     <div key={label}>
@@ -442,17 +457,20 @@ let make = (
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={_ => applyPresetSplTokenTransfers()}
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"SPL Token Transfers"->React.string}
                     </button>
                     <button
                       onClick={_ => applyPresetSystemTransfers()}
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"System Program SOL Transfers"->React.string}
                     </button>
                     <button
                       onClick={_ => applyPresetAllBlocks()}
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"All Blocks"->React.string}
                     </button>
                   </div>
@@ -477,7 +495,8 @@ let make = (
                   </div>
                   {totalFilters > 0
                     ? <span
-                        className="ml-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                        className="ml-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
+                      >
                         {`${Int.toString(totalFilters)} filter${totalFilters === 1
                             ? ""
                             : "s"}`->React.string}
@@ -489,17 +508,20 @@ let make = (
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={_ => addInstructionFilter()}
-                      className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 transition-colors">
+                      className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 transition-colors"
+                    >
                       {"+ Instruction Filter"->React.string}
                     </button>
                     <button
                       onClick={_ => addTransactionFilter()}
-                      className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 transition-colors">
+                      className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 transition-colors"
+                    >
                       {"+ Transaction Filter"->React.string}
                     </button>
                     <button
                       onClick={_ => addLogFilter()}
-                      className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 transition-colors">
+                      className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 transition-colors"
+                    >
                       {"+ Log Filter"->React.string}
                     </button>
                   </div>
@@ -551,7 +573,8 @@ let make = (
                       ->React.array}
                     </div>
                   : <div
-                      className="text-center py-8 border-2 border-dashed border-slate-300 rounded-lg">
+                      className="text-center py-8 border-2 border-dashed border-slate-300 rounded-lg"
+                    >
                       <h4 className="text-sm font-medium text-slate-600 mb-1">
                         {"No filters added yet"->React.string}
                       </h4>
@@ -596,7 +619,8 @@ let make = (
               <div className="flex items-center">
                 <button
                   onClick={_ => setExecuteSignal(prev => prev + 1)}
-                  className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-slate-700 hover:bg-slate-800 rounded-lg border border-slate-700 transition-colors">
+                  className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-slate-700 hover:bg-slate-800 rounded-lg border border-slate-700 transition-colors"
+                >
                   {"Execute Query"->React.string}
                 </button>
               </div>

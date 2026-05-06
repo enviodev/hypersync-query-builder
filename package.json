@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@rescript/react": "^0.13.1",
-    "@rescript/runtime": "^12.1.0",
+    "@rescript/runtime": "^12.2.0",
     "pako": "^2.1.0"
   },
   "peerDependencies": {
@@ -59,7 +59,7 @@
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
   },
   "devDependencies": {
-    "@rescript/linux-x64": "12.1.0",
+    "@rescript/linux-x64": "12.2.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@tailwindcss/vite": "^4.1.18",
     "@vitejs/plugin-react": "^4.3.4",
@@ -67,7 +67,7 @@
     "concurrently": "^9.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "rescript": "^12.1.0",
+    "rescript": "^12.2.0",
     "rescript-test": "8.0.0",
     "tailwindcss": "^4.1.18",
     "vite": "^6.4.1"

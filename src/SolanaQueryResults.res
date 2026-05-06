@@ -7,8 +7,7 @@ type rawMode = Plain | Interactive
 
 let solanaEndpoint = "https://solana-near-head-test.hypersync.xyz/query"
 
-let strList = (arr: array<string>): string =>
-  arr->Array.map(s => `"${s}"`)->Array.join(", ")
+let strList = (arr: array<string>): string => arr->Array.map(s => `"${s}"`)->Array.join(", ")
 
 let serializeInstructionFilter = (sel: instructionSelection): string => {
   let parts: array<option<string>> = [
@@ -120,14 +119,11 @@ let serializeLogFilter = (sel: logSelection): string => {
 
 let serializeFields = (fs: fieldSelection): string => {
   let blockArr = fs.block->Array.map(f => `"${blockFieldToSnake(f)}"`)->Array.join(", ")
-  let txnArr =
-    fs.transaction->Array.map(f => `"${transactionFieldToSnake(f)}"`)->Array.join(", ")
-  let instrArr =
-    fs.instruction->Array.map(f => `"${instructionFieldToSnake(f)}"`)->Array.join(", ")
+  let txnArr = fs.transaction->Array.map(f => `"${transactionFieldToSnake(f)}"`)->Array.join(", ")
+  let instrArr = fs.instruction->Array.map(f => `"${instructionFieldToSnake(f)}"`)->Array.join(", ")
   let logArr = fs.log->Array.map(f => `"${logFieldToSnake(f)}"`)->Array.join(", ")
   let balArr = fs.balance->Array.map(f => `"${balanceFieldToSnake(f)}"`)->Array.join(", ")
-  let tbArr =
-    fs.tokenBalance->Array.map(f => `"${tokenBalanceFieldToSnake(f)}"`)->Array.join(", ")
+  let tbArr = fs.tokenBalance->Array.map(f => `"${tokenBalanceFieldToSnake(f)}"`)->Array.join(", ")
   let rewArr = fs.reward->Array.map(f => `"${rewardFieldToSnake(f)}"`)->Array.join(", ")
   `"fields": {
     "block": [${blockArr}],
@@ -150,25 +146,31 @@ let serializeQuery = (q: query): string => {
     switch q.instructions {
     | Some(arr) if Array.length(arr) > 0 =>
       let body = arr->Array.map(serializeInstructionFilter)->Array.join(",\n    ")
-      Some(`"instructions": [
+      Some(
+        `"instructions": [
     ${body}
-  ]`)
+  ]`,
+      )
     | _ => None
     },
     switch q.transactions {
     | Some(arr) if Array.length(arr) > 0 =>
       let body = arr->Array.map(serializeTransactionFilter)->Array.join(",\n    ")
-      Some(`"transactions": [
+      Some(
+        `"transactions": [
     ${body}
-  ]`)
+  ]`,
+      )
     | _ => None
     },
     switch q.logs {
     | Some(arr) if Array.length(arr) > 0 =>
       let body = arr->Array.map(serializeLogFilter)->Array.join(",\n    ")
-      Some(`"logs": [
+      Some(
+        `"logs": [
     ${body}
-  ]`)
+  ]`,
+      )
     | _ => None
     },
     switch q.includeAllBlocks {
@@ -201,11 +203,7 @@ let serializeQuery = (q: query): string => {
 }
 
 @react.component
-let make = (
-  ~query: query,
-  ~executeSignal: int,
-  ~bearerToken: option<string>,
-) => {
+let make = (~query: query, ~executeSignal: int, ~bearerToken: option<string>) => {
   let (activeTab, setActiveTab) = React.useState(() => QueryJson)
   let (isExecuting, setIsExecuting) = React.useState(() => false)
   let (queryResult, setQueryResult) = React.useState(() => None)
@@ -286,7 +284,9 @@ let make = (
         | _ => setQueryError(_ => Some("Failed to stringify response JSON"))
         }
       } else {
-        setQueryError(_ => Some(`HTTP ${Int.toString(response->Response.status)}: ${resultTextRaw}`))
+        setQueryError(_ => Some(
+          `HTTP ${Int.toString(response->Response.status)}: ${resultTextRaw}`,
+        ))
       }
     } catch {
     | _ => setQueryError(_ => Some("Network error occurred"))
@@ -578,21 +578,24 @@ let make = (
       </p>
       <div className="mt-3">
         <span
-          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
+        >
           {`Query URL: ${solanaEndpoint}`->React.string}
         </span>
       </div>
     </div>
 
     <div
-      className="border-b border-slate-200 sticky top-[56px] bg-white/80 backdrop-blur z-10 -mx-6 px-6 mb-6">
+      className="border-b border-slate-200 sticky top-[56px] bg-white/80 backdrop-blur z-10 -mx-6 px-6 mb-6"
+    >
       <nav className="flex space-x-8">
         <button
           onClick={_ => setActiveTab(_ => QueryJson)}
           className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
               QueryJson
               ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}>
+              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}
+        >
           {"Query JSON"->React.string}
         </button>
         <button
@@ -600,7 +603,8 @@ let make = (
           className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab ===
               Results
               ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}>
+              : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"}`}
+        >
           {"Results"->React.string}
         </button>
       </nav>
@@ -619,31 +623,36 @@ let make = (
                 onClick={_ => copyCurl()}
                 className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg transition-colors ${copiedCurl
                     ? "bg-emerald-600 text-white"
-                    : "bg-slate-600 text-white hover:bg-slate-700"}`}>
+                    : "bg-slate-600 text-white hover:bg-slate-700"}`}
+              >
                 {(copiedCurl ? "Copied!" : "Copy cURL")->React.string}
               </button>
               <button
                 onClick={_ => copyJson()}
                 className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border transition-colors ${copiedJson
                     ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200"}`}>
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200"}`}
+              >
                 {(copiedJson ? "Copied!" : "Copy JSON")->React.string}
               </button>
               <button
                 onClick={_ => downloadJson()}
-                className="inline-flex items-center px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 border border-slate-200 transition-colors">
+                className="inline-flex items-center px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 border border-slate-200 transition-colors"
+              >
                 {"Download"->React.string}
               </button>
               <button
                 onClick={_ => executeQuery()->ignore}
                 disabled={isExecuting}
-                className="inline-flex items-center px-3 py-1 bg-slate-700 text-white text-xs font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors">
+                className="inline-flex items-center px-3 py-1 bg-slate-700 text-white text-xs font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
+              >
                 {(isExecuting ? "Executing..." : "Execute Query")->React.string}
               </button>
             </div>
           </div>
           <pre
-            className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre">
+            className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre"
+          >
             {serializeQuery(query)->React.string}
           </pre>
         </div>
@@ -657,7 +666,8 @@ let make = (
                   className="w-8 h-8 mx-auto animate-spin"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24">
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -673,10 +683,13 @@ let make = (
           | (Some(result), _, false) =>
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-medium text-gray-900"> {"Query Results"->React.string} </h4>
+                <h4 className="text-sm font-medium text-gray-900">
+                  {"Query Results"->React.string}
+                </h4>
                 <div className="flex items-center">
                   <span
-                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 mr-3">
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 mr-3"
+                  >
                     {"Success"->React.string}
                   </span>
                   {switch (clientMs, serverMs, responseBytes) {
@@ -698,7 +711,8 @@ let make = (
                     onClick={_ => copyResultsJson()}
                     className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border transition-colors mr-2 ${copiedResults
                         ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                        : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"}`}>
+                        : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"}`}
+                  >
                     {(copiedResults ? "Copied!" : "Copy Results JSON")->React.string}
                   </button>
                   <div className="inline-flex items-center">
@@ -707,7 +721,8 @@ let make = (
                       className={`px-3 py-1 text-xs font-medium rounded-l-lg border border-slate-200 ${resultsView ===
                           Raw
                           ? "bg-slate-800 text-white"
-                          : "bg-white text-slate-700 hover:bg-slate-50"}`}>
+                          : "bg-white text-slate-700 hover:bg-slate-50"}`}
+                    >
                       {"Raw"->React.string}
                     </button>
                     <button
@@ -715,7 +730,8 @@ let make = (
                       className={`px-3 py-1 text-xs font-medium rounded-r-lg border border-slate-200 border-l-0 ${resultsView ===
                           Table
                           ? "bg-slate-800 text-white"
-                          : "bg-white text-slate-700 hover:bg-slate-50"}`}>
+                          : "bg-white text-slate-700 hover:bg-slate-50"}`}
+                    >
                       {"Table"->React.string}
                     </button>
                   </div>
@@ -731,7 +747,9 @@ let make = (
                   let resultLen = String.length(result)
                   let displayResult = if resultLen > maxLen {
                     String.substring(result, ~start=0, ~end=maxLen) ++
-                    `\n\n... (truncated, ${Int.toString(resultLen - maxLen)} more chars - use "Copy Results JSON" or switch to Table view)`
+                    `\n\n... (truncated, ${Int.toString(
+                        resultLen - maxLen,
+                      )} more chars - use "Copy Results JSON" or switch to Table view)`
                   } else {
                     result
                   }
@@ -739,17 +757,21 @@ let make = (
                     <div className="mb-2 flex items-center gap-2">
                       <button
                         onClick={_ => setRawMode(_ => Interactive)}
-                        className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 border border-slate-200 transition-colors">
+                        className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 border border-slate-200 transition-colors"
+                      >
                         {"Interactive JSON"->React.string}
                       </button>
                       {resultLen > maxLen
                         ? <span className="text-xs text-amber-700">
-                            {`Response is ${formatBytes(resultLen)} - preview truncated`->React.string}
+                            {`Response is ${formatBytes(
+                                resultLen,
+                              )} - preview truncated`->React.string}
                           </span>
                         : React.null}
                     </div>
                     <pre
-                      className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre max-h-96">
+                      className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-mono overflow-x-auto whitespace-pre max-h-96"
+                    >
                       {displayResult->React.string}
                     </pre>
                   </div>
@@ -758,12 +780,14 @@ let make = (
                     <div className="mb-2">
                       <button
                         onClick={_ => setRawMode(_ => Plain)}
-                        className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 border border-slate-200 transition-colors">
+                        className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 border border-slate-200 transition-colors"
+                      >
                         {"Plain JSON"->React.string}
                       </button>
                     </div>
                     <div
-                      className="bg-slate-50 border border-slate-200 rounded-xl p-4 max-h-96 overflow-auto">
+                      className="bg-slate-50 border border-slate-200 rounded-xl p-4 max-h-96 overflow-auto"
+                    >
                       {switch queryResultJson {
                       | Some(json) => renderJsonNode("root", json, 0)
                       | None => React.null
@@ -778,14 +802,13 @@ let make = (
                     let effectiveDataset = switch selectedDataset {
                     | Some(name) => name
                     | None =>
-                      Array.length(datasetNames) > 0
-                        ? Belt.Array.getExn(datasetNames, 0)
-                        : "blocks"
+                      Array.length(datasetNames) > 0 ? Belt.Array.getExn(datasetNames, 0) : "blocks"
                     }
                     let rowsJson = solanaDatasetRows(json, effectiveDataset)
                     if Array.length(rowsJson) == 0 {
                       <div
-                        className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                        className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4"
+                      >
                         {"No tabular rows in this dataset"->React.string}
                       </div>
                     } else {
@@ -795,8 +818,7 @@ let make = (
                       let columnTypes = analyzeColumns(flatRows)
                       let displayedRows = switch sortColumn {
                       | Some(col) =>
-                        let colType =
-                          Dict.get(columnTypes, col)->Belt.Option.getWithDefault("text")
+                        let colType = Dict.get(columnTypes, col)->Belt.Option.getWithDefault("text")
                         sortFlatRows(flatRows, col, colType, sortAscending)
                       | None => flatRows
                       }
@@ -808,7 +830,8 @@ let make = (
                                   {"Dataset"->React.string}
                                 </span>
                                 <div
-                                  className="inline-flex rounded-lg border border-slate-200 overflow-hidden">
+                                  className="inline-flex rounded-lg border border-slate-200 overflow-hidden"
+                                >
                                   {datasetNames
                                   ->Array.map(name =>
                                     <button
@@ -816,7 +839,8 @@ let make = (
                                       onClick={_ => setSelectedDataset(_ => Some(name))}
                                       className={`px-3 py-1 text-xs ${name === effectiveDataset
                                           ? "bg-slate-800 text-white"
-                                          : "bg-white text-slate-700 hover:bg-slate-50"}`}>
+                                          : "bg-white text-slate-700 hover:bg-slate-50"}`}
+                                    >
                                       {name->React.string}
                                     </button>
                                   )
@@ -826,12 +850,14 @@ let make = (
                             : React.null}
                           <button
                             onClick={_ => copyText(csvText)}
-                            className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 border border-slate-200 transition-colors mr-2">
+                            className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 border border-slate-200 transition-colors mr-2"
+                          >
                             {"Copy CSV"->React.string}
                           </button>
                           <button
                             onClick={_ => downloadCsv(csvText)}
-                            className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 border border-slate-200 transition-colors">
+                            className="px-3 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 border border-slate-200 transition-colors"
+                          >
                             {"Download CSV"->React.string}
                           </button>
                           <span className="ml-3 text-xs text-slate-500">
@@ -840,7 +866,9 @@ let make = (
                               )} rows`->React.string}
                           </span>
                         </div>
-                        <div className="overflow-x-auto max-h-96 rounded-xl border border-slate-200">
+                        <div
+                          className="overflow-x-auto max-h-96 rounded-xl border border-slate-200"
+                        >
                           <table className="w-full table-fixed border-collapse">
                             <thead>
                               <tr>
@@ -849,7 +877,8 @@ let make = (
                                   <th
                                     key={col}
                                     className="px-3 py-2 text-left text-xs font-semibold text-slate-700 sticky top-0 z-10 bg-white border-b border-slate-200"
-                                    style={{width: fixedColumnWidth, maxWidth: fixedColumnWidth}}>
+                                    style={{width: fixedColumnWidth, maxWidth: fixedColumnWidth}}
+                                  >
                                     <button
                                       className="inline-flex items-center gap-1 hover:underline truncate flex-1 text-left"
                                       onClick={_ =>
@@ -862,7 +891,8 @@ let make = (
                                             Some(col)
                                           }
                                         )}
-                                      title={col}>
+                                      title={col}
+                                    >
                                       <span className="truncate">
                                         {smartTruncate(col, 20)->React.string}
                                       </span>
@@ -886,7 +916,8 @@ let make = (
                               ->Array.mapWithIndex((r, i) =>
                                 <tr
                                   key={Int.toString(i)}
-                                  className={mod(i, 2) == 1 ? "bg-slate-50" : "bg-white"}>
+                                  className={mod(i, 2) == 1 ? "bg-slate-50" : "bg-white"}
+                                >
                                   {columns
                                   ->Array.map(col => {
                                     let v = Dict.get(r, col)->Belt.Option.getWithDefault("")
@@ -896,10 +927,10 @@ let make = (
                                       style={{
                                         width: fixedColumnWidth,
                                         maxWidth: fixedColumnWidth,
-                                      }}>
+                                      }}
+                                    >
                                       <div className="flex items-center gap-2 overflow-hidden">
-                                        <span
-                                          className="truncate flex-1 cursor-default" title={v}>
+                                        <span className="truncate flex-1 cursor-default" title={v}>
                                           {smartTruncate(v, 25)->React.string}
                                         </span>
                                       </div>
@@ -917,7 +948,8 @@ let make = (
                   }
                 | None =>
                   <div
-                    className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4"
+                  >
                     {"No data to display"->React.string}
                   </div>
                 }
@@ -926,9 +958,12 @@ let make = (
           | (None, Some(error), false) =>
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-medium text-gray-900"> {"Query Error"->React.string} </h4>
+                <h4 className="text-sm font-medium text-gray-900">
+                  {"Query Error"->React.string}
+                </h4>
                 <span
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                >
                   {"Error"->React.string}
                 </span>
               </div>
@@ -940,7 +975,10 @@ let make = (
             <div className="text-center py-12">
               <div className="text-slate-400 mb-4">
                 <svg
-                  className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  className="w-12 h-12 mx-auto"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
                   <path
                     strokeLinecap="round"
@@ -959,12 +997,14 @@ let make = (
               <div className="mt-4 flex justify-center space-x-2">
                 <button
                   onClick={_ => copyCurl()}
-                  className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors">
+                  className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors"
+                >
                   {"Copy cURL"->React.string}
                 </button>
                 <button
                   onClick={_ => executeQuery()->ignore}
-                  className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors">
+                  className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors"
+                >
                   {"Execute Query"->React.string}
                 </button>
               </div>

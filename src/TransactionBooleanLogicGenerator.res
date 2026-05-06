@@ -81,7 +81,7 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
         | _ =>
           let first = Int.toString(Array.getUnsafe(typeArray, 0))
           let second = Int.toString(Array.getUnsafe(typeArray, 1))
-          let rest = Array.sliceToEnd(typeArray, ~start=2)
+          let rest = Array.slice(typeArray, ~start=2)
           let restStr = Array.reduce(rest, "", (acc, k) => acc ++ " OR " ++ Int.toString(k))
           first ++ " OR " ++ second ++ restStr
         }
