@@ -1,10 +1,35 @@
 %%raw("import './tailwind.css'")
 
+type ecosystem = Evm | Solana
+
+@val external windowLocation: 'a = "window"
+@get external locationOf: 'a => 'b = "location"
+@get external hashOf: 'a => string = "hash"
+@send external setHash: ('a, string) => unit = "replace"
+
+let getInitialEcosystem = (): ecosystem => {
+  let getHash: unit => string = %raw(`() => (typeof window !== 'undefined' ? window.location.hash : '')`)
+  let h = getHash()
+  if String.includes(h, "solana") {
+    Solana
+  } else {
+    Evm
+  }
+}
+
+let setHashFor = (e: ecosystem) => {
+  let setH: string => unit = %raw(`(s) => { if (typeof window !== 'undefined') window.location.hash = s }`)
+  switch e {
+  | Solana => setH("solana")
+  | Evm => setH("")
+  }
+}
+
 module AppWrapper = {
   @react.component
   let make = () => {
-    // Token state management at the top level
     let (bearerToken, setBearerToken) = React.useState(() => AuthToken.getToken())
+    let (ecosystem, setEcosystem) = React.useState(getInitialEcosystem)
 
     let handleTokenUpdate = (token: string) => {
       if AuthToken.saveToken(token) {
@@ -18,14 +43,47 @@ module AppWrapper = {
       }
     }
 
+    let switchEcosystem = (e: ecosystem) => {
+      setEcosystem(_ => e)
+      setHashFor(e)
+    }
+
+    let title = switch ecosystem {
+    | Evm => "HyperSync Query Builder"
+    | Solana => "HyperSync Query Builder · Solana"
+    }
+
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 sticky top-0 z-10">
         <div className="px-6 lg:px-4">
           <div className="flex items-center justify-between h-14">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-4">
               <h1 className="text-lg font-semibold tracking-tight text-slate-900">
-                {"HyperSync Query Builder"->React.string}
+                {title->React.string}
               </h1>
+              <div
+                className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+                <button
+                  onClick={_ => switchEcosystem(Evm)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${ecosystem ===
+                      Evm
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"}`}>
+                  {"EVM"->React.string}
+                </button>
+                <button
+                  onClick={_ => switchEcosystem(Solana)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${ecosystem ===
+                      Solana
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"}`}>
+                  {"Solana"->React.string}
+                  <span
+                    className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">
+                    {"BETA"->React.string}
+                  </span>
+                </button>
+              </div>
             </div>
             <div className="flex items-center space-x-3">
               <TokenSettings
@@ -37,11 +95,9 @@ module AppWrapper = {
                 href="https://docs.envio.dev/docs/HyperSync/overview"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200"
-              >
+                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200">
                 <svg
-                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
+                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -55,11 +111,9 @@ module AppWrapper = {
                 href="https://envio.dev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200"
-              >
+                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200">
                 <svg
-                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
+                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -73,7 +127,10 @@ module AppWrapper = {
           </div>
         </div>
       </header>
-      <App bearerToken onTokenSubmit={handleTokenUpdate} />
+      {switch ecosystem {
+      | Evm => <App bearerToken onTokenSubmit={handleTokenUpdate} />
+      | Solana => <SolanaApp bearerToken onTokenSubmit={handleTokenUpdate} />
+      }}
       <footer className="bg-white border-t border-slate-200 mt-auto">
         <div className="px-6 lg:px-8 py-3">
           <div className="flex items-center justify-center text-xs text-slate-500">
