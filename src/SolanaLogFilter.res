@@ -59,7 +59,8 @@ let make = (
   let hasFilters = Option.isSome(filterState.programId) || Option.isSome(filterState.kind)
 
   <div
-    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
+    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full"
+  >
     <div className="p-4 border-b border-slate-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -68,7 +69,8 @@ let make = (
           </h3>
           {hasFilters
             ? <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
+              >
                 {"Active"->React.string}
               </span>
             : React.null}
@@ -76,14 +78,16 @@ let make = (
         <div className="flex items-center space-x-1">
           <button
             onClick={_ => onToggleExpand()}
-            className="inline-flex items-center p-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
+            className="inline-flex items-center p-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+          >
             <svg
               className={`w-4 h-4 transform transition-transform ${isExpanded
                   ? "rotate-180"
                   : "rotate-0"}`}
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"
               />
@@ -91,7 +95,8 @@ let make = (
           </button>
           <button
             onClick={_ => onRemove()}
-            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
+            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -128,7 +133,8 @@ let make = (
               <button
                 onClick={_ => addProgramId(newProgramId)}
                 disabled={String.length(newProgramId) === 0 || !isBase58Pubkey(newProgramId)}
-                className={addBtnClass}>
+                className={addBtnClass}
+              >
                 {(
                   Array.length(filterState.programId->Option.getOr([])) > 0 ? "Add (OR)" : "Add"
                 )->React.string}
@@ -144,7 +150,8 @@ let make = (
                   </span>
                   <button
                     onClick={_ => removeProgramId(i)}
-                    className="ml-2 text-red-600 hover:text-red-800 text-xs font-medium transition-colors">
+                    className="ml-2 text-red-600 hover:text-red-800 text-xs font-medium transition-colors"
+                  >
                     {"Remove"->React.string}
                   </button>
                 </div>
@@ -175,7 +182,8 @@ let make = (
               <button
                 onClick={_ => addKind(newKind)}
                 disabled={String.length(String.trim(newKind)) === 0}
-                className={addBtnClass}>
+                className={addBtnClass}
+              >
                 {(
                   Array.length(filterState.kind->Option.getOr([])) > 0 ? "Add (OR)" : "Add"
                 )->React.string}
@@ -189,7 +197,8 @@ let make = (
                   <span className="text-xs font-mono text-slate-800"> {v->React.string} </span>
                   <button
                     onClick={_ => removeKind(i)}
-                    className="ml-2 text-red-600 hover:text-red-800 text-xs font-medium transition-colors">
+                    className="ml-2 text-red-600 hover:text-red-800 text-xs font-medium transition-colors"
+                  >
                     {"Remove"->React.string}
                   </button>
                 </div>

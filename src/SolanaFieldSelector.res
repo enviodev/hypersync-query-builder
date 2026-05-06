@@ -1,46 +1,47 @@
 open SolanaQueryStructure
 
-let blockOptions: array<TagSelector.selectOption<blockField>> =
-  allBlockFields->Array.map(f => {
-    TagSelector.value: f,
-    label: snakeToTitle(blockFieldToSnake(f)),
-  })
+let blockOptions: array<TagSelector.selectOption<blockField>> = allBlockFields->Array.map(f => {
+  TagSelector.value: f,
+  label: snakeToTitle(blockFieldToSnake(f)),
+})
 
-let transactionOptions: array<TagSelector.selectOption<transactionField>> =
-  allTransactionFields->Array.map(f => {
-    TagSelector.value: f,
-    label: snakeToTitle(transactionFieldToSnake(f)),
-  })
+let transactionOptions: array<
+  TagSelector.selectOption<transactionField>,
+> = allTransactionFields->Array.map(f => {
+  TagSelector.value: f,
+  label: snakeToTitle(transactionFieldToSnake(f)),
+})
 
-let instructionOptions: array<TagSelector.selectOption<instructionField>> =
-  allInstructionFields->Array.map(f => {
-    TagSelector.value: f,
-    label: snakeToTitle(instructionFieldToSnake(f)),
-  })
+let instructionOptions: array<
+  TagSelector.selectOption<instructionField>,
+> = allInstructionFields->Array.map(f => {
+  TagSelector.value: f,
+  label: snakeToTitle(instructionFieldToSnake(f)),
+})
 
-let logOptions: array<TagSelector.selectOption<logField>> =
-  allLogFields->Array.map(f => {
-    TagSelector.value: f,
-    label: snakeToTitle(logFieldToSnake(f)),
-  })
+let logOptions: array<TagSelector.selectOption<logField>> = allLogFields->Array.map(f => {
+  TagSelector.value: f,
+  label: snakeToTitle(logFieldToSnake(f)),
+})
 
-let balanceOptions: array<TagSelector.selectOption<balanceField>> =
-  allBalanceFields->Array.map(f => {
-    TagSelector.value: f,
-    label: snakeToTitle(balanceFieldToSnake(f)),
-  })
+let balanceOptions: array<
+  TagSelector.selectOption<balanceField>,
+> = allBalanceFields->Array.map(f => {
+  TagSelector.value: f,
+  label: snakeToTitle(balanceFieldToSnake(f)),
+})
 
-let tokenBalanceOptions: array<TagSelector.selectOption<tokenBalanceField>> =
-  allTokenBalanceFields->Array.map(f => {
-    TagSelector.value: f,
-    label: snakeToTitle(tokenBalanceFieldToSnake(f)),
-  })
+let tokenBalanceOptions: array<
+  TagSelector.selectOption<tokenBalanceField>,
+> = allTokenBalanceFields->Array.map(f => {
+  TagSelector.value: f,
+  label: snakeToTitle(tokenBalanceFieldToSnake(f)),
+})
 
-let rewardOptions: array<TagSelector.selectOption<rewardField>> =
-  allRewardFields->Array.map(f => {
-    TagSelector.value: f,
-    label: snakeToTitle(rewardFieldToSnake(f)),
-  })
+let rewardOptions: array<TagSelector.selectOption<rewardField>> = allRewardFields->Array.map(f => {
+  TagSelector.value: f,
+  label: snakeToTitle(rewardFieldToSnake(f)),
+})
 
 let renderSection = (
   ~title: string,
@@ -59,14 +60,13 @@ let renderSection = (
         {allSelected
           ? React.null
           : <button
-              onClick={_ => onSelectAll()}
-              className="text-xs text-blue-600 hover:text-blue-700">
+              onClick={_ => onSelectAll()} className="text-xs text-blue-600 hover:text-blue-700"
+            >
               {"All"->React.string}
             </button>}
         {noneSelected
           ? React.null
-          : <button
-              onClick={_ => onClear()} className="text-xs text-red-600 hover:text-red-700">
+          : <button onClick={_ => onClear()} className="text-xs text-red-600 hover:text-red-700">
               {"Clear"->React.string}
             </button>}
       </div>
@@ -81,10 +81,7 @@ let renderSection = (
 }
 
 @react.component
-let make = (
-  ~fieldSelection: fieldSelection,
-  ~onFieldSelectionChange: fieldSelection => unit,
-) => {
+let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelection => unit) => {
   let updateBlock = v => onFieldSelectionChange({...fieldSelection, block: v})
   let updateTransaction = v => onFieldSelectionChange({...fieldSelection, transaction: v})
   let updateInstruction = v => onFieldSelectionChange({...fieldSelection, instruction: v})

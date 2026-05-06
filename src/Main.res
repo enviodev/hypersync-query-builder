@@ -62,13 +62,15 @@ module AppWrapper = {
                 {title->React.string}
               </h1>
               <div
-                className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+                className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5"
+              >
                 <button
                   onClick={_ => switchEcosystem(Evm)}
                   className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${ecosystem ===
                       Evm
                       ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"}`}>
+                      : "text-slate-600 hover:text-slate-900"}`}
+                >
                   {"EVM"->React.string}
                 </button>
                 <button
@@ -76,10 +78,12 @@ module AppWrapper = {
                   className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${ecosystem ===
                       Solana
                       ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"}`}>
+                      : "text-slate-600 hover:text-slate-900"}`}
+                >
                   {"Solana"->React.string}
                   <span
-                    className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">
+                    className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded text-[10px] font-semibold bg-amber-100 text-amber-800"
+                  >
                     {"BETA"->React.string}
                   </span>
                 </button>
@@ -95,9 +99,11 @@ module AppWrapper = {
                 href="https://docs.envio.dev/docs/HyperSync/overview"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200">
+                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200"
+              >
                 <svg
-                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -111,9 +117,11 @@ module AppWrapper = {
                 href="https://envio.dev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200">
+                className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium rounded-lg transition-colors border border-slate-200"
+              >
                 <svg
-                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

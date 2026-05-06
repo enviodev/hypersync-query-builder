@@ -40,7 +40,8 @@ let renderListEditor = (
       <button
         onClick={_ => onAdd(draft)}
         disabled={String.length(draft) === 0 || !validate(draft)}
-        className={addBtnClass}>
+        className={addBtnClass}
+      >
         {(Array.length(values) > 0 ? "Add (OR)" : "Add")->React.string}
       </button>
     </div>
@@ -52,7 +53,8 @@ let renderListEditor = (
               <span className="text-xs font-mono text-slate-800 truncate"> {v->React.string} </span>
               <button
                 onClick={_ => onRemove(i)}
-                className="ml-2 text-red-600 hover:text-red-800 text-xs font-medium transition-colors">
+                className="ml-2 text-red-600 hover:text-red-800 text-xs font-medium transition-colors"
+              >
                 {"Remove"->React.string}
               </button>
             </div>
@@ -171,7 +173,8 @@ let make = (
     Option.isSome(filterState.isInner)
 
   <div
-    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full">
+    className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full"
+  >
     <div className="p-4 border-b border-slate-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -180,7 +183,8 @@ let make = (
           </h3>
           {hasFilters
             ? <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
+              >
                 {"Active"->React.string}
               </span>
             : React.null}
@@ -188,14 +192,16 @@ let make = (
         <div className="flex items-center space-x-1">
           <button
             onClick={_ => onToggleExpand()}
-            className="inline-flex items-center p-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
+            className="inline-flex items-center p-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+          >
             <svg
               className={`w-4 h-4 transform transition-transform ${isExpanded
                   ? "rotate-180"
                   : "rotate-0"}`}
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"
               />
@@ -203,7 +209,8 @@ let make = (
           </button>
           <button
             onClick={_ => onRemove()}
-            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
+            className="inline-flex items-center p-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -240,15 +247,19 @@ let make = (
           <div className="mb-4">
             <button
               onClick={_ => setShowDiscriminators(prev => !prev)}
-              className="flex items-center text-xs font-semibold text-slate-700 hover:text-slate-900 mb-2">
+              className="flex items-center text-xs font-semibold text-slate-700 hover:text-slate-900 mb-2"
+            >
               <svg
                 className={`w-3 h-3 mr-1 transform transition-transform ${showDiscriminators
                     ? "rotate-90"
                     : ""}`}
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"
+                />
               </svg>
               {"Instruction Discriminators (hex)"->React.string}
             </button>
@@ -326,15 +337,19 @@ let make = (
           <div className="mb-4">
             <button
               onClick={_ => setShowAccounts(prev => !prev)}
-              className="flex items-center text-xs font-semibold text-slate-700 hover:text-slate-900 mb-2">
+              className="flex items-center text-xs font-semibold text-slate-700 hover:text-slate-900 mb-2"
+            >
               <svg
                 className={`w-3 h-3 mr-1 transform transition-transform ${showAccounts
                     ? "rotate-90"
                     : ""}`}
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"
+                />
               </svg>
               {`Account Position Filters (a0..a9)${Array.length(activeAccountSlots()) > 0
                   ? ` - ${Int.toString(Array.length(activeAccountSlots()))} active`
@@ -352,7 +367,8 @@ let make = (
                         | None => ()
                         }
                       }}
-                      className="border border-slate-300 rounded-lg px-2 py-2 text-xs">
+                      className="border border-slate-300 rounded-lg px-2 py-2 text-xs"
+                    >
                       {Belt.Array.range(0, 9)
                       ->Array.map(i =>
                         <option key={Int.toString(i)} value={Int.toString(i)}>
@@ -382,7 +398,8 @@ let make = (
                         }
                       }}
                       disabled={String.length(newAccount) === 0 || !isBase58Pubkey(newAccount)}
-                      className={addBtnClass}>
+                      className={addBtnClass}
+                    >
                       {"Add"->React.string}
                     </button>
                   </div>
@@ -403,11 +420,10 @@ let make = (
                             <button
                               onClick={_ => {
                                 let cur = getAccountAt(filterState, slot)
-                                updateField(
-                                  setAccountAt(filterState, slot, removeFromList(cur, i)),
-                                )
+                                updateField(setAccountAt(filterState, slot, removeFromList(cur, i)))
                               }}
-                              className="ml-2 text-red-600 hover:text-red-800 text-xs">
+                              className="ml-2 text-red-600 hover:text-red-800 text-xs"
+                            >
                               {"Remove"->React.string}
                             </button>
                           </div>
@@ -433,7 +449,8 @@ let make = (
                   onClick={_ => updateField({...filterState, isInner: value})}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${isActive
                       ? "bg-slate-800 text-white border-slate-800"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}>
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
+                >
                   {label->React.string}
                 </button>
               })
