@@ -1,14 +1,18 @@
 import { ReactElement } from 'react';
 
 // Query structure types
+// `exclude` holds a filter of the same shape; matching rows are excluded from
+// the selection's results.
 export interface BlockSelection {
   hash?: string[];
   miner?: string[];
+  exclude?: BlockSelection;
 }
 
 export interface LogSelection {
   address?: string[];
   topics?: string[][];
+  exclude?: LogSelection;
 }
 
 export interface AuthorizationSelection {
@@ -24,6 +28,7 @@ export interface TransactionSelection {
   kind?: number[];
   contractAddress?: string[];
   authorizationList?: AuthorizationSelection[];
+  exclude?: TransactionSelection;
 }
 
 export interface TraceSelection {
@@ -34,6 +39,7 @@ export interface TraceSelection {
   rewardType?: string[];
   kind?: string[];
   sighash?: string[];
+  exclude?: TraceSelection;
 }
 
 export type BlockField =

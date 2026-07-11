@@ -121,6 +121,109 @@ let deserializeTraceField = (str: string): option<traceField> => {
   )
 }
 
+let rec serializeLogSelectionJson = (log: logSelection): JSON.t => {
+  let addressJson = switch log.address {
+  | Some(addresses) => JSON.Encode.array(addresses->Array.map(JSON.Encode.string))
+  | None => JSON.Encode.null
+  }
+  let topicsJson = switch log.topics {
+  | Some(topics) =>
+    JSON.Encode.array(
+      topics->Array.map(topicArray => JSON.Encode.array(topicArray->Array.map(JSON.Encode.string))),
+    )
+  | None => JSON.Encode.null
+  }
+  let fields = [("address", addressJson), ("topics", topicsJson)]
+  let fields = switch log.exclude {
+  | Some(ex) => Array.concat(fields, [("exclude", serializeLogSelectionJson(ex))])
+  | None => fields
+  }
+  JSON.Encode.object(Dict.fromArray(fields))
+}
+
+let rec serializeTransactionSelectionJson = (transaction: transactionSelection): JSON.t => {
+  let fromJson = switch transaction.from_ {
+  | Some(froms) => JSON.Encode.array(froms->Array.map(JSON.Encode.string))
+  | None => JSON.Encode.null
+  }
+  let toJson = switch transaction.to_ {
+  | Some(tos) => JSON.Encode.array(tos->Array.map(JSON.Encode.string))
+  | None => JSON.Encode.null
+  }
+  let sighashJson = switch transaction.sighash {
+  | Some(sighashes) => JSON.Encode.array(sighashes->Array.map(JSON.Encode.string))
+  | None => JSON.Encode.null
+  }
+  let statusJson = switch transaction.status {
+  | Some(status) => JSON.Encode.float(Int.toFloat(status))
+  | None => JSON.Encode.null
+  }
+  let typeJson = switch transaction.type_ {
+  | Some(types) => JSON.Encode.array(types->Array.map(t => JSON.Encode.float(Int.toFloat(t))))
+  | None => JSON.Encode.null
+  }
+  let contractAddressJson = switch transaction.contractAddress {
+  | Some(addresses) => JSON.Encode.array(addresses->Array.map(JSON.Encode.string))
+  | None => JSON.Encode.null
+  }
+  let hashJson = switch transaction.hash {
+  | Some(hashes) => JSON.Encode.array(hashes->Array.map(JSON.Encode.string))
+  | None => JSON.Encode.null
+  }
+  let authorizationListJson = switch transaction.authorizationList {
+  | Some(authorizations) =>
+    JSON.Encode.array(
+      authorizations->Array.map(auth => {
+        let authChainIdJson = switch auth.chainId {
+        | Some(chainIds) =>
+          JSON.Encode.array(chainIds->Array.map(chainId => JSON.Encode.float(Int.toFloat(chainId))))
+        | None => JSON.Encode.null
+        }
+        let authAddressJson = switch auth.address {
+        | Some(addresses) => JSON.Encode.array(addresses->Array.map(JSON.Encode.string))
+        | None => JSON.Encode.null
+        }
+        JSON.Encode.object(
+          Dict.fromArray([("chainId", authChainIdJson), ("address", authAddressJson)]),
+        )
+      }),
+    )
+  | None => JSON.Encode.null
+  }
+  let fields = [
+    ("from_", fromJson),
+    ("to_", toJson),
+    ("sighash", sighashJson),
+    ("status", statusJson),
+    ("type_", typeJson),
+    ("contractAddress", contractAddressJson),
+    ("hash", hashJson),
+    ("authorizationList", authorizationListJson),
+  ]
+  let fields = switch transaction.exclude {
+  | Some(ex) => Array.concat(fields, [("exclude", serializeTransactionSelectionJson(ex))])
+  | None => fields
+  }
+  JSON.Encode.object(Dict.fromArray(fields))
+}
+
+let rec serializeBlockSelectionJson = (block: blockSelection): JSON.t => {
+  let hashJson = switch block.hash {
+  | Some(hashes) => JSON.Encode.array(hashes->Array.map(JSON.Encode.string))
+  | None => JSON.Encode.null
+  }
+  let minerJson = switch block.miner {
+  | Some(miners) => JSON.Encode.array(miners->Array.map(JSON.Encode.string))
+  | None => JSON.Encode.null
+  }
+  let fields = [("hash", hashJson), ("miner", minerJson)]
+  let fields = switch block.exclude {
+  | Some(ex) => Array.concat(fields, [("exclude", serializeBlockSelectionJson(ex))])
+  | None => fields
+  }
+  JSON.Encode.object(Dict.fromArray(fields))
+}
+
 let serializeUrlState = (state: urlState): string => {
   let json = JSON.Encode.object(
     Dict.fromArray([
@@ -169,27 +272,7 @@ let serializeUrlState = (state: urlState): string => {
             (
               "logs",
               switch state.query.logs {
-              | Some(logs) =>
-                JSON.Encode.array(
-                  logs->Array.map(log => {
-                    let addressJson = switch log.address {
-                    | Some(addresses) => JSON.Encode.array(addresses->Array.map(JSON.Encode.string))
-                    | None => JSON.Encode.null
-                    }
-                    let topicsJson = switch log.topics {
-                    | Some(topics) =>
-                      JSON.Encode.array(
-                        topics->Array.map(topicArray =>
-                          JSON.Encode.array(topicArray->Array.map(JSON.Encode.string))
-                        ),
-                      )
-                    | None => JSON.Encode.null
-                    }
-                    JSON.Encode.object(
-                      Dict.fromArray([("address", addressJson), ("topics", topicsJson)]),
-                    )
-                  }),
-                )
+              | Some(logs) => JSON.Encode.array(logs->Array.map(serializeLogSelectionJson))
               | None => JSON.Encode.null
               },
             ),
@@ -197,99 +280,14 @@ let serializeUrlState = (state: urlState): string => {
               "transactions",
               switch state.query.transactions {
               | Some(transactions) =>
-                JSON.Encode.array(
-                  transactions->Array.map(transaction => {
-                    let fromJson = switch transaction.from_ {
-                    | Some(froms) => JSON.Encode.array(froms->Array.map(JSON.Encode.string))
-                    | None => JSON.Encode.null
-                    }
-                    let toJson = switch transaction.to_ {
-                    | Some(tos) => JSON.Encode.array(tos->Array.map(JSON.Encode.string))
-                    | None => JSON.Encode.null
-                    }
-                    let sighashJson = switch transaction.sighash {
-                    | Some(sighashes) => JSON.Encode.array(sighashes->Array.map(JSON.Encode.string))
-                    | None => JSON.Encode.null
-                    }
-                    let statusJson = switch transaction.status {
-                    | Some(status) => JSON.Encode.float(Int.toFloat(status))
-                    | None => JSON.Encode.null
-                    }
-                    let typeJson = switch transaction.type_ {
-                    | Some(types) =>
-                      JSON.Encode.array(types->Array.map(t => JSON.Encode.float(Int.toFloat(t))))
-                    | None => JSON.Encode.null
-                    }
-                    let contractAddressJson = switch transaction.contractAddress {
-                    | Some(addresses) => JSON.Encode.array(addresses->Array.map(JSON.Encode.string))
-                    | None => JSON.Encode.null
-                    }
-                    let hashJson = switch transaction.hash {
-                    | Some(hashes) => JSON.Encode.array(hashes->Array.map(JSON.Encode.string))
-                    | None => JSON.Encode.null
-                    }
-                    let authorizationListJson = switch transaction.authorizationList {
-                    | Some(authorizations) =>
-                      JSON.Encode.array(
-                        authorizations->Array.map(auth => {
-                          let authChainIdJson = switch auth.chainId {
-                          | Some(chainIds) =>
-                            JSON.Encode.array(
-                              chainIds->Array.map(
-                                chainId => JSON.Encode.float(Int.toFloat(chainId)),
-                              ),
-                            )
-                          | None => JSON.Encode.null
-                          }
-                          let authAddressJson = switch auth.address {
-                          | Some(addresses) =>
-                            JSON.Encode.array(addresses->Array.map(JSON.Encode.string))
-                          | None => JSON.Encode.null
-                          }
-                          JSON.Encode.object(
-                            Dict.fromArray([
-                              ("chainId", authChainIdJson),
-                              ("address", authAddressJson),
-                            ]),
-                          )
-                        }),
-                      )
-                    | None => JSON.Encode.null
-                    }
-                    JSON.Encode.object(
-                      Dict.fromArray([
-                        ("from_", fromJson),
-                        ("to_", toJson),
-                        ("sighash", sighashJson),
-                        ("status", statusJson),
-                        ("type_", typeJson),
-                        ("contractAddress", contractAddressJson),
-                        ("hash", hashJson),
-                        ("authorizationList", authorizationListJson),
-                      ]),
-                    )
-                  }),
-                )
+                JSON.Encode.array(transactions->Array.map(serializeTransactionSelectionJson))
               | None => JSON.Encode.null
               },
             ),
             (
               "blocks",
               switch state.query.blocks {
-              | Some(blocks) =>
-                JSON.Encode.array(
-                  blocks->Array.map(block => {
-                    let hashJson = switch block.hash {
-                    | Some(hashes) => JSON.Encode.array(hashes->Array.map(JSON.Encode.string))
-                    | None => JSON.Encode.null
-                    }
-                    let minerJson = switch block.miner {
-                    | Some(miners) => JSON.Encode.array(miners->Array.map(JSON.Encode.string))
-                    | None => JSON.Encode.null
-                    }
-                    JSON.Encode.object(Dict.fromArray([("hash", hashJson), ("miner", minerJson)]))
-                  }),
-                )
+              | Some(blocks) => JSON.Encode.array(blocks->Array.map(serializeBlockSelectionJson))
               | None => JSON.Encode.null
               },
             ),
@@ -345,6 +343,247 @@ let serializeUrlState = (state: urlState): string => {
     ]),
   )
   JSON.stringify(json)
+}
+
+let rec decodeLogSelection = (log: dict<JSON.t>): logSelection => {
+  let address = switch Dict.get(log, "address") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(addresses) => Some(addresses->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let topics = switch Dict.get(log, "topics") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(topicsArray) => {
+          let decodedTopics =
+            topicsArray
+            ->Array.map(JSON.Decode.array)
+            ->Array.filterMap(x => x)
+            ->Array.map(topicArray =>
+              topicArray
+              ->Array.map(JSON.Decode.string)
+              ->Array.filterMap(x => x)
+            )
+          Some(decodedTopics)
+        }
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let exclude = switch Dict.get(log, "exclude") {
+  | Some(value) =>
+    switch JSON.Decode.object(value) {
+    | Some(excludeObj) => Some(decodeLogSelection(excludeObj))
+    | None => None
+    }
+  | None => None
+  }
+  {address, topics, ?exclude}
+}
+
+let rec decodeTransactionSelection = (transaction: dict<JSON.t>): transactionSelection => {
+  let from_ = switch Dict.get(transaction, "from_") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(froms) => Some(froms->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let to_ = switch Dict.get(transaction, "to_") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(tos) => Some(tos->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let sighash = switch Dict.get(transaction, "sighash") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(sighashes) => Some(sighashes->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let status = switch Dict.get(transaction, "status") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.float(value) {
+      | Some(num) => Some(Float.toInt(num))
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let type_ = switch Dict.get(transaction, "type_") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(types) =>
+        Some(
+          types
+          ->Array.map(JSON.Decode.float)
+          ->Array.filterMap(x => x)
+          ->Array.map(t => Float.toInt(t)),
+        )
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let contractAddress = switch Dict.get(transaction, "contractAddress") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(addresses) => Some(addresses->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let hash = switch Dict.get(transaction, "hash") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(hashes) => Some(hashes->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let authorizationList = switch Dict.get(transaction, "authorizationList") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(authorizations) => {
+          let decodedAuthorizations =
+            authorizations
+            ->Array.map(JSON.Decode.object)
+            ->Array.filterMap(x => x)
+            ->Array.map(auth => {
+              let chainId = switch Dict.get(auth, "chainId") {
+              | Some(value) =>
+                switch JSON.Decode.null(value) {
+                | Some(_) => None
+                | None =>
+                  switch JSON.Decode.array(value) {
+                  | Some(chainIds) =>
+                    Some(
+                      chainIds
+                      ->Array.map(JSON.Decode.float)
+                      ->Array.filterMap(x => x)
+                      ->Array.map(chainId => Float.toInt(chainId)),
+                    )
+                  | None => None
+                  }
+                }
+              | None => None
+              }
+              let address = switch Dict.get(auth, "address") {
+              | Some(value) =>
+                switch JSON.Decode.null(value) {
+                | Some(_) => None
+                | None =>
+                  switch JSON.Decode.array(value) {
+                  | Some(addresses) =>
+                    Some(
+                      addresses
+                      ->Array.map(JSON.Decode.string)
+                      ->Array.filterMap(x => x),
+                    )
+                  | None => None
+                  }
+                }
+              | None => None
+              }
+              {chainId, address}
+            })
+          Some(decodedAuthorizations)
+        }
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let exclude = switch Dict.get(transaction, "exclude") {
+  | Some(value) =>
+    switch JSON.Decode.object(value) {
+    | Some(excludeObj) => Some(decodeTransactionSelection(excludeObj))
+    | None => None
+    }
+  | None => None
+  }
+  {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList, ?exclude}
+}
+
+let rec decodeBlockSelection = (block: dict<JSON.t>): blockSelection => {
+  let hash = switch Dict.get(block, "hash") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(hashes) => Some(hashes->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let miner = switch Dict.get(block, "miner") {
+  | Some(value) =>
+    switch JSON.Decode.null(value) {
+    | Some(_) => None
+    | None =>
+      switch JSON.Decode.array(value) {
+      | Some(miners) => Some(miners->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
+      | None => None
+      }
+    }
+  | None => None
+  }
+  let exclude = switch Dict.get(block, "exclude") {
+  | Some(value) =>
+    switch JSON.Decode.object(value) {
+    | Some(excludeObj) => Some(decodeBlockSelection(excludeObj))
+    | None => None
+    }
+  | None => None
+  }
+  {hash, miner, ?exclude}
 }
 
 let deserializeUrlState = (jsonString: string): option<urlState> => {
@@ -456,45 +695,7 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
                     array
                     ->Array.map(JSON.Decode.object)
                     ->Array.filterMap(x => x)
-                    ->Array.map(log => {
-                      let address = switch Dict.get(log, "address") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(addresses) =>
-                            Some(addresses->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let topics = switch Dict.get(log, "topics") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(topicsArray) => {
-                              let decodedTopics =
-                                topicsArray
-                                ->Array.map(JSON.Decode.array)
-                                ->Array.filterMap(x => x)
-                                ->Array.map(topicArray =>
-                                  topicArray
-                                  ->Array.map(JSON.Decode.string)
-                                  ->Array.filterMap(x => x)
-                                )
-                              Some(decodedTopics)
-                            }
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      {address, topics}
-                    })
+                    ->Array.map(decodeLogSelection)
                   Some(decodedLogs)
                 }
               | None => None
@@ -514,160 +715,7 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
                     array
                     ->Array.map(JSON.Decode.object)
                     ->Array.filterMap(x => x)
-                    ->Array.map(transaction => {
-                      let from_ = switch Dict.get(transaction, "from_") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(froms) =>
-                            Some(froms->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let to_ = switch Dict.get(transaction, "to_") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(tos) =>
-                            Some(tos->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let sighash = switch Dict.get(transaction, "sighash") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(sighashes) =>
-                            Some(sighashes->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let status = switch Dict.get(transaction, "status") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.float(value) {
-                          | Some(num) => Some(Float.toInt(num))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let type_ = switch Dict.get(transaction, "type_") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(types) =>
-                            Some(
-                              types
-                              ->Array.map(JSON.Decode.float)
-                              ->Array.filterMap(x => x)
-                              ->Array.map(t => Float.toInt(t)),
-                            )
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let contractAddress = switch Dict.get(transaction, "contractAddress") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(addresses) =>
-                            Some(addresses->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let hash = switch Dict.get(transaction, "hash") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(hashes) =>
-                            Some(hashes->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let authorizationList = switch Dict.get(transaction, "authorizationList") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(authorizations) => {
-                              let decodedAuthorizations =
-                                authorizations
-                                ->Array.map(JSON.Decode.object)
-                                ->Array.filterMap(x => x)
-                                ->Array.map(auth => {
-                                  let chainId = switch Dict.get(auth, "chainId") {
-                                  | Some(value) =>
-                                    switch JSON.Decode.null(value) {
-                                    | Some(_) => None
-                                    | None =>
-                                      switch JSON.Decode.array(value) {
-                                      | Some(chainIds) =>
-                                        Some(
-                                          chainIds
-                                          ->Array.map(JSON.Decode.float)
-                                          ->Array.filterMap(x => x)
-                                          ->Array.map(chainId => Float.toInt(chainId)),
-                                        )
-                                      | None => None
-                                      }
-                                    }
-                                  | None => None
-                                  }
-                                  let address = switch Dict.get(auth, "address") {
-                                  | Some(value) =>
-                                    switch JSON.Decode.null(value) {
-                                    | Some(_) => None
-                                    | None =>
-                                      switch JSON.Decode.array(value) {
-                                      | Some(addresses) =>
-                                        Some(
-                                          addresses
-                                          ->Array.map(JSON.Decode.string)
-                                          ->Array.filterMap(x => x),
-                                        )
-                                      | None => None
-                                      }
-                                    }
-                                  | None => None
-                                  }
-                                  {chainId, address}
-                                })
-                              Some(decodedAuthorizations)
-                            }
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList}
-                    })
+                    ->Array.map(decodeTransactionSelection)
                   Some(decodedTransactions)
                 }
               | None => None
@@ -687,35 +735,7 @@ let deserializeUrlState = (jsonString: string): option<urlState> => {
                     array
                     ->Array.map(JSON.Decode.object)
                     ->Array.filterMap(x => x)
-                    ->Array.map(block => {
-                      let hash = switch Dict.get(block, "hash") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(hashes) =>
-                            Some(hashes->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      let miner = switch Dict.get(block, "miner") {
-                      | Some(value) =>
-                        switch JSON.Decode.null(value) {
-                        | Some(_) => None
-                        | None =>
-                          switch JSON.Decode.array(value) {
-                          | Some(miners) =>
-                            Some(miners->Array.map(JSON.Decode.string)->Array.filterMap(x => x))
-                          | None => None
-                          }
-                        }
-                      | None => None
-                      }
-                      {hash, miner}
-                    })
+                    ->Array.map(decodeBlockSelection)
                   Some(decodedBlocks)
                 }
               | None => None

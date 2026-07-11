@@ -2,6 +2,484 @@ open QueryStructure
 
 type transactionFilterState = QueryStructure.transactionSelection
 
+let emptyTransactionFields: transactionFilterState = {
+  from_: None,
+  to_: None,
+  sighash: None,
+  status: None,
+  type_: None,
+  contractAddress: None,
+  hash: None,
+  authorizationList: None,
+}
+
+// Editor for a transaction filter's fields. Used for the filter itself and,
+// bound to `filterState.exclude`, for its exclusions.
+module FilterFields = {
+  @react.component
+  let make = (
+    ~filterState: transactionFilterState,
+    ~onFilterChange: transactionFilterState => unit,
+  ) => {
+    let (newFrom, setNewFrom) = React.useState(() => "")
+    let (newTo, setNewTo) = React.useState(() => "")
+    let (newSighash, setNewSighash) = React.useState(() => "")
+    let (newStatus, setNewStatus) = React.useState(() => "")
+    let (newType, setNewType) = React.useState(() => "")
+    let (newContractAddress, setNewContractAddress) = React.useState(() => "")
+    let (newHash, setNewHash) = React.useState(() => "")
+
+    let addFrom = () => {
+      if newFrom !== "" && newFrom->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          from_: Some(Array.concat(filterState.from_->Option.getOr([]), [newFrom])),
+        })
+        setNewFrom(_ => "")
+      }
+    }
+
+    let removeFrom = index => {
+      let currentArray = filterState.from_->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        from_: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addTo = () => {
+      if newTo !== "" && newTo->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          to_: Some(Array.concat(filterState.to_->Option.getOr([]), [newTo])),
+        })
+        setNewTo(_ => "")
+      }
+    }
+
+    let removeTo = index => {
+      let currentArray = filterState.to_->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        to_: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addSighash = () => {
+      if newSighash !== "" && newSighash->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          sighash: Some(Array.concat(filterState.sighash->Option.getOr([]), [newSighash])),
+        })
+        setNewSighash(_ => "")
+      }
+    }
+
+    let removeSighash = index => {
+      let currentArray = filterState.sighash->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        sighash: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let setStatus = () => {
+      switch Int.fromString(newStatus) {
+      | Some(status) =>
+        onFilterChange({...filterState, status: Some(status)})
+        setNewStatus(_ => "")
+      | None => ()
+      }
+    }
+
+    let clearStatus = () => {
+      onFilterChange({...filterState, status: None})
+    }
+
+    let addType = () => {
+      switch Int.fromString(newType) {
+      | Some(t) =>
+        onFilterChange({
+          ...filterState,
+          type_: Some(Array.concat(filterState.type_->Option.getOr([]), [t])),
+        })
+        setNewType(_ => "")
+      | None => ()
+      }
+    }
+
+    let removeType = index => {
+      let currentArray = filterState.type_->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        type_: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addContractAddress = () => {
+      if newContractAddress !== "" && newContractAddress->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          contractAddress: Some(
+            Array.concat(filterState.contractAddress->Option.getOr([]), [newContractAddress]),
+          ),
+        })
+        setNewContractAddress(_ => "")
+      }
+    }
+
+    let removeContractAddress = index => {
+      let currentArray = filterState.contractAddress->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        contractAddress: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addHash = () => {
+      if newHash !== "" && newHash->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          hash: Some(Array.concat(filterState.hash->Option.getOr([]), [newHash])),
+        })
+        setNewHash(_ => "")
+      }
+    }
+
+    let removeHash = index => {
+      let currentArray = filterState.hash->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        hash: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    <>
+      // From Addresses
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"From Addresses"->React.string}
+        </label>
+        <div className="flex space-x-2 mb-3">
+          <input
+            type_="text"
+            value={newFrom}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewFrom(_ => target["value"])
+            }}
+            placeholder="0x..."
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            onClick={_ => addFrom()}
+            disabled={String.length(newFrom) == 0 || !(newFrom->String.startsWith("0x"))}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {(
+              Array.length(filterState.from_->Option.getOr([])) > 0
+                ? "Add (via OR) From"
+                : "Add From"
+            )->React.string}
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Array.mapWithIndex(filterState.from_->Option.getOr([]), (address, index) =>
+            <div
+              key={Int.toString(index)}
+              className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+            >
+              <span className="text-sm font-mono text-gray-800"> {address->React.string} </span>
+              <button
+                onClick={_ => removeFrom(index)} className="text-red-600 hover:text-red-800 text-sm"
+              >
+                {"Remove"->React.string}
+              </button>
+            </div>
+          )->React.array}
+        </div>
+      </div>
+
+      // To Addresses
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"To Addresses"->React.string}
+        </label>
+        <div className="flex space-x-2 mb-3">
+          <input
+            type_="text"
+            value={newTo}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewTo(_ => target["value"])
+            }}
+            placeholder="0x..."
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            onClick={_ => addTo()}
+            disabled={String.length(newTo) == 0 || !(newTo->String.startsWith("0x"))}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {(
+              Array.length(filterState.to_->Option.getOr([])) > 0 ? "Add (via OR) To" : "Add To"
+            )->React.string}
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Array.mapWithIndex(filterState.to_->Option.getOr([]), (address, index) =>
+            <div
+              key={Int.toString(index)}
+              className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+            >
+              <span className="text-sm font-mono text-gray-800"> {address->React.string} </span>
+              <button
+                onClick={_ => removeTo(index)} className="text-red-600 hover:text-red-800 text-sm"
+              >
+                {"Remove"->React.string}
+              </button>
+            </div>
+          )->React.array}
+        </div>
+      </div>
+
+      // Sighash
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Function Signatures (Sighash)"->React.string}
+        </label>
+        <div className="flex space-x-2 mb-3">
+          <input
+            type_="text"
+            value={newSighash}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewSighash(_ => target["value"])
+            }}
+            placeholder="0xa9059cbb"
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            onClick={_ => addSighash()}
+            disabled={String.length(newSighash) == 0 || !(newSighash->String.startsWith("0x"))}
+            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {(
+              Array.length(filterState.sighash->Option.getOr([])) > 0
+                ? "Add (via OR) Sighash"
+                : "Add Sighash"
+            )->React.string}
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Array.mapWithIndex(filterState.sighash->Option.getOr([]), (sighash, index) =>
+            <div
+              key={Int.toString(index)}
+              className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+            >
+              <span className="text-sm font-mono text-gray-800"> {sighash->React.string} </span>
+              <button
+                onClick={_ => removeSighash(index)}
+                className="text-red-600 hover:text-red-800 text-sm"
+              >
+                {"Remove"->React.string}
+              </button>
+            </div>
+          )->React.array}
+        </div>
+      </div>
+
+      // Status
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Transaction Status"->React.string}
+        </label>
+        <div className="flex space-x-2 mb-3">
+          <input
+            type_="number"
+            value={newStatus}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewStatus(_ => target["value"])
+            }}
+            placeholder="0 (failed) or 1 (success)"
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            onClick={_ => setStatus()}
+            disabled={String.length(newStatus) == 0}
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {"Set Status"->React.string}
+          </button>
+        </div>
+        {switch filterState.status {
+        | Some(status) =>
+          <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+            <span className="text-sm font-mono text-gray-800">
+              {`Status: ${Int.toString(status)} (${status === 1
+                  ? "Success"
+                  : "Failed"})`->React.string}
+            </span>
+            <button
+              onClick={_ => clearStatus()} className="text-red-600 hover:text-red-800 text-sm"
+            >
+              {"Clear"->React.string}
+            </button>
+          </div>
+        | None => React.null
+        }}
+      </div>
+
+      // Type
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Transaction Type"->React.string}
+        </label>
+        <div className="flex space-x-2 mb-3">
+          <input
+            type_="number"
+            value={newType}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewType(_ => target["value"])
+            }}
+            placeholder="0, 1, 2..."
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            onClick={_ => addType()}
+            disabled={String.length(newType) == 0}
+            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {(
+              Array.length(filterState.type_->Option.getOr([])) > 0
+                ? "Add (via OR) Type"
+                : "Add Type"
+            )->React.string}
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Array.mapWithIndex(filterState.type_->Option.getOr([]), (t, index) =>
+            <div
+              key={Int.toString(index)}
+              className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+            >
+              <span className="text-sm font-mono text-gray-800">
+                {Int.toString(t)->React.string}
+              </span>
+              <button
+                onClick={_ => removeType(index)} className="text-red-600 hover:text-red-800 text-sm"
+              >
+                {"Remove"->React.string}
+              </button>
+            </div>
+          )->React.array}
+        </div>
+      </div>
+
+      // Contract Address
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Contract Addresses"->React.string}
+        </label>
+        <div className="flex space-x-2 mb-3">
+          <input
+            type_="text"
+            value={newContractAddress}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewContractAddress(_ => target["value"])
+            }}
+            placeholder="0x..."
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            onClick={_ => addContractAddress()}
+            disabled={String.length(newContractAddress) == 0 ||
+              !(newContractAddress->String.startsWith("0x"))}
+            className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {(
+              Array.length(filterState.contractAddress->Option.getOr([])) > 0
+                ? "Add (via OR) Contract"
+                : "Add Contract"
+            )->React.string}
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Array.mapWithIndex(filterState.contractAddress->Option.getOr([]), (address, index) =>
+            <div
+              key={Int.toString(index)}
+              className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+            >
+              <span className="text-sm font-mono text-gray-800"> {address->React.string} </span>
+              <button
+                onClick={_ => removeContractAddress(index)}
+                className="text-red-600 hover:text-red-800 text-sm"
+              >
+                {"Remove"->React.string}
+              </button>
+            </div>
+          )->React.array}
+        </div>
+      </div>
+
+      // Transaction Hashes
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Transaction Hashes"->React.string}
+        </label>
+        <div className="flex space-x-2 mb-3">
+          <input
+            type_="text"
+            value={newHash}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewHash(_ => target["value"])
+            }}
+            placeholder="0x..."
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            onClick={_ => addHash()}
+            disabled={String.length(newHash) == 0 || !(newHash->String.startsWith("0x"))}
+            className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {(
+              Array.length(filterState.hash->Option.getOr([])) > 0
+                ? "Add (via OR) Hash"
+                : "Add Hash"
+            )->React.string}
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Array.mapWithIndex(filterState.hash->Option.getOr([]), (h, index) =>
+            <div
+              key={Int.toString(index)}
+              className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+            >
+              <span className="text-sm font-mono text-gray-800 truncate"> {h->React.string} </span>
+              <button
+                onClick={_ => removeHash(index)}
+                className="text-red-600 hover:text-red-800 text-sm ml-2 shrink-0"
+              >
+                {"Remove"->React.string}
+              </button>
+            </div>
+          )->React.array}
+        </div>
+      </div>
+    </>
+  }
+}
+
 @react.component
 let make = (
   ~filterState: transactionFilterState,
@@ -11,71 +489,33 @@ let make = (
   ~isExpanded: bool,
   ~onToggleExpand,
 ) => {
-  let (newFrom, setNewFrom) = React.useState(() => "")
-  let (newTo, setNewTo) = React.useState(() => "")
-  let (newSighash, setNewSighash) = React.useState(() => "")
-  let (newStatus, setNewStatus) = React.useState(() => "")
-  let (newType, setNewType) = React.useState(() => "")
-  let (newContractAddress, setNewContractAddress) = React.useState(() => "")
-  let (newHash, setNewHash) = React.useState(() => "")
-
   // Example filter states
   let eip7702Example: transactionFilterState = {
-    from_: None,
-    to_: None,
-    sighash: None,
-    status: None,
+    ...emptyTransactionFields,
     type_: Some([4]),
-    contractAddress: None,
-    hash: None,
-    authorizationList: None,
   }
 
   let failedTransactionsExample: transactionFilterState = {
-    from_: None,
-    to_: None,
-    sighash: None,
+    ...emptyTransactionFields,
     status: Some(0),
-    type_: None,
-    contractAddress: None,
-    hash: None,
-    authorizationList: None,
   }
 
   let transferCallExample: transactionFilterState = {
-    from_: None,
-    to_: None,
+    ...emptyTransactionFields,
     sighash: Some(["0xa9059cbb"]),
-    status: None,
-    type_: None,
-    contractAddress: None,
-    hash: None,
-    authorizationList: None,
   }
 
   let approveCallExample: transactionFilterState = {
-    from_: None,
-    to_: None,
+    ...emptyTransactionFields,
     sighash: Some(["0x095ea7b3"]),
-    status: None,
-    type_: None,
-    contractAddress: None,
-    hash: None,
-    authorizationList: None,
   }
 
   let lookupByHashExample: transactionFilterState = {
-    from_: None,
-    to_: None,
-    sighash: None,
-    status: None,
-    type_: None,
-    contractAddress: None,
+    ...emptyTransactionFields,
     hash: Some([
       "0x653a4532b6daf38b36e26794be5c27da1253811cfb1b422159232fd1aed68e40",
       "0x45b366153d0b2decc91c1fef8b5dc9c4bb0a0d1d2d01daa4bbd26d06029b6ebc",
     ]),
-    authorizationList: None,
   }
 
   let setEip7702Example = () => {
@@ -98,155 +538,24 @@ let make = (
     onFilterChange(lookupByHashExample)
   }
 
-  let addFrom = () => {
-    if newFrom !== "" && newFrom->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        from_: Some(Array.concat(filterState.from_->Option.getOr([]), [newFrom])),
-      })
-      setNewFrom(_ => "")
-    }
-  }
-
-  let removeFrom = index => {
-    let currentArray = filterState.from_->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      from_: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addTo = () => {
-    if newTo !== "" && newTo->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        to_: Some(Array.concat(filterState.to_->Option.getOr([]), [newTo])),
-      })
-      setNewTo(_ => "")
-    }
-  }
-
-  let removeTo = index => {
-    let currentArray = filterState.to_->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      to_: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addSighash = () => {
-    if newSighash !== "" && newSighash->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        sighash: Some(Array.concat(filterState.sighash->Option.getOr([]), [newSighash])),
-      })
-      setNewSighash(_ => "")
-    }
-  }
-
-  let removeSighash = index => {
-    let currentArray = filterState.sighash->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      sighash: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let setStatus = () => {
-    switch Int.fromString(newStatus) {
-    | Some(status) =>
-      onFilterChange({...filterState, status: Some(status)})
-      setNewStatus(_ => "")
-    | None => ()
-    }
-  }
-
-  let clearStatus = () => {
-    onFilterChange({...filterState, status: None})
-  }
-
-  let addType = () => {
-    switch Int.fromString(newType) {
-    | Some(t) =>
-      onFilterChange({
-        ...filterState,
-        type_: Some(Array.concat(filterState.type_->Option.getOr([]), [t])),
-      })
-      setNewType(_ => "")
-    | None => ()
-    }
-  }
-
-  let removeType = index => {
-    let currentArray = filterState.type_->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      type_: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addContractAddress = () => {
-    if newContractAddress !== "" && newContractAddress->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        contractAddress: Some(
-          Array.concat(filterState.contractAddress->Option.getOr([]), [newContractAddress]),
-        ),
-      })
-      setNewContractAddress(_ => "")
-    }
-  }
-
-  let removeContractAddress = index => {
-    let currentArray = filterState.contractAddress->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      contractAddress: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addHash = () => {
-    if newHash !== "" && newHash->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        hash: Some(Array.concat(filterState.hash->Option.getOr([]), [newHash])),
-      })
-      setNewHash(_ => "")
-    }
-  }
-
-  let removeHash = index => {
-    let currentArray = filterState.hash->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      hash: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let _transactionSelectionToStruct = (): option<transactionSelection> => {
-    Some(filterState)
+  let onExcludeChange = (newExclude: transactionFilterState) => {
+    let exclude = TransactionBooleanLogicGenerator.isEmptyTransactionFields(newExclude)
+      ? None
+      : Some(newExclude)
+    onFilterChange({...filterState, ?exclude})
   }
 
   let generateEnglishDescription = () => {
-    TransactionBooleanLogicGenerator.generateEnglishDescription(
-      (filterState :> TransactionBooleanLogicGenerator.transactionFilterState),
-    )
+    TransactionBooleanLogicGenerator.generateEnglishDescription(filterState)
   }
 
   let generateBooleanHierarchy = () => {
-    TransactionBooleanLogicGenerator.generateBooleanHierarchy(
-      (filterState :> TransactionBooleanLogicGenerator.transactionFilterState),
-    )
+    TransactionBooleanLogicGenerator.generateBooleanHierarchy(filterState)
   }
 
-  let generateCodeBlock = () => {
-    let {from_, to_, sighash, status, type_, contractAddress, hash} = filterState
+  // Pretty-printed JSON parts for a filter's own fields, indented by two spaces
+  let generateFieldParts = (state: transactionFilterState) => {
+    let {from_, to_, sighash, status, type_, contractAddress, hash} = state
 
     let fromStr = switch from_ {
     | Some(fromArray) if Array.length(fromArray) > 0 => {
@@ -319,16 +628,30 @@ let make = (
     | _ => ""
     }
 
-    let parts =
-      [
-        fromStr,
-        toStr,
-        sighashStr,
-        statusStr,
-        typeStr,
-        contractAddressStr,
-        hashStr,
-      ]->Array.filterMap(str => str !== "" ? Some(str) : None)
+    [
+      fromStr,
+      toStr,
+      sighashStr,
+      statusStr,
+      typeStr,
+      contractAddressStr,
+      hashStr,
+    ]->Array.filterMap(str => str !== "" ? Some(str) : None)
+  }
+
+  let generateCodeBlock = () => {
+    let parts = generateFieldParts(filterState)
+    let parts = switch TransactionBooleanLogicGenerator.excludeContent(filterState) {
+    | Some(ex) =>
+      let excludeParts = generateFieldParts(ex)->Array.map(part =>
+        part
+        ->String.split("\n")
+        ->Array.map(line => `  ${line}`)
+        ->Array.join("\n")
+      )
+      Array.concat(parts, [`  "exclude": {\n${Array.join(excludeParts, ",\n")}\n  }`])
+    | None => parts
+    }
     if Array.length(parts) > 0 {
       `{\n${Array.join(parts, ",\n")}\n}`
     } else {
@@ -336,14 +659,9 @@ let make = (
     }
   }
 
+  let hasExclusions = TransactionBooleanLogicGenerator.excludeContent(filterState)->Option.isSome
   let hasFilters =
-    Array.length(filterState.from_->Option.getOr([])) > 0 ||
-    Array.length(filterState.to_->Option.getOr([])) > 0 ||
-    Array.length(filterState.sighash->Option.getOr([])) > 0 ||
-    Option.isSome(filterState.status) ||
-    Array.length(filterState.type_->Option.getOr([])) > 0 ||
-    Array.length(filterState.contractAddress->Option.getOr([])) > 0 ||
-    Array.length(filterState.hash->Option.getOr([])) > 0
+    !TransactionBooleanLogicGenerator.isEmptyTransactionFields(filterState) || hasExclusions
 
   <div
     className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full"
@@ -432,326 +750,14 @@ let make = (
             </button>
           </div>
 
-          // From Addresses
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"From Addresses"->React.string}
-            </label>
-            <div className="flex space-x-2 mb-3">
-              <input
-                type_="text"
-                value={newFrom}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewFrom(_ => target["value"])
-                }}
-                placeholder="0x..."
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <button
-                onClick={_ => addFrom()}
-                disabled={String.length(newFrom) == 0 || !(newFrom->String.startsWith("0x"))}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {(
-                  Array.length(filterState.from_->Option.getOr([])) > 0
-                    ? "Add (via OR) From"
-                    : "Add From"
-                )->React.string}
-              </button>
-            </div>
-            <div className="space-y-2">
-              {Array.mapWithIndex(filterState.from_->Option.getOr([]), (address, index) =>
-                <div
-                  key={Int.toString(index)}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
-                >
-                  <span className="text-sm font-mono text-gray-800"> {address->React.string} </span>
-                  <button
-                    onClick={_ => removeFrom(index)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    {"Remove"->React.string}
-                  </button>
-                </div>
-              )->React.array}
-            </div>
-          </div>
+          <FilterFields filterState onFilterChange />
 
-          // To Addresses
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"To Addresses"->React.string}
-            </label>
-            <div className="flex space-x-2 mb-3">
-              <input
-                type_="text"
-                value={newTo}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewTo(_ => target["value"])
-                }}
-                placeholder="0x..."
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <button
-                onClick={_ => addTo()}
-                disabled={String.length(newTo) == 0 || !(newTo->String.startsWith("0x"))}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {(
-                  Array.length(filterState.to_->Option.getOr([])) > 0 ? "Add (via OR) To" : "Add To"
-                )->React.string}
-              </button>
-            </div>
-            <div className="space-y-2">
-              {Array.mapWithIndex(filterState.to_->Option.getOr([]), (address, index) =>
-                <div
-                  key={Int.toString(index)}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
-                >
-                  <span className="text-sm font-mono text-gray-800"> {address->React.string} </span>
-                  <button
-                    onClick={_ => removeTo(index)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    {"Remove"->React.string}
-                  </button>
-                </div>
-              )->React.array}
-            </div>
-          </div>
-
-          // Sighash
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Function Signatures (Sighash)"->React.string}
-            </label>
-            <div className="flex space-x-2 mb-3">
-              <input
-                type_="text"
-                value={newSighash}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewSighash(_ => target["value"])
-                }}
-                placeholder="0xa9059cbb"
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <button
-                onClick={_ => addSighash()}
-                disabled={String.length(newSighash) == 0 || !(newSighash->String.startsWith("0x"))}
-                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {(
-                  Array.length(filterState.sighash->Option.getOr([])) > 0
-                    ? "Add (via OR) Sighash"
-                    : "Add Sighash"
-                )->React.string}
-              </button>
-            </div>
-            <div className="space-y-2">
-              {Array.mapWithIndex(filterState.sighash->Option.getOr([]), (sighash, index) =>
-                <div
-                  key={Int.toString(index)}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
-                >
-                  <span className="text-sm font-mono text-gray-800"> {sighash->React.string} </span>
-                  <button
-                    onClick={_ => removeSighash(index)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    {"Remove"->React.string}
-                  </button>
-                </div>
-              )->React.array}
-            </div>
-          </div>
-
-          // Status
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Transaction Status"->React.string}
-            </label>
-            <div className="flex space-x-2 mb-3">
-              <input
-                type_="number"
-                value={newStatus}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewStatus(_ => target["value"])
-                }}
-                placeholder="0 (failed) or 1 (success)"
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <button
-                onClick={_ => setStatus()}
-                disabled={String.length(newStatus) == 0}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {"Set Status"->React.string}
-              </button>
-            </div>
-            {switch filterState.status {
-            | Some(status) =>
-              <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
-                <span className="text-sm font-mono text-gray-800">
-                  {`Status: ${Int.toString(status)} (${status === 1
-                      ? "Success"
-                      : "Failed"})`->React.string}
-                </span>
-                <button
-                  onClick={_ => clearStatus()} className="text-red-600 hover:text-red-800 text-sm"
-                >
-                  {"Clear"->React.string}
-                </button>
-              </div>
-            | None => React.null
-            }}
-          </div>
-
-          // Type
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Transaction Type"->React.string}
-            </label>
-            <div className="flex space-x-2 mb-3">
-              <input
-                type_="number"
-                value={newType}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewType(_ => target["value"])
-                }}
-                placeholder="0, 1, 2..."
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <button
-                onClick={_ => addType()}
-                disabled={String.length(newType) == 0}
-                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {(
-                  Array.length(filterState.type_->Option.getOr([])) > 0
-                    ? "Add (via OR) Type"
-                    : "Add Type"
-                )->React.string}
-              </button>
-            </div>
-            <div className="space-y-2">
-              {Array.mapWithIndex(filterState.type_->Option.getOr([]), (t, index) =>
-                <div
-                  key={Int.toString(index)}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
-                >
-                  <span className="text-sm font-mono text-gray-800">
-                    {Int.toString(t)->React.string}
-                  </span>
-                  <button
-                    onClick={_ => removeType(index)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    {"Remove"->React.string}
-                  </button>
-                </div>
-              )->React.array}
-            </div>
-          </div>
-
-          // Contract Address
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Contract Addresses"->React.string}
-            </label>
-            <div className="flex space-x-2 mb-3">
-              <input
-                type_="text"
-                value={newContractAddress}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewContractAddress(_ => target["value"])
-                }}
-                placeholder="0x..."
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <button
-                onClick={_ => addContractAddress()}
-                disabled={String.length(newContractAddress) == 0 ||
-                  !(newContractAddress->String.startsWith("0x"))}
-                className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {(
-                  Array.length(filterState.contractAddress->Option.getOr([])) > 0
-                    ? "Add (via OR) Contract"
-                    : "Add Contract"
-                )->React.string}
-              </button>
-            </div>
-            <div className="space-y-2">
-              {Array.mapWithIndex(filterState.contractAddress->Option.getOr([]), (address, index) =>
-                <div
-                  key={Int.toString(index)}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
-                >
-                  <span className="text-sm font-mono text-gray-800"> {address->React.string} </span>
-                  <button
-                    onClick={_ => removeContractAddress(index)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    {"Remove"->React.string}
-                  </button>
-                </div>
-              )->React.array}
-            </div>
-          </div>
-
-          // Transaction Hashes
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Transaction Hashes"->React.string}
-            </label>
-            <div className="flex space-x-2 mb-3">
-              <input
-                type_="text"
-                value={newHash}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewHash(_ => target["value"])
-                }}
-                placeholder="0x..."
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <button
-                onClick={_ => addHash()}
-                disabled={String.length(newHash) == 0 || !(newHash->String.startsWith("0x"))}
-                className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {(
-                  Array.length(filterState.hash->Option.getOr([])) > 0
-                    ? "Add (via OR) Hash"
-                    : "Add Hash"
-                )->React.string}
-              </button>
-            </div>
-            <div className="space-y-2">
-              {Array.mapWithIndex(filterState.hash->Option.getOr([]), (h, index) =>
-                <div
-                  key={Int.toString(index)}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
-                >
-                  <span className="text-sm font-mono text-gray-800 truncate">
-                    {h->React.string}
-                  </span>
-                  <button
-                    onClick={_ => removeHash(index)}
-                    className="text-red-600 hover:text-red-800 text-sm ml-2 shrink-0"
-                  >
-                    {"Remove"->React.string}
-                  </button>
-                </div>
-              )->React.array}
-            </div>
-          </div>
+          <ExcludeSection entityNamePlural="Transactions" hasExclusions>
+            <FilterFields
+              filterState={filterState.exclude->Option.getOr(emptyTransactionFields)}
+              onFilterChange={onExcludeChange}
+            />
+          </ExcludeSection>
 
           // English Description and Boolean Logic
           <div className="mt-6">

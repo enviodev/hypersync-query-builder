@@ -2,7 +2,27 @@ open QueryStructure
 
 type traceFilterState = QueryStructure.traceSelection
 
-let generateEnglishDescription = (filterState: traceFilterState) => {
+// True when the filter's own fields are empty, ignoring any exclude filter.
+let isEmptyTraceFields = (filterState: traceFilterState) => {
+  let {from_, to_, address, callType, rewardType, type_, sighash} = filterState
+  Array.length(from_->Option.getOr([])) === 0 &&
+  Array.length(to_->Option.getOr([])) === 0 &&
+  Array.length(address->Option.getOr([])) === 0 &&
+  Array.length(callType->Option.getOr([])) === 0 &&
+  Array.length(rewardType->Option.getOr([])) === 0 &&
+  Array.length(type_->Option.getOr([])) === 0 &&
+  Array.length(sighash->Option.getOr([])) === 0
+}
+
+// Returns the exclude filter only when it actually has conditions.
+let excludeContent = (filterState: traceFilterState): option<traceFilterState> =>
+  switch filterState.exclude {
+  | Some(ex) if !isEmptyTraceFields(ex) => Some(ex)
+  | _ => None
+  }
+
+// Description of the filter's own fields, "" when empty.
+let generateFieldsDescription = (filterState: traceFilterState) => {
   let {from_, to_, address, callType, rewardType, type_, sighash} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
@@ -12,102 +32,105 @@ let generateEnglishDescription = (filterState: traceFilterState) => {
   let typeArray = type_->Option.getOr([])
   let sighashArray = sighash->Option.getOr([])
 
-  let hasAnyFilter =
-    Array.length(fromArray) > 0 ||
-    Array.length(toArray) > 0 ||
-    Array.length(addressArray) > 0 ||
-    Array.length(callTypeArray) > 0 ||
-    Array.length(rewardTypeArray) > 0 ||
-    Array.length(typeArray) > 0 ||
-    Array.length(sighashArray) > 0
+  let parts = []
 
-  if !hasAnyFilter {
-    "No filters applied - will match all traces"
-  } else {
-    let parts = []
-
-    // From condition
-    if Array.length(fromArray) > 0 {
-      let fromCondition = if Array.length(fromArray) === 1 {
-        `the sender address is ${Array.getUnsafe(fromArray, 0)}`
-      } else {
-        let fromList = Array.join(fromArray, " OR ")
-        `the sender address is ${fromList}`
-      }
-      parts->Array.push(fromCondition)->ignore
+  // From condition
+  if Array.length(fromArray) > 0 {
+    let fromCondition = if Array.length(fromArray) === 1 {
+      `the sender address is ${Array.getUnsafe(fromArray, 0)}`
+    } else {
+      let fromList = Array.join(fromArray, " OR ")
+      `the sender address is ${fromList}`
     }
+    parts->Array.push(fromCondition)->ignore
+  }
 
-    // To condition
-    if Array.length(toArray) > 0 {
-      let toCondition = if Array.length(toArray) === 1 {
-        `the recipient address is ${Array.getUnsafe(toArray, 0)}`
-      } else {
-        let toList = Array.join(toArray, " OR ")
-        `the recipient address is ${toList}`
-      }
-      parts->Array.push(toCondition)->ignore
+  // To condition
+  if Array.length(toArray) > 0 {
+    let toCondition = if Array.length(toArray) === 1 {
+      `the recipient address is ${Array.getUnsafe(toArray, 0)}`
+    } else {
+      let toList = Array.join(toArray, " OR ")
+      `the recipient address is ${toList}`
     }
+    parts->Array.push(toCondition)->ignore
+  }
 
-    // Address condition
-    if Array.length(addressArray) > 0 {
-      let addressCondition = if Array.length(addressArray) === 1 {
-        `the address is ${Array.getUnsafe(addressArray, 0)}`
-      } else {
-        let addressList = Array.join(addressArray, " OR ")
-        `the address is ${addressList}`
-      }
-      parts->Array.push(addressCondition)->ignore
+  // Address condition
+  if Array.length(addressArray) > 0 {
+    let addressCondition = if Array.length(addressArray) === 1 {
+      `the address is ${Array.getUnsafe(addressArray, 0)}`
+    } else {
+      let addressList = Array.join(addressArray, " OR ")
+      `the address is ${addressList}`
     }
+    parts->Array.push(addressCondition)->ignore
+  }
 
-    // Call type condition
-    if Array.length(callTypeArray) > 0 {
-      let callTypeCondition = if Array.length(callTypeArray) === 1 {
-        `the call type is ${Array.getUnsafe(callTypeArray, 0)}`
-      } else {
-        let callTypeList = Array.join(callTypeArray, " OR ")
-        `the call type is ${callTypeList}`
-      }
-      parts->Array.push(callTypeCondition)->ignore
+  // Call type condition
+  if Array.length(callTypeArray) > 0 {
+    let callTypeCondition = if Array.length(callTypeArray) === 1 {
+      `the call type is ${Array.getUnsafe(callTypeArray, 0)}`
+    } else {
+      let callTypeList = Array.join(callTypeArray, " OR ")
+      `the call type is ${callTypeList}`
     }
+    parts->Array.push(callTypeCondition)->ignore
+  }
 
-    // Reward type condition
-    if Array.length(rewardTypeArray) > 0 {
-      let rewardTypeCondition = if Array.length(rewardTypeArray) === 1 {
-        `the reward type is ${Array.getUnsafe(rewardTypeArray, 0)}`
-      } else {
-        let rewardTypeList = Array.join(rewardTypeArray, " OR ")
-        `the reward type is ${rewardTypeList}`
-      }
-      parts->Array.push(rewardTypeCondition)->ignore
+  // Reward type condition
+  if Array.length(rewardTypeArray) > 0 {
+    let rewardTypeCondition = if Array.length(rewardTypeArray) === 1 {
+      `the reward type is ${Array.getUnsafe(rewardTypeArray, 0)}`
+    } else {
+      let rewardTypeList = Array.join(rewardTypeArray, " OR ")
+      `the reward type is ${rewardTypeList}`
     }
+    parts->Array.push(rewardTypeCondition)->ignore
+  }
 
-    // Type condition
-    if Array.length(typeArray) > 0 {
-      let typeCondition = if Array.length(typeArray) === 1 {
-        `the type is ${Array.getUnsafe(typeArray, 0)}`
-      } else {
-        let typeList = Array.join(typeArray, " OR ")
-        `the type is ${typeList}`
-      }
-      parts->Array.push(typeCondition)->ignore
+  // Type condition
+  if Array.length(typeArray) > 0 {
+    let typeCondition = if Array.length(typeArray) === 1 {
+      `the type is ${Array.getUnsafe(typeArray, 0)}`
+    } else {
+      let typeList = Array.join(typeArray, " OR ")
+      `the type is ${typeList}`
     }
+    parts->Array.push(typeCondition)->ignore
+  }
 
-    // Sighash condition
-    if Array.length(sighashArray) > 0 {
-      let sighashCondition = if Array.length(sighashArray) === 1 {
-        `the function signature is ${Array.getUnsafe(sighashArray, 0)}`
-      } else {
-        let sighashList = Array.join(sighashArray, " OR ")
-        `the function signature is ${sighashList}`
-      }
-      parts->Array.push(sighashCondition)->ignore
+  // Sighash condition
+  if Array.length(sighashArray) > 0 {
+    let sighashCondition = if Array.length(sighashArray) === 1 {
+      `the function signature is ${Array.getUnsafe(sighashArray, 0)}`
+    } else {
+      let sighashList = Array.join(sighashArray, " OR ")
+      `the function signature is ${sighashList}`
     }
+    parts->Array.push(sighashCondition)->ignore
+  }
 
-    "Match traces where: " ++ Array.join(parts, " AND ")
+  Array.join(parts, " AND ")
+}
+
+let generateEnglishDescription = (filterState: traceFilterState) => {
+  let include_ = generateFieldsDescription(filterState)
+  switch excludeContent(filterState) {
+  | Some(ex) =>
+    let exclude = generateFieldsDescription(ex)
+    `Match traces where: ${BooleanLogicFormat.composeDescriptionWithNot(~include_, ~exclude)}`
+  | None =>
+    if include_ === "" {
+      "No filters applied - will match all traces"
+    } else {
+      `Match traces where: ${include_}`
+    }
   }
 }
 
-let generateBooleanHierarchy = (filterState: traceFilterState) => {
+// Hierarchy of the filter's own fields, ignoring any exclude filter.
+let generateFieldsHierarchy = (filterState: traceFilterState) => {
   let {from_, to_, address, callType, rewardType, type_, sighash} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
@@ -373,5 +396,19 @@ let generateBooleanHierarchy = (filterState: traceFilterState) => {
     }
 
     Array.join(lines, "\n")
+  }
+}
+
+let generateBooleanHierarchy = (filterState: traceFilterState) => {
+  switch excludeContent(filterState) {
+  | None => generateFieldsHierarchy(filterState)
+  | Some(ex) =>
+    let includeTree = isEmptyTraceFields(filterState)
+      ? None
+      : Some(generateFieldsHierarchy(filterState))
+    BooleanLogicFormat.composeHierarchyWithNot(
+      ~includeTree,
+      ~excludeTree=generateFieldsHierarchy(ex),
+    )
   }
 }
