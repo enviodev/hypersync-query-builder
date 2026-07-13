@@ -539,9 +539,10 @@ let make = (
   }
 
   let onExcludeChange = (newExclude: transactionFilterState) => {
+    // Selections carry a single exclude level, so never persist a nested one
     let exclude = TransactionBooleanLogicGenerator.isEmptyTransactionFields(newExclude)
       ? None
-      : Some(newExclude)
+      : Some({...newExclude, exclude: ?None})
     onFilterChange({...filterState, ?exclude})
   }
 

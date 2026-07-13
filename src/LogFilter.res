@@ -246,7 +246,10 @@ let make = (
   }
 
   let onExcludeChange = (newExclude: filterState) => {
-    let exclude = BooleanLogicGenerator.isEmptyLogFields(newExclude) ? None : Some(newExclude)
+    // Selections carry a single exclude level, so never persist a nested one
+    let exclude = BooleanLogicGenerator.isEmptyLogFields(newExclude)
+      ? None
+      : Some({...newExclude, exclude: ?None})
     onFilterChange({...filterState, ?exclude})
   }
 

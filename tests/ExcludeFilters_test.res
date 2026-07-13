@@ -266,3 +266,24 @@ test("url decode - urls without exclude keys still decode", () => {
   | None => assertEqual(true, false)
   }
 })
+
+test("url decode - nested excludes are dropped (single exclude level)", () => {
+  // A hand-crafted URL payload with exclude.exclude: only one level is kept,
+  // matching the server's Selection<T> type
+  let jsonWithNestedExclude = `{"query":{"fromBlock":0,"toBlock":null,"logs":[{"address":null,"topics":[["0xaaa"]],"exclude":{"address":["0xbbb"],"topics":null,"exclude":{"address":["0xccc"],"topics":null}}}],"transactions":null,"blocks":null,"fieldSelection":{"block":[],"transaction":[],"log":["address"],"trace":[]}},"selectedChainName":"eth"}`
+  switch UrlEncoder.deserializeUrlState(jsonWithNestedExclude) {
+  | Some(decoded) =>
+    switch decoded.query.logs {
+    | Some([log]) =>
+      switch log.exclude {
+      | Some(ex) => {
+          assertEqual(ex.address, Some(["0xbbb"]))
+          assertEqual(ex.exclude, None)
+        }
+      | None => assertEqual(true, false)
+      }
+    | _ => assertEqual(true, false)
+    }
+  | None => assertEqual(true, false)
+  }
+})

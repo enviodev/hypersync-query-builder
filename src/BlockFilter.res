@@ -164,9 +164,10 @@ let make = (
   }
 
   let onExcludeChange = (newExclude: blockFilterState) => {
+    // Selections carry a single exclude level, so never persist a nested one
     let exclude = BlockBooleanLogicGenerator.isEmptyBlockFields(newExclude)
       ? None
-      : Some(newExclude)
+      : Some({...newExclude, exclude: ?None})
     onFilterChange({...filterState, ?exclude})
   }
 

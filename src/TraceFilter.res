@@ -184,7 +184,7 @@ module FilterFields = {
         </div>
         {Array.mapWithIndex(filterState.from_->Option.getOr([]), (address, index) =>
           <div
-            key={address}
+            key={Int.toString(index)}
             className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
           >
             <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
@@ -227,7 +227,7 @@ module FilterFields = {
         </div>
         {Array.mapWithIndex(filterState.to_->Option.getOr([]), (address, index) =>
           <div
-            key={address}
+            key={Int.toString(index)}
             className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
           >
             <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
@@ -270,7 +270,7 @@ module FilterFields = {
         </div>
         {Array.mapWithIndex(filterState.address->Option.getOr([]), (address, index) =>
           <div
-            key={address}
+            key={Int.toString(index)}
             className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
           >
             <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
@@ -313,7 +313,7 @@ module FilterFields = {
         </div>
         {Array.mapWithIndex(filterState.callType->Option.getOr([]), (callType, index) =>
           <div
-            key={callType}
+            key={Int.toString(index)}
             className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
           >
             <span className="text-sm text-gray-700"> {callType->React.string} </span>
@@ -358,7 +358,7 @@ module FilterFields = {
         </div>
         {Array.mapWithIndex(filterState.rewardType->Option.getOr([]), (rewardType, index) =>
           <div
-            key={rewardType}
+            key={Int.toString(index)}
             className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
           >
             <span className="text-sm text-gray-700"> {rewardType->React.string} </span>
@@ -403,7 +403,7 @@ module FilterFields = {
         </div>
         {Array.mapWithIndex(filterState.type_->Option.getOr([]), (t, index) =>
           <div
-            key={t}
+            key={Int.toString(index)}
             className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
           >
             <span className="text-sm text-gray-700"> {t->React.string} </span>
@@ -446,7 +446,7 @@ module FilterFields = {
         </div>
         {Array.mapWithIndex(filterState.sighash->Option.getOr([]), (sighash, index) =>
           <div
-            key={sighash}
+            key={Int.toString(index)}
             className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
           >
             <span className="text-sm text-gray-700 font-mono"> {sighash->React.string} </span>
@@ -514,9 +514,10 @@ let make = (
   }
 
   let onExcludeChange = (newExclude: traceFilterState) => {
+    // Selections carry a single exclude level, so never persist a nested one
     let exclude = TraceBooleanLogicGenerator.isEmptyTraceFields(newExclude)
       ? None
-      : Some(newExclude)
+      : Some({...newExclude, exclude: ?None})
     onFilterChange({...filterState, ?exclude})
   }
 

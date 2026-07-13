@@ -121,7 +121,10 @@ let deserializeTraceField = (str: string): option<traceField> => {
   )
 }
 
-let rec serializeLogSelectionJson = (log: logSelection): JSON.t => {
+// Selections carry at most one level of exclude (a nested exclude is not
+// representable in the server's Selection<T> type), so exclude filters are
+// encoded and decoded fields-only.
+let serializeLogFieldsJson = (log: logSelection): array<(string, JSON.t)> => {
   let addressJson = switch log.address {
   | Some(addresses) => JSON.Encode.array(addresses->Array.map(JSON.Encode.string))
   | None => JSON.Encode.null
@@ -133,15 +136,26 @@ let rec serializeLogSelectionJson = (log: logSelection): JSON.t => {
     )
   | None => JSON.Encode.null
   }
-  let fields = [("address", addressJson), ("topics", topicsJson)]
+  [("address", addressJson), ("topics", topicsJson)]
+}
+
+let serializeLogSelectionJson = (log: logSelection): JSON.t => {
+  let fields = serializeLogFieldsJson(log)
   let fields = switch log.exclude {
-  | Some(ex) => Array.concat(fields, [("exclude", serializeLogSelectionJson(ex))])
+  | Some(ex) =>
+    Array.concat(
+      fields,
+      [("exclude", JSON.Encode.object(Dict.fromArray(serializeLogFieldsJson(ex))))],
+    )
   | None => fields
   }
   JSON.Encode.object(Dict.fromArray(fields))
 }
 
-let rec serializeTransactionSelectionJson = (transaction: transactionSelection): JSON.t => {
+let serializeTransactionFieldsJson = (transaction: transactionSelection): array<(
+  string,
+  JSON.t,
+)> => {
   let fromJson = switch transaction.from_ {
   | Some(froms) => JSON.Encode.array(froms->Array.map(JSON.Encode.string))
   | None => JSON.Encode.null
@@ -190,7 +204,7 @@ let rec serializeTransactionSelectionJson = (transaction: transactionSelection):
     )
   | None => JSON.Encode.null
   }
-  let fields = [
+  [
     ("from_", fromJson),
     ("to_", toJson),
     ("sighash", sighashJson),
@@ -200,14 +214,22 @@ let rec serializeTransactionSelectionJson = (transaction: transactionSelection):
     ("hash", hashJson),
     ("authorizationList", authorizationListJson),
   ]
+}
+
+let serializeTransactionSelectionJson = (transaction: transactionSelection): JSON.t => {
+  let fields = serializeTransactionFieldsJson(transaction)
   let fields = switch transaction.exclude {
-  | Some(ex) => Array.concat(fields, [("exclude", serializeTransactionSelectionJson(ex))])
+  | Some(ex) =>
+    Array.concat(
+      fields,
+      [("exclude", JSON.Encode.object(Dict.fromArray(serializeTransactionFieldsJson(ex))))],
+    )
   | None => fields
   }
   JSON.Encode.object(Dict.fromArray(fields))
 }
 
-let rec serializeBlockSelectionJson = (block: blockSelection): JSON.t => {
+let serializeBlockFieldsJson = (block: blockSelection): array<(string, JSON.t)> => {
   let hashJson = switch block.hash {
   | Some(hashes) => JSON.Encode.array(hashes->Array.map(JSON.Encode.string))
   | None => JSON.Encode.null
@@ -216,9 +238,17 @@ let rec serializeBlockSelectionJson = (block: blockSelection): JSON.t => {
   | Some(miners) => JSON.Encode.array(miners->Array.map(JSON.Encode.string))
   | None => JSON.Encode.null
   }
-  let fields = [("hash", hashJson), ("miner", minerJson)]
+  [("hash", hashJson), ("miner", minerJson)]
+}
+
+let serializeBlockSelectionJson = (block: blockSelection): JSON.t => {
+  let fields = serializeBlockFieldsJson(block)
   let fields = switch block.exclude {
-  | Some(ex) => Array.concat(fields, [("exclude", serializeBlockSelectionJson(ex))])
+  | Some(ex) =>
+    Array.concat(
+      fields,
+      [("exclude", JSON.Encode.object(Dict.fromArray(serializeBlockFieldsJson(ex))))],
+    )
   | None => fields
   }
   JSON.Encode.object(Dict.fromArray(fields))
@@ -345,7 +375,7 @@ let serializeUrlState = (state: urlState): string => {
   JSON.stringify(json)
 }
 
-let rec decodeLogSelection = (log: dict<JSON.t>): logSelection => {
+let decodeLogSelectionFields = (log: dict<JSON.t>): logSelection => {
   let address = switch Dict.get(log, "address") {
   | Some(value) =>
     switch JSON.Decode.null(value) {
@@ -381,18 +411,24 @@ let rec decodeLogSelection = (log: dict<JSON.t>): logSelection => {
     }
   | None => None
   }
+  {address, topics}
+}
+
+let decodeLogSelection = (log: dict<JSON.t>): logSelection => {
+  let fields = decodeLogSelectionFields(log)
+  // Fields-only: a nested exclude has no server-side meaning, so it is dropped.
   let exclude = switch Dict.get(log, "exclude") {
   | Some(value) =>
     switch JSON.Decode.object(value) {
-    | Some(excludeObj) => Some(decodeLogSelection(excludeObj))
+    | Some(excludeObj) => Some(decodeLogSelectionFields(excludeObj))
     | None => None
     }
   | None => None
   }
-  {address, topics, ?exclude}
+  {...fields, ?exclude}
 }
 
-let rec decodeTransactionSelection = (transaction: dict<JSON.t>): transactionSelection => {
+let decodeTransactionSelectionFields = (transaction: dict<JSON.t>): transactionSelection => {
   let from_ = switch Dict.get(transaction, "from_") {
   | Some(value) =>
     switch JSON.Decode.null(value) {
@@ -539,18 +575,24 @@ let rec decodeTransactionSelection = (transaction: dict<JSON.t>): transactionSel
     }
   | None => None
   }
+  {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList}
+}
+
+let decodeTransactionSelection = (transaction: dict<JSON.t>): transactionSelection => {
+  let fields = decodeTransactionSelectionFields(transaction)
+  // Fields-only: a nested exclude has no server-side meaning, so it is dropped.
   let exclude = switch Dict.get(transaction, "exclude") {
   | Some(value) =>
     switch JSON.Decode.object(value) {
-    | Some(excludeObj) => Some(decodeTransactionSelection(excludeObj))
+    | Some(excludeObj) => Some(decodeTransactionSelectionFields(excludeObj))
     | None => None
     }
   | None => None
   }
-  {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList, ?exclude}
+  {...fields, ?exclude}
 }
 
-let rec decodeBlockSelection = (block: dict<JSON.t>): blockSelection => {
+let decodeBlockSelectionFields = (block: dict<JSON.t>): blockSelection => {
   let hash = switch Dict.get(block, "hash") {
   | Some(value) =>
     switch JSON.Decode.null(value) {
@@ -575,15 +617,21 @@ let rec decodeBlockSelection = (block: dict<JSON.t>): blockSelection => {
     }
   | None => None
   }
+  {hash, miner}
+}
+
+let decodeBlockSelection = (block: dict<JSON.t>): blockSelection => {
+  let fields = decodeBlockSelectionFields(block)
+  // Fields-only: a nested exclude has no server-side meaning, so it is dropped.
   let exclude = switch Dict.get(block, "exclude") {
   | Some(value) =>
     switch JSON.Decode.object(value) {
-    | Some(excludeObj) => Some(decodeBlockSelection(excludeObj))
+    | Some(excludeObj) => Some(decodeBlockSelectionFields(excludeObj))
     | None => None
     }
   | None => None
   }
-  {hash, miner, ?exclude}
+  {...fields, ?exclude}
 }
 
 let deserializeUrlState = (jsonString: string): option<urlState> => {
