@@ -1,6 +1,27 @@
 type transactionFilterState = QueryStructure.transactionSelection
 
-let generateEnglishDescription = (filterState: transactionFilterState) => {
+// True when the filter's own fields are empty, ignoring any exclude filter.
+let isEmptyTransactionFields = (filterState: transactionFilterState) => {
+  let {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList} = filterState
+  Array.length(from_->Option.getOr([])) === 0 &&
+  Array.length(to_->Option.getOr([])) === 0 &&
+  Array.length(sighash->Option.getOr([])) === 0 &&
+  Option.isNone(status) &&
+  Array.length(type_->Option.getOr([])) === 0 &&
+  Array.length(contractAddress->Option.getOr([])) === 0 &&
+  Array.length(hash->Option.getOr([])) === 0 &&
+  Array.length(authorizationList->Option.getOr([])) === 0
+}
+
+// Returns the exclude filter only when it actually has conditions.
+let excludeContent = (filterState: transactionFilterState): option<transactionFilterState> =>
+  switch filterState.exclude {
+  | Some(ex) if !isEmptyTransactionFields(ex) => Some(ex)
+  | _ => None
+  }
+
+// Description of the filter's own fields, "" when empty.
+let generateFieldsDescription = (filterState: transactionFilterState) => {
   let {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
@@ -10,127 +31,125 @@ let generateEnglishDescription = (filterState: transactionFilterState) => {
   let hashArray = hash->Option.getOr([])
   let authArray = authorizationList->Option.getOr([])
 
-  let hasAnyFilter =
-    Array.length(fromArray) > 0 ||
-    Array.length(toArray) > 0 ||
-    Array.length(sighashArray) > 0 ||
-    Option.isSome(status) ||
-    Array.length(typeArray) > 0 ||
-    Array.length(contractAddressArray) > 0 ||
-    Array.length(hashArray) > 0 ||
-    Array.length(authArray) > 0
+  let parts = []
 
-  if !hasAnyFilter {
-    "No filters applied - will match all transactions"
-  } else {
-    let parts = []
-
-    // From condition
-    if Array.length(fromArray) > 0 {
-      let fromCondition = if Array.length(fromArray) === 1 {
-        `the sender address is ${Array.getUnsafe(fromArray, 0)}`
-      } else {
-        let fromList = Array.join(fromArray, " OR ")
-        `the sender address is ${fromList}`
-      }
-      parts->Array.push(fromCondition)->ignore
-    }
-
-    // To condition
-    if Array.length(toArray) > 0 {
-      let toCondition = if Array.length(toArray) === 1 {
-        `the recipient address is ${Array.getUnsafe(toArray, 0)}`
-      } else {
-        let toList = Array.join(toArray, " OR ")
-        `the recipient address is ${toList}`
-      }
-      parts->Array.push(toCondition)->ignore
-    }
-
-    // Sighash condition
-    if Array.length(sighashArray) > 0 {
-      let sighashCondition = if Array.length(sighashArray) === 1 {
-        `the function signature is ${Array.getUnsafe(sighashArray, 0)}`
-      } else {
-        let sighashList = Array.join(sighashArray, " OR ")
-        `the function signature is ${sighashList}`
-      }
-      parts->Array.push(sighashCondition)->ignore
-    }
-
-    // Status condition
-    switch status {
-    | Some(s) =>
-      let statusText = s === 1 ? "successful" : "failed"
-      parts->Array.push(`the transaction is ${statusText}`)->ignore
-    | None => ()
-    }
-
-    // Type condition
-    if Array.length(typeArray) > 0 {
-      let typeCondition = if Array.length(typeArray) === 1 {
-        `the transaction type is ${Int.toString(Array.getUnsafe(typeArray, 0))}`
-      } else {
-        let typeList = switch Array.length(typeArray) {
-        | 0 => ""
-        | 1 => Int.toString(Array.getUnsafe(typeArray, 0))
-        | 2 =>
-          Int.toString(Array.getUnsafe(typeArray, 0)) ++
-          " OR " ++
-          Int.toString(Array.getUnsafe(typeArray, 1))
-        | _ =>
-          let first = Int.toString(Array.getUnsafe(typeArray, 0))
-          let second = Int.toString(Array.getUnsafe(typeArray, 1))
-          let rest = Array.slice(typeArray, ~start=2)
-          let restStr = Array.reduce(rest, "", (acc, k) => acc ++ " OR " ++ Int.toString(k))
-          first ++ " OR " ++ second ++ restStr
-        }
-        `the transaction type is ${typeList}`
-      }
-      parts->Array.push(typeCondition)->ignore
-    }
-
-    // Contract address condition
-    if Array.length(contractAddressArray) > 0 {
-      let contractCondition = if Array.length(contractAddressArray) === 1 {
-        `the contract address is ${Array.getUnsafe(contractAddressArray, 0)}`
-      } else {
-        let contractList = Array.join(contractAddressArray, " OR ")
-        `the contract address is ${contractList}`
-      }
-      parts->Array.push(contractCondition)->ignore
-    }
-
-    // Hash condition
-    if Array.length(hashArray) > 0 {
-      let hashCondition = if Array.length(hashArray) === 1 {
-        `the transaction hash is ${Array.getUnsafe(hashArray, 0)}`
-      } else {
-        let hashList = Array.join(hashArray, " OR ")
-        `the transaction hash is ${hashList}`
-      }
-      parts->Array.push(hashCondition)->ignore
-    }
-
-    // Authorization list condition
-    if Array.length(authArray) > 0 {
-      let authCondition = if Array.length(authArray) === 1 {
-        `the authorization list includes ${Int.toString(Array.length(authArray))} authorization`
-      } else {
-        `the authorization list includes ${Int.toString(Array.length(authArray))} authorizations`
-      }
-      parts->Array.push(authCondition)->ignore
-    }
-
-    if Array.length(parts) > 0 {
-      `Match transactions where: ${Array.join(parts, " AND ")}`
+  // From condition
+  if Array.length(fromArray) > 0 {
+    let fromCondition = if Array.length(fromArray) === 1 {
+      `the sender address is ${Array.getUnsafe(fromArray, 0)}`
     } else {
+      let fromList = Array.join(fromArray, " OR ")
+      `the sender address is ${fromList}`
+    }
+    parts->Array.push(fromCondition)->ignore
+  }
+
+  // To condition
+  if Array.length(toArray) > 0 {
+    let toCondition = if Array.length(toArray) === 1 {
+      `the recipient address is ${Array.getUnsafe(toArray, 0)}`
+    } else {
+      let toList = Array.join(toArray, " OR ")
+      `the recipient address is ${toList}`
+    }
+    parts->Array.push(toCondition)->ignore
+  }
+
+  // Sighash condition
+  if Array.length(sighashArray) > 0 {
+    let sighashCondition = if Array.length(sighashArray) === 1 {
+      `the function signature is ${Array.getUnsafe(sighashArray, 0)}`
+    } else {
+      let sighashList = Array.join(sighashArray, " OR ")
+      `the function signature is ${sighashList}`
+    }
+    parts->Array.push(sighashCondition)->ignore
+  }
+
+  // Status condition
+  switch status {
+  | Some(s) =>
+    let statusText = s === 1 ? "successful" : "failed"
+    parts->Array.push(`the transaction is ${statusText}`)->ignore
+  | None => ()
+  }
+
+  // Type condition
+  if Array.length(typeArray) > 0 {
+    let typeCondition = if Array.length(typeArray) === 1 {
+      `the transaction type is ${Int.toString(Array.getUnsafe(typeArray, 0))}`
+    } else {
+      let typeList = switch Array.length(typeArray) {
+      | 0 => ""
+      | 1 => Int.toString(Array.getUnsafe(typeArray, 0))
+      | 2 =>
+        Int.toString(Array.getUnsafe(typeArray, 0)) ++
+        " OR " ++
+        Int.toString(Array.getUnsafe(typeArray, 1))
+      | _ =>
+        let first = Int.toString(Array.getUnsafe(typeArray, 0))
+        let second = Int.toString(Array.getUnsafe(typeArray, 1))
+        let rest = Array.slice(typeArray, ~start=2)
+        let restStr = Array.reduce(rest, "", (acc, k) => acc ++ " OR " ++ Int.toString(k))
+        first ++ " OR " ++ second ++ restStr
+      }
+      `the transaction type is ${typeList}`
+    }
+    parts->Array.push(typeCondition)->ignore
+  }
+
+  // Contract address condition
+  if Array.length(contractAddressArray) > 0 {
+    let contractCondition = if Array.length(contractAddressArray) === 1 {
+      `the contract address is ${Array.getUnsafe(contractAddressArray, 0)}`
+    } else {
+      let contractList = Array.join(contractAddressArray, " OR ")
+      `the contract address is ${contractList}`
+    }
+    parts->Array.push(contractCondition)->ignore
+  }
+
+  // Hash condition
+  if Array.length(hashArray) > 0 {
+    let hashCondition = if Array.length(hashArray) === 1 {
+      `the transaction hash is ${Array.getUnsafe(hashArray, 0)}`
+    } else {
+      let hashList = Array.join(hashArray, " OR ")
+      `the transaction hash is ${hashList}`
+    }
+    parts->Array.push(hashCondition)->ignore
+  }
+
+  // Authorization list condition
+  if Array.length(authArray) > 0 {
+    let authCondition = if Array.length(authArray) === 1 {
+      `the authorization list includes ${Int.toString(Array.length(authArray))} authorization`
+    } else {
+      `the authorization list includes ${Int.toString(Array.length(authArray))} authorizations`
+    }
+    parts->Array.push(authCondition)->ignore
+  }
+
+  Array.join(parts, " AND ")
+}
+
+let generateEnglishDescription = (filterState: transactionFilterState) => {
+  let include_ = generateFieldsDescription(filterState)
+  switch excludeContent(filterState) {
+  | Some(ex) =>
+    let exclude = generateFieldsDescription(ex)
+    `Match transactions where: ${BooleanLogicFormat.composeDescriptionWithNot(~include_, ~exclude)}`
+  | None =>
+    if include_ === "" {
       "No filters applied - will match all transactions"
+    } else {
+      `Match transactions where: ${include_}`
     }
   }
 }
 
-let generateBooleanHierarchy = (filterState: transactionFilterState) => {
+// Hierarchy of the filter's own fields, ignoring any exclude filter.
+let generateFieldsHierarchy = (filterState: transactionFilterState) => {
   let {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList} = filterState
   let fromArray = from_->Option.getOr([])
   let toArray = to_->Option.getOr([])
@@ -404,5 +423,19 @@ let generateBooleanHierarchy = (filterState: transactionFilterState) => {
     }
 
     Array.join(lines, "\n")
+  }
+}
+
+let generateBooleanHierarchy = (filterState: transactionFilterState) => {
+  switch excludeContent(filterState) {
+  | None => generateFieldsHierarchy(filterState)
+  | Some(ex) =>
+    let includeTree = isEmptyTransactionFields(filterState)
+      ? None
+      : Some(generateFieldsHierarchy(filterState))
+    BooleanLogicFormat.composeHierarchyWithNot(
+      ~includeTree,
+      ~excludeTree=generateFieldsHierarchy(ex),
+    )
   }
 }

@@ -2,6 +2,471 @@ open QueryStructure
 
 type traceFilterState = QueryStructure.traceSelection
 
+let emptyTraceFields: traceFilterState = {
+  from_: None,
+  to_: None,
+  address: None,
+  callType: None,
+  rewardType: None,
+  type_: None,
+  sighash: None,
+}
+
+// Editor for a trace filter's fields. Used for the filter itself and, bound to
+// `filterState.exclude`, for its exclusions.
+module FilterFields = {
+  @react.component
+  let make = (~filterState: traceFilterState, ~onFilterChange: traceFilterState => unit) => {
+    let (newFrom, setNewFrom) = React.useState(() => "")
+    let (newTo, setNewTo) = React.useState(() => "")
+    let (newAddress, setNewAddress) = React.useState(() => "")
+    let (newCallType, setNewCallType) = React.useState(() => "")
+    let (newRewardType, setNewRewardType) = React.useState(() => "")
+    let (newType, setNewType) = React.useState(() => "")
+    let (newSighash, setNewSighash) = React.useState(() => "")
+
+    let addFrom = () => {
+      if newFrom !== "" && newFrom->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          from_: Some(Array.concat(filterState.from_->Option.getOr([]), [newFrom])),
+        })
+        setNewFrom(_ => "")
+      }
+    }
+
+    let removeFrom = index => {
+      let currentArray = filterState.from_->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        from_: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addTo = () => {
+      if newTo !== "" && newTo->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          to_: Some(Array.concat(filterState.to_->Option.getOr([]), [newTo])),
+        })
+        setNewTo(_ => "")
+      }
+    }
+
+    let removeTo = index => {
+      let currentArray = filterState.to_->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        to_: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addAddress = () => {
+      if newAddress !== "" && newAddress->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          address: Some(Array.concat(filterState.address->Option.getOr([]), [newAddress])),
+        })
+        setNewAddress(_ => "")
+      }
+    }
+
+    let removeAddress = index => {
+      let currentArray = filterState.address->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        address: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addCallType = () => {
+      if newCallType !== "" {
+        onFilterChange({
+          ...filterState,
+          callType: Some(Array.concat(filterState.callType->Option.getOr([]), [newCallType])),
+        })
+        setNewCallType(_ => "")
+      }
+    }
+
+    let removeCallType = index => {
+      let currentArray = filterState.callType->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        callType: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addRewardType = () => {
+      if newRewardType !== "" {
+        onFilterChange({
+          ...filterState,
+          rewardType: Some(Array.concat(filterState.rewardType->Option.getOr([]), [newRewardType])),
+        })
+        setNewRewardType(_ => "")
+      }
+    }
+
+    let removeRewardType = index => {
+      let currentArray = filterState.rewardType->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        rewardType: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addType = () => {
+      if newType !== "" {
+        onFilterChange({
+          ...filterState,
+          type_: Some(Array.concat(filterState.type_->Option.getOr([]), [newType])),
+        })
+        setNewType(_ => "")
+      }
+    }
+
+    let removeType = index => {
+      let currentArray = filterState.type_->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        type_: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addSighash = () => {
+      if newSighash !== "" && newSighash->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          sighash: Some(Array.concat(filterState.sighash->Option.getOr([]), [newSighash])),
+        })
+        setNewSighash(_ => "")
+      }
+    }
+
+    let removeSighash = index => {
+      let currentArray = filterState.sighash->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        sighash: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    <>
+      // From addresses
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"From Addresses"->React.string}
+        </label>
+        <div className="flex gap-2 mb-2">
+          <input
+            type_="text"
+            value={newFrom}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewFrom(_ => target["value"])
+            }}
+            placeholder="0x..."
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+          <button
+            onClick={_ => addFrom()}
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            {"Add"->React.string}
+          </button>
+        </div>
+        {Array.mapWithIndex(filterState.from_->Option.getOr([]), (address, index) =>
+          <div
+            key={Int.toString(index)}
+            className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
+          >
+            <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
+            <button onClick={_ => removeFrom(index)} className="text-red-400 hover:text-red-600">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        )->React.array}
+      </div>
+
+      // To addresses
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"To Addresses"->React.string}
+        </label>
+        <div className="flex gap-2 mb-2">
+          <input
+            type_="text"
+            value={newTo}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewTo(_ => target["value"])
+            }}
+            placeholder="0x..."
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+          <button
+            onClick={_ => addTo()}
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            {"Add"->React.string}
+          </button>
+        </div>
+        {Array.mapWithIndex(filterState.to_->Option.getOr([]), (address, index) =>
+          <div
+            key={Int.toString(index)}
+            className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
+          >
+            <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
+            <button onClick={_ => removeTo(index)} className="text-red-400 hover:text-red-600">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        )->React.array}
+      </div>
+
+      // Addresses
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Addresses"->React.string}
+        </label>
+        <div className="flex gap-2 mb-2">
+          <input
+            type_="text"
+            value={newAddress}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewAddress(_ => target["value"])
+            }}
+            placeholder="0x..."
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+          <button
+            onClick={_ => addAddress()}
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            {"Add"->React.string}
+          </button>
+        </div>
+        {Array.mapWithIndex(filterState.address->Option.getOr([]), (address, index) =>
+          <div
+            key={Int.toString(index)}
+            className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
+          >
+            <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
+            <button onClick={_ => removeAddress(index)} className="text-red-400 hover:text-red-600">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        )->React.array}
+      </div>
+
+      // Call types
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Call Types"->React.string}
+        </label>
+        <div className="flex gap-2 mb-2">
+          <input
+            type_="text"
+            value={newCallType}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewCallType(_ => target["value"])
+            }}
+            placeholder="call, create, suicide..."
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+          <button
+            onClick={_ => addCallType()}
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            {"Add"->React.string}
+          </button>
+        </div>
+        {Array.mapWithIndex(filterState.callType->Option.getOr([]), (callType, index) =>
+          <div
+            key={Int.toString(index)}
+            className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
+          >
+            <span className="text-sm text-gray-700"> {callType->React.string} </span>
+            <button
+              onClick={_ => removeCallType(index)} className="text-red-400 hover:text-red-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        )->React.array}
+      </div>
+
+      // Reward types
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Reward Types"->React.string}
+        </label>
+        <div className="flex gap-2 mb-2">
+          <input
+            type_="text"
+            value={newRewardType}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewRewardType(_ => target["value"])
+            }}
+            placeholder="block, uncle..."
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+          <button
+            onClick={_ => addRewardType()}
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            {"Add"->React.string}
+          </button>
+        </div>
+        {Array.mapWithIndex(filterState.rewardType->Option.getOr([]), (rewardType, index) =>
+          <div
+            key={Int.toString(index)}
+            className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
+          >
+            <span className="text-sm text-gray-700"> {rewardType->React.string} </span>
+            <button
+              onClick={_ => removeRewardType(index)} className="text-red-400 hover:text-red-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        )->React.array}
+      </div>
+
+      // Types
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Types"->React.string}
+        </label>
+        <div className="flex gap-2 mb-2">
+          <input
+            type_="text"
+            value={newType}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewType(_ => target["value"])
+            }}
+            placeholder="call, create, suicide, reward..."
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+          <button
+            onClick={_ => addType()}
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            {"Add"->React.string}
+          </button>
+        </div>
+        {Array.mapWithIndex(filterState.type_->Option.getOr([]), (t, index) =>
+          <div
+            key={Int.toString(index)}
+            className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
+          >
+            <span className="text-sm text-gray-700"> {t->React.string} </span>
+            <button onClick={_ => removeType(index)} className="text-red-400 hover:text-red-600">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        )->React.array}
+      </div>
+
+      // Sighash
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Function Signatures"->React.string}
+        </label>
+        <div className="flex gap-2 mb-2">
+          <input
+            type_="text"
+            value={newSighash}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewSighash(_ => target["value"])
+            }}
+            placeholder="0x..."
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+          <button
+            onClick={_ => addSighash()}
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            {"Add"->React.string}
+          </button>
+        </div>
+        {Array.mapWithIndex(filterState.sighash->Option.getOr([]), (sighash, index) =>
+          <div
+            key={Int.toString(index)}
+            className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
+          >
+            <span className="text-sm text-gray-700 font-mono"> {sighash->React.string} </span>
+            <button onClick={_ => removeSighash(index)} className="text-red-400 hover:text-red-600">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        )->React.array}
+      </div>
+    </>
+  }
+}
+
 @react.component
 let make = (
   ~filterState: traceFilterState,
@@ -11,53 +476,25 @@ let make = (
   ~isExpanded: bool,
   ~onToggleExpand,
 ) => {
-  let (newFrom, setNewFrom) = React.useState(() => "")
-  let (newTo, setNewTo) = React.useState(() => "")
-  let (newAddress, setNewAddress) = React.useState(() => "")
-  let (newCallType, setNewCallType) = React.useState(() => "")
-  let (newRewardType, setNewRewardType) = React.useState(() => "")
-  let (newType, setNewType) = React.useState(() => "")
-  let (newSighash, setNewSighash) = React.useState(() => "")
-
   // Example filter states
   let callExample: traceFilterState = {
-    from_: None,
-    to_: None,
-    address: None,
+    ...emptyTraceFields,
     callType: Some(["call"]),
-    rewardType: None,
-    type_: None,
-    sighash: None,
   }
 
   let createExample: traceFilterState = {
-    from_: None,
-    to_: None,
-    address: None,
+    ...emptyTraceFields,
     callType: Some(["create"]),
-    rewardType: None,
-    type_: None,
-    sighash: None,
   }
 
   let suicideExample: traceFilterState = {
-    from_: None,
-    to_: None,
-    address: None,
+    ...emptyTraceFields,
     callType: Some(["suicide"]),
-    rewardType: None,
-    type_: None,
-    sighash: None,
   }
 
   let rewardExample: traceFilterState = {
-    from_: None,
-    to_: None,
-    address: None,
-    callType: None,
+    ...emptyTraceFields,
     rewardType: Some(["block"]),
-    type_: None,
-    sighash: None,
   }
 
   let setCallExample = () => {
@@ -76,138 +513,15 @@ let make = (
     onFilterChange(rewardExample)
   }
 
-  let addFrom = () => {
-    if newFrom !== "" && newFrom->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        from_: Some(Array.concat(filterState.from_->Option.getOr([]), [newFrom])),
-      })
-      setNewFrom(_ => "")
-    }
+  let onExcludeChange = (newExclude: traceFilterState) => {
+    // Selections carry a single exclude level, so never persist a nested one
+    let exclude = TraceBooleanLogicGenerator.isEmptyTraceFields(newExclude)
+      ? None
+      : Some({...newExclude, exclude: ?None})
+    onFilterChange({...filterState, ?exclude})
   }
 
-  let removeFrom = index => {
-    let currentArray = filterState.from_->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      from_: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addTo = () => {
-    if newTo !== "" && newTo->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        to_: Some(Array.concat(filterState.to_->Option.getOr([]), [newTo])),
-      })
-      setNewTo(_ => "")
-    }
-  }
-
-  let removeTo = index => {
-    let currentArray = filterState.to_->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      to_: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addAddress = () => {
-    if newAddress !== "" && newAddress->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        address: Some(Array.concat(filterState.address->Option.getOr([]), [newAddress])),
-      })
-      setNewAddress(_ => "")
-    }
-  }
-
-  let removeAddress = index => {
-    let currentArray = filterState.address->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      address: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addCallType = () => {
-    if newCallType !== "" {
-      onFilterChange({
-        ...filterState,
-        callType: Some(Array.concat(filterState.callType->Option.getOr([]), [newCallType])),
-      })
-      setNewCallType(_ => "")
-    }
-  }
-
-  let removeCallType = index => {
-    let currentArray = filterState.callType->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      callType: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addRewardType = () => {
-    if newRewardType !== "" {
-      onFilterChange({
-        ...filterState,
-        rewardType: Some(Array.concat(filterState.rewardType->Option.getOr([]), [newRewardType])),
-      })
-      setNewRewardType(_ => "")
-    }
-  }
-
-  let removeRewardType = index => {
-    let currentArray = filterState.rewardType->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      rewardType: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addType = () => {
-    if newType !== "" {
-      onFilterChange({
-        ...filterState,
-        type_: Some(Array.concat(filterState.type_->Option.getOr([]), [newType])),
-      })
-      setNewType(_ => "")
-    }
-  }
-
-  let removeType = index => {
-    let currentArray = filterState.type_->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      type_: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addSighash = () => {
-    if newSighash !== "" && newSighash->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        sighash: Some(Array.concat(filterState.sighash->Option.getOr([]), [newSighash])),
-      })
-      setNewSighash(_ => "")
-    }
-  }
-
-  let removeSighash = index => {
-    let currentArray = filterState.sighash->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      sighash: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
+  let hasExclusions = TraceBooleanLogicGenerator.excludeContent(filterState)->Option.isSome
 
   let generateEnglishDescription = () => {
     TraceBooleanLogicGenerator.generateEnglishDescription(filterState)
@@ -302,318 +616,16 @@ let make = (
             </div>
           </div>
 
-          // From addresses
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"From Addresses"->React.string}
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type_="text"
-                value={newFrom}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewFrom(_ => target["value"])
-                }}
-                placeholder="0x..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-              <button
-                onClick={_ => addFrom()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                {"Add"->React.string}
-              </button>
-            </div>
-            {Array.mapWithIndex(filterState.from_->Option.getOr([]), (address, index) =>
-              <div
-                key={address}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
-                <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
-                <button
-                  onClick={_ => removeFrom(index)} className="text-red-400 hover:text-red-600"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )->React.array}
-          </div>
+          <FilterFields filterState onFilterChange />
 
-          // To addresses
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"To Addresses"->React.string}
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type_="text"
-                value={newTo}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewTo(_ => target["value"])
-                }}
-                placeholder="0x..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          <ExcludeSection entityNamePlural="Traces" hasExclusions>
+            <div className="space-y-6">
+              <FilterFields
+                filterState={filterState.exclude->Option.getOr(emptyTraceFields)}
+                onFilterChange={onExcludeChange}
               />
-              <button
-                onClick={_ => addTo()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                {"Add"->React.string}
-              </button>
             </div>
-            {Array.mapWithIndex(filterState.to_->Option.getOr([]), (address, index) =>
-              <div
-                key={address}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
-                <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
-                <button onClick={_ => removeTo(index)} className="text-red-400 hover:text-red-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )->React.array}
-          </div>
-
-          // Addresses
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Addresses"->React.string}
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type_="text"
-                value={newAddress}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewAddress(_ => target["value"])
-                }}
-                placeholder="0x..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-              <button
-                onClick={_ => addAddress()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                {"Add"->React.string}
-              </button>
-            </div>
-            {Array.mapWithIndex(filterState.address->Option.getOr([]), (address, index) =>
-              <div
-                key={address}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
-                <span className="text-sm text-gray-700 font-mono"> {address->React.string} </span>
-                <button
-                  onClick={_ => removeAddress(index)} className="text-red-400 hover:text-red-600"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )->React.array}
-          </div>
-
-          // Call types
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Call Types"->React.string}
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type_="text"
-                value={newCallType}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewCallType(_ => target["value"])
-                }}
-                placeholder="call, create, suicide..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-              <button
-                onClick={_ => addCallType()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                {"Add"->React.string}
-              </button>
-            </div>
-            {Array.mapWithIndex(filterState.callType->Option.getOr([]), (callType, index) =>
-              <div
-                key={callType}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
-                <span className="text-sm text-gray-700"> {callType->React.string} </span>
-                <button
-                  onClick={_ => removeCallType(index)} className="text-red-400 hover:text-red-600"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )->React.array}
-          </div>
-
-          // Reward types
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Reward Types"->React.string}
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type_="text"
-                value={newRewardType}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewRewardType(_ => target["value"])
-                }}
-                placeholder="block, uncle..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-              <button
-                onClick={_ => addRewardType()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                {"Add"->React.string}
-              </button>
-            </div>
-            {Array.mapWithIndex(filterState.rewardType->Option.getOr([]), (rewardType, index) =>
-              <div
-                key={rewardType}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
-                <span className="text-sm text-gray-700"> {rewardType->React.string} </span>
-                <button
-                  onClick={_ => removeRewardType(index)} className="text-red-400 hover:text-red-600"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )->React.array}
-          </div>
-
-          // Types
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Types"->React.string}
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type_="text"
-                value={newType}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewType(_ => target["value"])
-                }}
-                placeholder="call, create, suicide, reward..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-              <button
-                onClick={_ => addType()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                {"Add"->React.string}
-              </button>
-            </div>
-            {Array.mapWithIndex(filterState.type_->Option.getOr([]), (t, index) =>
-              <div
-                key={t}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
-                <span className="text-sm text-gray-700"> {t->React.string} </span>
-                <button
-                  onClick={_ => removeType(index)} className="text-red-400 hover:text-red-600"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )->React.array}
-          </div>
-
-          // Sighash
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Function Signatures"->React.string}
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type_="text"
-                value={newSighash}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewSighash(_ => target["value"])
-                }}
-                placeholder="0x..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-              <button
-                onClick={_ => addSighash()}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                {"Add"->React.string}
-              </button>
-            </div>
-            {Array.mapWithIndex(filterState.sighash->Option.getOr([]), (sighash, index) =>
-              <div
-                key={sighash}
-                className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 mb-1"
-              >
-                <span className="text-sm text-gray-700 font-mono"> {sighash->React.string} </span>
-                <button
-                  onClick={_ => removeSighash(index)} className="text-red-400 hover:text-red-600"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )->React.array}
-          </div>
+          </ExcludeSection>
         </div>
       : React.null}
   </div>

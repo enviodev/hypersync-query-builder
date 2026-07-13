@@ -15,6 +15,7 @@ Live at [builder.hypersync.xyz](https://builder.hypersync.xyz).
 - **Visual query building**: Construct HyperSync queries through a UI instead of writing JSON by hand
 - **Multi-chain support**: Select from all networks supported by HyperSync
 - **Log, transaction, and block filtering**: Configure filters for any combination of data types
+- **Exclude filters**: Add per-filter exclusions (e.g. all Transfer events except from certain addresses), explained in plain English and in the boolean logic view
 - **Field selection**: Choose exactly which fields to return in your queries
 - **Query export**: Generate ready-to-use cURL commands and JSON queries to copy into your code
 - **Real-time execution**: Run queries directly from the UI and inspect the response

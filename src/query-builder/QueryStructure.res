@@ -1,13 +1,19 @@
 // Selection types
+// Each selection can carry an optional `exclude` filter with the same shape as the
+// selection itself: a row matches when it matches the selection's own fields AND
+// does not match the exclude filter. The nested filter never carries its own
+// exclude. Mirrors `Selection<T>` in hypersync-net-types.
 
-type blockSelection = {
+type rec blockSelection = {
   hash: option<array<string>>,
   miner: option<array<string>>,
+  exclude?: blockSelection,
 }
 
-type logSelection = {
+type rec logSelection = {
   address: option<array<string>>,
   topics: option<array<array<string>>>,
+  exclude?: logSelection,
 }
 
 type authorizationSelection = {
@@ -15,7 +21,7 @@ type authorizationSelection = {
   address: option<array<string>>,
 }
 
-type transactionSelection = {
+type rec transactionSelection = {
   from_: option<array<string>>,
   to_: option<array<string>>,
   sighash: option<array<string>>,
@@ -24,9 +30,10 @@ type transactionSelection = {
   contractAddress: option<array<string>>,
   hash: option<array<string>>,
   authorizationList: option<array<authorizationSelection>>,
+  exclude?: transactionSelection,
 }
 
-type traceSelection = {
+type rec traceSelection = {
   from_: option<array<string>>,
   to_: option<array<string>>,
   address: option<array<string>>,
@@ -34,6 +41,7 @@ type traceSelection = {
   rewardType: option<array<string>>,
   type_: option<array<string>>,
   sighash: option<array<string>>,
+  exclude?: traceSelection,
 }
 
 // Field selection enums

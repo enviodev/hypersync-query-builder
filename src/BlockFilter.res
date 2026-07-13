@@ -2,6 +2,149 @@ open QueryStructure
 
 type blockFilterState = QueryStructure.blockSelection
 
+let emptyBlockFields: blockFilterState = {hash: None, miner: None}
+
+// Editor for a block filter's fields. Used for the filter itself and, bound to
+// `filterState.exclude`, for its exclusions.
+module FilterFields = {
+  @react.component
+  let make = (~filterState: blockFilterState, ~onFilterChange: blockFilterState => unit) => {
+    let (newHash, setNewHash) = React.useState(() => "")
+    let (newMiner, setNewMiner) = React.useState(() => "")
+
+    let addHash = () => {
+      if newHash !== "" && newHash->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          hash: Some(Array.concat(filterState.hash->Option.getOr([]), [newHash])),
+        })
+        setNewHash(_ => "")
+      }
+    }
+
+    let removeHash = index => {
+      let currentArray = filterState.hash->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        hash: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    let addMiner = () => {
+      if newMiner !== "" && newMiner->String.startsWith("0x") {
+        onFilterChange({
+          ...filterState,
+          miner: Some(Array.concat(filterState.miner->Option.getOr([]), [newMiner])),
+        })
+        setNewMiner(_ => "")
+      }
+    }
+
+    let removeMiner = index => {
+      let currentArray = filterState.miner->Option.getOr([])
+      let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
+      onFilterChange({
+        ...filterState,
+        miner: Array.length(newArray) > 0 ? Some(newArray) : None,
+      })
+    }
+
+    <>
+      // Block Hashes
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Block Hashes"->React.string}
+        </label>
+        <div className="flex space-x-2 mb-3">
+          <input
+            type_="text"
+            value={newHash}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewHash(_ => target["value"])
+            }}
+            placeholder="0x..."
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            onClick={_ => addHash()}
+            disabled={String.length(newHash) == 0 || !(newHash->String.startsWith("0x"))}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {(
+              Array.length(filterState.hash->Option.getOr([])) > 0
+                ? "Add (via OR) Hash"
+                : "Add Hash"
+            )->React.string}
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Array.mapWithIndex(filterState.hash->Option.getOr([]), (hash, index) =>
+            <div
+              key={Int.toString(index)}
+              className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+            >
+              <span className="text-sm font-mono text-gray-800"> {hash->React.string} </span>
+              <button
+                onClick={_ => removeHash(index)} className="text-red-600 hover:text-red-800 text-sm"
+              >
+                {"Remove"->React.string}
+              </button>
+            </div>
+          )->React.array}
+        </div>
+      </div>
+
+      // Miner Addresses
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {"Miner Addresses"->React.string}
+        </label>
+        <div className="flex space-x-2 mb-3">
+          <input
+            type_="text"
+            value={newMiner}
+            onChange={e => {
+              let target = ReactEvent.Form.target(e)
+              setNewMiner(_ => target["value"])
+            }}
+            placeholder="0x..."
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            onClick={_ => addMiner()}
+            disabled={String.length(newMiner) == 0 || !(newMiner->String.startsWith("0x"))}
+            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {(
+              Array.length(filterState.miner->Option.getOr([])) > 0
+                ? "Add (via OR) Miner"
+                : "Add Miner"
+            )->React.string}
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Array.mapWithIndex(filterState.miner->Option.getOr([]), (miner, index) =>
+            <div
+              key={Int.toString(index)}
+              className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+            >
+              <span className="text-sm font-mono text-gray-800"> {miner->React.string} </span>
+              <button
+                onClick={_ => removeMiner(index)}
+                className="text-red-600 hover:text-red-800 text-sm"
+              >
+                {"Remove"->React.string}
+              </button>
+            </div>
+          )->React.array}
+        </div>
+      </div>
+    </>
+  }
+}
+
 @react.component
 let make = (
   ~filterState: blockFilterState,
@@ -11,9 +154,6 @@ let make = (
   ~isExpanded: bool,
   ~onToggleExpand,
 ) => {
-  let (newHash, setNewHash) = React.useState(() => "")
-  let (newMiner, setNewMiner) = React.useState(() => "")
-
   let titanBuilderExample: blockFilterState = {
     hash: None,
     miner: Some(["0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97"]),
@@ -23,62 +163,25 @@ let make = (
     onFilterChange(titanBuilderExample)
   }
 
-  let addHash = () => {
-    if newHash !== "" && newHash->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        hash: Some(Array.concat(filterState.hash->Option.getOr([]), [newHash])),
-      })
-      setNewHash(_ => "")
-    }
-  }
-
-  let removeHash = index => {
-    let currentArray = filterState.hash->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      hash: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let addMiner = () => {
-    if newMiner !== "" && newMiner->String.startsWith("0x") {
-      onFilterChange({
-        ...filterState,
-        miner: Some(Array.concat(filterState.miner->Option.getOr([]), [newMiner])),
-      })
-      setNewMiner(_ => "")
-    }
-  }
-
-  let removeMiner = index => {
-    let currentArray = filterState.miner->Option.getOr([])
-    let newArray = Belt.Array.keepWithIndex(currentArray, (_, i) => i !== index)
-    onFilterChange({
-      ...filterState,
-      miner: Array.length(newArray) > 0 ? Some(newArray) : None,
-    })
-  }
-
-  let _blockSelectionToStruct = (): option<blockSelection> => {
-    Some(filterState)
+  let onExcludeChange = (newExclude: blockFilterState) => {
+    // Selections carry a single exclude level, so never persist a nested one
+    let exclude = BlockBooleanLogicGenerator.isEmptyBlockFields(newExclude)
+      ? None
+      : Some({...newExclude, exclude: ?None})
+    onFilterChange({...filterState, ?exclude})
   }
 
   let generateEnglishDescription = () => {
-    BlockBooleanLogicGenerator.generateEnglishDescription(
-      (filterState :> BlockBooleanLogicGenerator.blockFilterState),
-    )
+    BlockBooleanLogicGenerator.generateEnglishDescription(filterState)
   }
 
   let generateBooleanHierarchy = () => {
-    BlockBooleanLogicGenerator.generateBooleanHierarchy(
-      (filterState :> BlockBooleanLogicGenerator.blockFilterState),
-    )
+    BlockBooleanLogicGenerator.generateBooleanHierarchy(filterState)
   }
 
-  let generateCodeBlock = () => {
-    let {hash, miner} = filterState
+  // Pretty-printed JSON parts for a filter's own fields, indented by two spaces
+  let generateFieldParts = (state: blockFilterState) => {
+    let {hash, miner} = state
 
     let hashStr = switch hash {
     | Some(hashArray) if Array.length(hashArray) > 0 => {
@@ -96,7 +199,22 @@ let make = (
     | _ => ""
     }
 
-    let parts = [hashStr, minerStr]->Array.filter(str => str !== "")
+    [hashStr, minerStr]->Array.filter(str => str !== "")
+  }
+
+  let generateCodeBlock = () => {
+    let parts = generateFieldParts(filterState)
+    let parts = switch BlockBooleanLogicGenerator.excludeContent(filterState) {
+    | Some(ex) =>
+      let excludeParts = generateFieldParts(ex)->Array.map(part =>
+        part
+        ->String.split("\n")
+        ->Array.map(line => `  ${line}`)
+        ->Array.join("\n")
+      )
+      Array.concat(parts, [`  "exclude": {\n${Array.join(excludeParts, ",\n")}\n  }`])
+    | None => parts
+    }
     if Array.length(parts) > 0 {
       `{\n${Array.join(parts, ",\n")}\n}`
     } else {
@@ -104,9 +222,8 @@ let make = (
     }
   }
 
-  let hasFilters =
-    Array.length(filterState.hash->Option.getOr([])) > 0 ||
-      Array.length(filterState.miner->Option.getOr([])) > 0
+  let hasExclusions = BlockBooleanLogicGenerator.excludeContent(filterState)->Option.isSome
+  let hasFilters = !BlockBooleanLogicGenerator.isEmptyBlockFields(filterState) || hasExclusions
 
   <div
     className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full"
@@ -171,97 +288,14 @@ let make = (
             </button>
           </div>
 
-          // Block Hashes
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Block Hashes"->React.string}
-            </label>
-            <div className="flex space-x-2 mb-3">
-              <input
-                type_="text"
-                value={newHash}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewHash(_ => target["value"])
-                }}
-                placeholder="0x..."
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <button
-                onClick={_ => addHash()}
-                disabled={String.length(newHash) == 0 || !(newHash->String.startsWith("0x"))}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {(
-                  Array.length(filterState.hash->Option.getOr([])) > 0
-                    ? "Add (via OR) Hash"
-                    : "Add Hash"
-                )->React.string}
-              </button>
-            </div>
-            <div className="space-y-2">
-              {Array.mapWithIndex(filterState.hash->Option.getOr([]), (hash, index) =>
-                <div
-                  key={Int.toString(index)}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
-                >
-                  <span className="text-sm font-mono text-gray-800"> {hash->React.string} </span>
-                  <button
-                    onClick={_ => removeHash(index)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    {"Remove"->React.string}
-                  </button>
-                </div>
-              )->React.array}
-            </div>
-          </div>
+          <FilterFields filterState onFilterChange />
 
-          // Miner Addresses
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {"Miner Addresses"->React.string}
-            </label>
-            <div className="flex space-x-2 mb-3">
-              <input
-                type_="text"
-                value={newMiner}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewMiner(_ => target["value"])
-                }}
-                placeholder="0x..."
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <button
-                onClick={_ => addMiner()}
-                disabled={String.length(newMiner) == 0 || !(newMiner->String.startsWith("0x"))}
-                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {(
-                  Array.length(filterState.miner->Option.getOr([])) > 0
-                    ? "Add (via OR) Miner"
-                    : "Add Miner"
-                )->React.string}
-              </button>
-            </div>
-            <div className="space-y-2">
-              {Array.mapWithIndex(filterState.miner->Option.getOr([]), (miner, index) =>
-                <div
-                  key={Int.toString(index)}
-                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
-                >
-                  <span className="text-sm font-mono text-gray-800"> {miner->React.string} </span>
-                  <button
-                    onClick={_ => removeMiner(index)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    {"Remove"->React.string}
-                  </button>
-                </div>
-              )->React.array}
-            </div>
-          </div>
+          <ExcludeSection entityNamePlural="Blocks" hasExclusions>
+            <FilterFields
+              filterState={filterState.exclude->Option.getOr(emptyBlockFields)}
+              onFilterChange={onExcludeChange}
+            />
+          </ExcludeSection>
 
           // English Description and Boolean Logic
           <div className="mt-6">

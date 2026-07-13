@@ -108,7 +108,7 @@ let make = (
     }
   }
 
-  let serializeLogFilter = (logFilter: logSelection) => {
+  let serializeLogFilterFields = (logFilter: logSelection) => {
     let addressJson = switch logFilter.address {
     | Some(addresses) if Array.length(addresses) > 0 =>
       let addressesStr = Array.map(addresses, addr => `"${addr}"`)->Array.join(", ")
@@ -126,12 +126,24 @@ let make = (
     | _ => ""
     }
 
-    let parts = [addressJson, topicsJson]->Array.filter(part => part !== "")
+    [addressJson, topicsJson]->Array.filter(part => part !== "")
+  }
+
+  let serializeLogFilter = (logFilter: logSelection) => {
+    let parts = serializeLogFilterFields(logFilter)
+    let parts = switch logFilter.exclude {
+    | Some(ex) =>
+      let excludeParts = serializeLogFilterFields(ex)
+      Array.length(excludeParts) > 0
+        ? Array.concat(parts, [`"exclude": {${Array.join(excludeParts, ", ")}}`])
+        : parts
+    | None => parts
+    }
     let content = Array.join(parts, ", ")
     `{${content}}`
   }
 
-  let serializeTransactionFilter = (transactionFilter: transactionSelection) => {
+  let serializeTransactionFilterFields = (transactionFilter: transactionSelection) => {
     let fromJson = switch transactionFilter.from_ {
     | Some(froms) if Array.length(froms) > 0 =>
       let fromsStr = Array.map(froms, addr => `"${addr}"`)->Array.join(", ")
@@ -202,22 +214,33 @@ let make = (
     | _ => None
     }
 
-    let allParts =
-      [
-        fromJson,
-        toJson,
-        sighashJson,
-        statusJson,
-        typeJson,
-        contractAddressJson,
-        hashJson,
-        authorizationListJson,
-      ]->Array.filterMap(x => x)
-    let content = Array.join(allParts, ", ")
+    [
+      fromJson,
+      toJson,
+      sighashJson,
+      statusJson,
+      typeJson,
+      contractAddressJson,
+      hashJson,
+      authorizationListJson,
+    ]->Array.filterMap(x => x)
+  }
+
+  let serializeTransactionFilter = (transactionFilter: transactionSelection) => {
+    let parts = serializeTransactionFilterFields(transactionFilter)
+    let parts = switch transactionFilter.exclude {
+    | Some(ex) =>
+      let excludeParts = serializeTransactionFilterFields(ex)
+      Array.length(excludeParts) > 0
+        ? Array.concat(parts, [`"exclude": {${Array.join(excludeParts, ", ")}}`])
+        : parts
+    | None => parts
+    }
+    let content = Array.join(parts, ", ")
     `{${content}}`
   }
 
-  let serializeBlockFilter = (blockFilter: blockSelection) => {
+  let serializeBlockFilterFields = (blockFilter: blockSelection) => {
     let hashJson = switch blockFilter.hash {
     | Some(hashes) if Array.length(hashes) > 0 =>
       let hashesStr = Array.map(hashes, hash => `"${hash}"`)->Array.join(", ")
@@ -232,12 +255,24 @@ let make = (
     | _ => None
     }
 
-    let allParts = [hashJson, minerJson]->Array.filterMap(x => x)
-    let content = Array.join(allParts, ", ")
+    [hashJson, minerJson]->Array.filterMap(x => x)
+  }
+
+  let serializeBlockFilter = (blockFilter: blockSelection) => {
+    let parts = serializeBlockFilterFields(blockFilter)
+    let parts = switch blockFilter.exclude {
+    | Some(ex) =>
+      let excludeParts = serializeBlockFilterFields(ex)
+      Array.length(excludeParts) > 0
+        ? Array.concat(parts, [`"exclude": {${Array.join(excludeParts, ", ")}}`])
+        : parts
+    | None => parts
+    }
+    let content = Array.join(parts, ", ")
     `{${content}}`
   }
 
-  let serializeTraceFilter = (traceFilter: traceSelection) => {
+  let serializeTraceFilterFields = (traceFilter: traceSelection) => {
     let fromJson = switch traceFilter.from_ {
     | Some(froms) if Array.length(froms) > 0 =>
       let fromsStr = Array.map(froms, addr => `"${addr}"`)->Array.join(", ")
@@ -287,17 +322,28 @@ let make = (
     | _ => None
     }
 
-    let allParts =
-      [
-        fromJson,
-        toJson,
-        addressJson,
-        callTypeJson,
-        rewardTypeJson,
-        typeJson,
-        sighashJson,
-      ]->Array.filterMap(x => x)
-    let content = Array.join(allParts, ", ")
+    [
+      fromJson,
+      toJson,
+      addressJson,
+      callTypeJson,
+      rewardTypeJson,
+      typeJson,
+      sighashJson,
+    ]->Array.filterMap(x => x)
+  }
+
+  let serializeTraceFilter = (traceFilter: traceSelection) => {
+    let parts = serializeTraceFilterFields(traceFilter)
+    let parts = switch traceFilter.exclude {
+    | Some(ex) =>
+      let excludeParts = serializeTraceFilterFields(ex)
+      Array.length(excludeParts) > 0
+        ? Array.concat(parts, [`"exclude": {${Array.join(excludeParts, ", ")}}`])
+        : parts
+    | None => parts
+    }
+    let content = Array.join(parts, ", ")
     `{${content}}`
   }
 

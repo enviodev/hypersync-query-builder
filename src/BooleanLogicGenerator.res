@@ -2,65 +2,42 @@ open QueryStructure
 
 type filterState = QueryStructure.logSelection
 
-// Helper function to check if a filter is empty
-let isEmptyFilter = (filterState: filterState) => {
+// Helper function to check if a log filter's own fields are empty (ignoring exclude)
+let isEmptyLogFields = (filterState: filterState) => {
   let {address, topics} = filterState
   let addressArray = address->Option.getOr([])
   let topicsArray = topics->Option.getOr([])
   Array.length(addressArray) === 0 && Array.length(topicsArray) === 0
 }
 
-// Helper function to check if a transaction filter is empty
-let isEmptyTransactionFilter = (filterState: QueryStructure.transactionSelection) => {
-  let {from_, to_, sighash, status, type_, contractAddress, hash, authorizationList} = filterState
-  let fromArray = from_->Option.getOr([])
-  let toArray = to_->Option.getOr([])
-  let sighashArray = sighash->Option.getOr([])
-  let typeArray = type_->Option.getOr([])
-  let contractAddressArray = contractAddress->Option.getOr([])
-  let hashArray = hash->Option.getOr([])
-  let authArray = authorizationList->Option.getOr([])
+// Returns a log filter's exclude filter only when it actually has conditions
+let logExcludeContent = (filterState: filterState): option<filterState> =>
+  switch filterState.exclude {
+  | Some(ex) if !isEmptyLogFields(ex) => Some(ex)
+  | _ => None
+  }
 
-  Array.length(fromArray) === 0 &&
-  Array.length(toArray) === 0 &&
-  Array.length(sighashArray) === 0 &&
-  Option.isNone(status) &&
-  Array.length(typeArray) === 0 &&
-  Array.length(contractAddressArray) === 0 &&
-  Array.length(hashArray) === 0 &&
-  Array.length(authArray) === 0
-}
+// Helper function to check if a filter is empty
+let isEmptyFilter = (filterState: filterState) =>
+  isEmptyLogFields(filterState) && logExcludeContent(filterState)->Option.isNone
+
+// Helper function to check if a transaction filter is empty
+let isEmptyTransactionFilter = (filterState: QueryStructure.transactionSelection) =>
+  TransactionBooleanLogicGenerator.isEmptyTransactionFields(filterState) &&
+  TransactionBooleanLogicGenerator.excludeContent(filterState)->Option.isNone
 
 // Helper function to check if a block filter is empty
-let isEmptyBlockFilter = (filterState: QueryStructure.blockSelection) => {
-  let {hash, miner} = filterState
-  let hashArray = hash->Option.getOr([])
-  let minerArray = miner->Option.getOr([])
-  Array.length(hashArray) === 0 && Array.length(minerArray) === 0
-}
+let isEmptyBlockFilter = (filterState: QueryStructure.blockSelection) =>
+  BlockBooleanLogicGenerator.isEmptyBlockFields(filterState) &&
+  BlockBooleanLogicGenerator.excludeContent(filterState)->Option.isNone
 
 // Helper function to check if a trace filter is empty
-let isEmptyTraceFilter = (filterState: QueryStructure.traceSelection) => {
-  let {from_, to_, address, callType, rewardType, type_, sighash} = filterState
-  let fromArray = from_->Option.getOr([])
-  let toArray = to_->Option.getOr([])
-  let addressArray = address->Option.getOr([])
-  let callTypeArray = callType->Option.getOr([])
-  let rewardTypeArray = rewardType->Option.getOr([])
-  let typeArray = type_->Option.getOr([])
-  let sighashArray = sighash->Option.getOr([])
+let isEmptyTraceFilter = (filterState: QueryStructure.traceSelection) =>
+  TraceBooleanLogicGenerator.isEmptyTraceFields(filterState) &&
+  TraceBooleanLogicGenerator.excludeContent(filterState)->Option.isNone
 
-  Array.length(fromArray) === 0 &&
-  Array.length(toArray) === 0 &&
-  Array.length(addressArray) === 0 &&
-  Array.length(callTypeArray) === 0 &&
-  Array.length(rewardTypeArray) === 0 &&
-  Array.length(typeArray) === 0 &&
-  Array.length(sighashArray) === 0
-}
-
-// Helper function to generate a clean filter description (without "Match logs where:" prefix)
-let generateFilterDescription = (filterState: filterState) => {
+// Description of a log filter's own fields (ignoring exclude), "" when empty
+let generateLogFieldsDescription = (filterState: filterState) => {
   let {address, topics} = filterState
   let addressArray = address->Option.getOr([])
   let topicsArray = topics->Option.getOr([])
@@ -98,6 +75,19 @@ let generateFilterDescription = (filterState: filterState) => {
   }
 
   Array.join(parts, " AND ")
+}
+
+// Helper function to generate a clean filter description (without "Match logs where:" prefix)
+let generateFilterDescription = (filterState: filterState) => {
+  let include_ = generateLogFieldsDescription(filterState)
+  switch logExcludeContent(filterState) {
+  | Some(ex) =>
+    BooleanLogicFormat.composeDescriptionWithNot(
+      ~include_,
+      ~exclude=generateLogFieldsDescription(ex),
+    )
+  | None => include_
+  }
 }
 
 // Helper function to generate transaction filter description
@@ -276,54 +266,16 @@ let generateMultiTraceFilterDescription = (
 }
 
 let generateEnglishDescription = (filterState: filterState) => {
-  let {address, topics} = filterState
-  let addressArray = address->Option.getOr([])
-  let topicsArray = topics->Option.getOr([])
-
-  if Array.length(addressArray) === 0 && Array.length(topicsArray) === 0 {
+  let description = generateFilterDescription(filterState)
+  if description === "" {
     "No filters applied - will match all logs"
   } else {
-    let parts = []
-
-    // Address condition
-    if Array.length(addressArray) > 0 {
-      let addressCondition = if Array.length(addressArray) === 1 {
-        `the contract address is ${Array.getUnsafe(addressArray, 0)}`
-      } else {
-        let addressList = Array.join(addressArray, " OR ")
-        `the contract address is ${addressList}`
-      }
-      parts->Array.push(addressCondition)->ignore
-    }
-
-    // Topic conditions
-    let topicConditions = []
-    Array.forEachWithIndex(topicsArray, (topicArray, i) => {
-      if Array.length(topicArray) > 0 {
-        let condition = if Array.length(topicArray) === 1 {
-          `topic[${Int.toString(i)}] is ${Array.getUnsafe(topicArray, 0)}`
-        } else {
-          let topicList = Array.join(topicArray, " OR ")
-          `topic[${Int.toString(i)}] is ${topicList}`
-        }
-        topicConditions->Array.push(condition)->ignore
-      }
-    })
-
-    if Array.length(topicConditions) > 0 {
-      let topicCondition = Array.join(topicConditions, " AND ")
-      parts->Array.push(topicCondition)->ignore
-    }
-
-    if Array.length(parts) > 0 {
-      `Match logs where: ${Array.join(parts, " AND ")}`
-    } else {
-      "No filters applied - will match all logs"
-    }
+    `Match logs where: ${description}`
   }
 }
 
-let generateBooleanHierarchy = (filterState: filterState) => {
+// Hierarchy of a log filter's own fields, ignoring any exclude filter
+let generateLogFieldsHierarchy = (filterState: filterState) => {
   let {address, topics} = filterState
 
   let addressArray = address->Option.getOr([])
@@ -438,6 +390,20 @@ let generateBooleanHierarchy = (filterState: filterState) => {
     }
 
     Array.join(lines, "\n")
+  }
+}
+
+let generateBooleanHierarchy = (filterState: filterState) => {
+  switch logExcludeContent(filterState) {
+  | None => generateLogFieldsHierarchy(filterState)
+  | Some(ex) =>
+    let includeTree = isEmptyLogFields(filterState)
+      ? None
+      : Some(generateLogFieldsHierarchy(filterState))
+    BooleanLogicFormat.composeHierarchyWithNot(
+      ~includeTree,
+      ~excludeTree=generateLogFieldsHierarchy(ex),
+    )
   }
 }
 

@@ -1,48 +1,68 @@
 type blockFilterState = QueryStructure.blockSelection
 
-let generateEnglishDescription = (filterState: blockFilterState) => {
+// True when the filter's own fields are empty, ignoring any exclude filter.
+let isEmptyBlockFields = (filterState: blockFilterState) => {
+  let {hash, miner} = filterState
+  Array.length(hash->Option.getOr([])) === 0 && Array.length(miner->Option.getOr([])) === 0
+}
+
+// Returns the exclude filter only when it actually has conditions.
+let excludeContent = (filterState: blockFilterState): option<blockFilterState> =>
+  switch filterState.exclude {
+  | Some(ex) if !isEmptyBlockFields(ex) => Some(ex)
+  | _ => None
+  }
+
+// Description of the filter's own fields, "" when empty.
+let generateFieldsDescription = (filterState: blockFilterState) => {
   let {hash, miner} = filterState
   let hashArray = hash->Option.getOr([])
   let minerArray = miner->Option.getOr([])
 
-  let hasAnyFilter = Array.length(hashArray) > 0 || Array.length(minerArray) > 0
+  let parts = []
 
-  if !hasAnyFilter {
-    "No filters applied - will match all blocks"
-  } else {
-    let parts = []
-
-    // Hash condition
-    if Array.length(hashArray) > 0 {
-      let hashCondition = if Array.length(hashArray) === 1 {
-        `the block hash is ${Array.getUnsafe(hashArray, 0)}`
-      } else {
-        let hashList = Array.join(hashArray, " OR ")
-        `the block hash is ${hashList}`
-      }
-      parts->Array.push(hashCondition)->ignore
-    }
-
-    // Miner condition
-    if Array.length(minerArray) > 0 {
-      let minerCondition = if Array.length(minerArray) === 1 {
-        `the miner address is ${Array.getUnsafe(minerArray, 0)}`
-      } else {
-        let minerList = Array.join(minerArray, " OR ")
-        `the miner address is ${minerList}`
-      }
-      parts->Array.push(minerCondition)->ignore
-    }
-
-    if Array.length(parts) > 0 {
-      `Match blocks where: ${Array.join(parts, " AND ")}`
+  // Hash condition
+  if Array.length(hashArray) > 0 {
+    let hashCondition = if Array.length(hashArray) === 1 {
+      `the block hash is ${Array.getUnsafe(hashArray, 0)}`
     } else {
+      let hashList = Array.join(hashArray, " OR ")
+      `the block hash is ${hashList}`
+    }
+    parts->Array.push(hashCondition)->ignore
+  }
+
+  // Miner condition
+  if Array.length(minerArray) > 0 {
+    let minerCondition = if Array.length(minerArray) === 1 {
+      `the miner address is ${Array.getUnsafe(minerArray, 0)}`
+    } else {
+      let minerList = Array.join(minerArray, " OR ")
+      `the miner address is ${minerList}`
+    }
+    parts->Array.push(minerCondition)->ignore
+  }
+
+  Array.join(parts, " AND ")
+}
+
+let generateEnglishDescription = (filterState: blockFilterState) => {
+  let include_ = generateFieldsDescription(filterState)
+  switch excludeContent(filterState) {
+  | Some(ex) =>
+    let exclude = generateFieldsDescription(ex)
+    `Match blocks where: ${BooleanLogicFormat.composeDescriptionWithNot(~include_, ~exclude)}`
+  | None =>
+    if include_ === "" {
       "No filters applied - will match all blocks"
+    } else {
+      `Match blocks where: ${include_}`
     }
   }
 }
 
-let generateBooleanHierarchy = (filterState: blockFilterState) => {
+// Hierarchy of the filter's own fields, ignoring any exclude filter.
+let generateFieldsHierarchy = (filterState: blockFilterState) => {
   let {hash, miner} = filterState
   let hashArray = hash->Option.getOr([])
   let minerArray = miner->Option.getOr([])
@@ -124,5 +144,19 @@ let generateBooleanHierarchy = (filterState: blockFilterState) => {
     }
 
     Array.join(lines, "\n")
+  }
+}
+
+let generateBooleanHierarchy = (filterState: blockFilterState) => {
+  switch excludeContent(filterState) {
+  | None => generateFieldsHierarchy(filterState)
+  | Some(ex) =>
+    let includeTree = isEmptyBlockFields(filterState)
+      ? None
+      : Some(generateFieldsHierarchy(filterState))
+    BooleanLogicFormat.composeHierarchyWithNot(
+      ~includeTree,
+      ~excludeTree=generateFieldsHierarchy(ex),
+    )
   }
 }
