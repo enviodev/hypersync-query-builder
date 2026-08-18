@@ -8,6 +8,7 @@ let addBtnClass = "px-3 py-2 bg-slate-700 text-white text-xs font-medium rounded
 let chipClass = "flex items-center justify-between bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100"
 
 let isBase58Pubkey = SolanaInstructionFilter.isBase58Pubkey
+let isBase58Signature = SolanaInstructionFilter.isBase58Signature
 
 @react.component
 let make = (
@@ -17,8 +18,8 @@ let make = (
   ~filterIndex: int,
   ~isExpanded: bool,
   ~onToggleExpand: unit => unit,
-  ~selectedTables: array<string>,
-  ~onIncludeTable: string => unit,
+  ~selectedTables: array<joinTable>,
+  ~onIncludeTable: joinTable => unit,
 ) => {
   let (newFeePayer, setNewFeePayer) = React.useState(() => "")
   let (newTransactionId, setNewTransactionId) = React.useState(() => "")
@@ -38,15 +39,8 @@ let make = (
 
   let removeFeePayer = (idx: int) => {
     let cur = filterState.feePayer->Option.getOr([])
-    let next = Belt.Array.keepWithIndex(cur, (_, i) => i !== idx)
+    let next = cur->Array.filterWithIndex((_, i) => i !== idx)
     updateField({...filterState, feePayer: Array.length(next) > 0 ? Some(next) : None})
-  }
-
-  let isBase58Signature = (v: string): bool => {
-    let len = String.length(String.trim(v))
-    len >= 64 &&
-    len <= 90 &&
-    RegExp.test(RegExp.fromString("^[1-9A-HJ-NP-Za-km-z]+$"), String.trim(v))
   }
 
   let addTransactionId = (v: string) => {
@@ -62,13 +56,19 @@ let make = (
 
   let removeTransactionId = (idx: int) => {
     let cur = filterState.transactionId->Option.getOr([])
-    let next = Belt.Array.keepWithIndex(cur, (_, i) => i !== idx)
+    let next = cur->Array.filterWithIndex((_, i) => i !== idx)
     updateField({...filterState, transactionId: Array.length(next) > 0 ? Some(next) : None})
   }
 
-  let addTransactionIndex = (v: string) =>
+  let parseTransactionIndex = (v: string): option<int> =>
     switch Int.fromString(String.trim(v)) {
-    | Some(n) if n >= 0 =>
+    | Some(n) if n >= 0 => Some(n)
+    | _ => None
+    }
+
+  let addTransactionIndex = (v: string) =>
+    switch parseTransactionIndex(v) {
+    | Some(n) =>
       updateField({
         ...filterState,
         transactionIndex: Some(Array.concat(filterState.transactionIndex->Option.getOr([]), [n])),
@@ -79,7 +79,7 @@ let make = (
 
   let removeTransactionIndex = (idx: int) => {
     let cur = filterState.transactionIndex->Option.getOr([])
-    let next = Belt.Array.keepWithIndex(cur, (_, i) => i !== idx)
+    let next = cur->Array.filterWithIndex((_, i) => i !== idx)
     updateField({...filterState, transactionIndex: Array.length(next) > 0 ? Some(next) : None})
   }
 
@@ -287,7 +287,7 @@ let make = (
               />
               <button
                 onClick={_ => addTransactionIndex(newTransactionIndex)}
-                disabled={Option.isNone(Int.fromString(String.trim(newTransactionIndex)))}
+                disabled={Option.isNone(parseTransactionIndex(newTransactionIndex))}
                 className={addBtnClass}
               >
                 {(
@@ -319,10 +319,10 @@ let make = (
 
           <SolanaJoinHints
             tables={[
-              ("instruction_call", "instruction fields"),
-              ("account_activity", "account activity fields"),
-              ("log", "log fields"),
-              ("block", "block fields"),
+              (InstructionCall, "instruction fields"),
+              (AccountActivity, "account activity fields"),
+              (Log, "log fields"),
+              (Block, "block fields"),
             ]}
             selectedTables={selectedTables}
             onIncludeTable={onIncludeTable}

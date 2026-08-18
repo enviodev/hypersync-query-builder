@@ -124,8 +124,39 @@ test("field selection drives the joins, so selectedTables reflects it", () => {
       transaction: defaultTransactionFields,
       instructionCall: defaultInstructionFields,
     }),
-    ["transaction", "instruction_call"],
+    [Transaction, InstructionCall],
   )
+})
+
+test("withTableDefaults gives a table columns and leaves an existing selection alone", () => {
+  let seeded = withTableDefaults(emptyFieldSelection, Transaction)
+  assertEqual(seeded.transaction, defaultTransactionFields)
+  assertEqual(selectedTables(seeded), [Transaction])
+
+  let custom = {...emptyFieldSelection, transaction: [Slot]}
+  assertEqual(withTableDefaults(custom, Transaction).transaction, [Slot])
+})
+
+test("filter values are JSON-escaped, so quotes and backslashes cannot break the body", () => {
+  let nasty = `we"ird\\value` ++ "\n\t"
+  let json = serializeQuery({
+    ...baseQuery,
+    instructionCalls: Some([{...emptyInstructionSelection, executingAccount: Some([nasty])}]),
+  })
+  // The body has to stay parseable, and the value has to survive the round trip.
+  let parsed = JSON.parseOrThrow(json)
+  let roundTripped =
+    parsed
+    ->JSON.Decode.object
+    ->Option.flatMap(d => Dict.get(d, "instruction_calls"))
+    ->Option.flatMap(JSON.Decode.array)
+    ->Option.flatMap(arr => arr->Array.get(0))
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.flatMap(d => Dict.get(d, "executing_account"))
+    ->Option.flatMap(JSON.Decode.array)
+    ->Option.flatMap(arr => arr->Array.get(0))
+    ->Option.flatMap(JSON.Decode.string)
+  assertEqual(roundTripped, Some(nasty))
 })
 
 test("instruction field wire names follow the v0.2.0 renames", () => {

@@ -5,6 +5,25 @@ type activeTab = QueryJson | Results
 type resultsView = Raw | Table
 type rawMode = Plain | Interactive
 
+// A stalled endpoint used to pin the UI in "Executing Query..." forever, so every
+// request carries an abort signal with a timeout.
+let requestTimeoutMs = 120_000
+
+type abortHandle
+type abortSignalT
+let makeAbortHandle: int => abortHandle = %raw(`(ms) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return {
+    signal: controller.signal,
+    clear: () => clearTimeout(timer),
+    aborted: () => controller.signal.aborted,
+  };
+}`)
+let abortSignal: abortHandle => abortSignalT = %raw(`(h) => h.signal`)
+let clearAbortTimer: abortHandle => unit = %raw(`(h) => h.clear()`)
+let didAbort: abortHandle => bool = %raw(`(h) => h.aborted()`)
+
 @react.component
 let make = (
   ~query: query,
@@ -52,6 +71,7 @@ let make = (
     setResponseBytes(_ => None)
     setSelectedDataset(_ => None)
 
+    let abortHandle = makeAbortHandle(requestTimeoutMs)
     try {
       let body = serializeQuery(query)
       let calcByteLength: string => int = %raw(`(s) => new TextEncoder().encode(s).length`)
@@ -68,6 +88,7 @@ let make = (
         "method": "POST",
         "body": Body.string(body),
         "headers": headers,
+        "signal": abortSignal(abortHandle),
       })
       let response = await fetch(queryUrl, requestInit)
       let resultTextRaw = await response->Response.text
@@ -99,8 +120,16 @@ let make = (
         ))
       }
     } catch {
-    | _ => setQueryError(_ => Some("Network error occurred"))
+    | _ =>
+      setQueryError(_ => Some(
+        didAbort(abortHandle)
+          ? `Request aborted after ${Int.toString(
+                requestTimeoutMs / 1000,
+              )}s. Narrow the slot range or the field selection and try again.`
+          : "Network error occurred",
+      ))
     }
+    clearAbortTimer(abortHandle)
     setIsExecuting(_ => false)
   }
 
@@ -276,7 +305,17 @@ let make = (
         const bn = parseFloat(bv ?? '0');
         return an === bn ? 0 : (an < bn ? -1 : 1);
       }
-      return String(av ?? '').localeCompare(String(bv ?? ''));
+      // Integer-like strings (u64 token balances are carried as decimal strings) must
+      // compare numerically, or "9" would sort after "1000000000000000000".
+      const as_ = String(av ?? '');
+      const bs = String(bv ?? '');
+      const isInt = (v) => /^-?\d+$/.test(v.trim());
+      if (isInt(as_) && isInt(bs)) {
+        const ab = BigInt(as_.trim());
+        const bb = BigInt(bs.trim());
+        return ab === bb ? 0 : (ab < bb ? -1 : 1);
+      }
+      return as_.localeCompare(bs);
     };
     arr.sort((a, b) => asc ? cmp(a, b) : -cmp(a, b));
     return arr;

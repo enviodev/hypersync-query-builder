@@ -17,11 +17,10 @@ let make = (
   ~filterIndex: int,
   ~isExpanded: bool,
   ~onToggleExpand: unit => unit,
-  ~selectedTables: array<string>,
-  ~onIncludeTable: string => unit,
+  ~selectedTables: array<joinTable>,
+  ~onIncludeTable: joinTable => unit,
 ) => {
   let (newProgramId, setNewProgramId) = React.useState(() => "")
-  let (newKind, setNewKind) = React.useState(() => "")
 
   let updateField = (newState: filterState) => onFilterChange(newState)
 
@@ -41,20 +40,13 @@ let make = (
     updateField({...filterState, programId: Array.length(next) > 0 ? Some(next) : None})
   }
 
-  let addKind = (v: string) => {
-    let trimmed = String.trim(v)
-    if String.length(trimmed) > 0 {
-      updateField({
-        ...filterState,
-        kind: Some(Array.concat(filterState.kind->Option.getOr([]), [trimmed])),
-      })
-      setNewKind(_ => "")
-    }
-  }
-
-  let removeKind = (idx: int) => {
-    let cur = filterState.kind->Option.getOr([])
-    let next = Belt.Array.keepWithIndex(cur, (_, i) => i !== idx)
+  // kind is a closed, case-sensitive enum on the wire: an unknown value is a hard 400,
+  // so offer the valid values instead of free text.
+  let toggleKind = (kind: string) => {
+    let current = filterState.kind->Option.getOr([])
+    let next = Array.includes(current, kind)
+      ? current->Array.filter(k => k !== kind)
+      : Array.concat(current, [kind])
     updateField({...filterState, kind: Array.length(next) > 0 ? Some(next) : None})
   }
 
@@ -165,58 +157,32 @@ let make = (
           // Kind
           <div className="mb-4">
             <label className={labelClass}> {"Log Kind"->React.string} </label>
-            <p className="text-[11px] text-slate-500 mb-1">
-              {"One of invoke, success, failed, consumed, log, data, other. SQD-ingested and default RPC-ingested ranges only carry log / data / other."->React.string}
-            </p>
-            <div className="flex space-x-2 mb-2">
-              <input
-                type_="text"
-                value={newKind}
-                onChange={e => {
-                  let target = ReactEvent.Form.target(e)
-                  setNewKind(_ => target["value"])
-                }}
-                onKeyDown={e =>
-                  if ReactEvent.Keyboard.key(e) === "Enter" {
-                    ReactEvent.Synthetic.preventDefault(e)
-                    addKind(newKind)
-                  }}
-                placeholder="log | data"
-                className={inputClass}
-              />
-              <button
-                onClick={_ => addKind(newKind)}
-                disabled={String.length(String.trim(newKind)) === 0}
-                className={addBtnClass}
-              >
-                {(
-                  Array.length(filterState.kind->Option.getOr([])) > 0 ? "Add (OR)" : "Add"
-                )->React.string}
-              </button>
-            </div>
-            <div className="space-y-1">
-              {filterState.kind
-              ->Option.getOr([])
-              ->Array.mapWithIndex((v, i) =>
-                <div key={Int.toString(i)} className={chipClass}>
-                  <span className="text-xs font-mono text-slate-800"> {v->React.string} </span>
-                  <button
-                    onClick={_ => removeKind(i)}
-                    className="ml-2 text-red-600 hover:text-red-800 text-xs font-medium transition-colors"
-                  >
-                    {"Remove"->React.string}
-                  </button>
-                </div>
-              )
+            <div className="flex flex-wrap gap-2">
+              {logKinds
+              ->Array.map(kind => {
+                let isActive = Array.includes(filterState.kind->Option.getOr([]), kind)
+                <button
+                  key={kind}
+                  onClick={_ => toggleKind(kind)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${isActive
+                      ? "bg-slate-800 text-white border-slate-800"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
+                >
+                  {kind->React.string}
+                </button>
+              })
               ->React.array}
             </div>
+            <p className="mt-1 text-[11px] text-slate-500">
+              {"Empty matches every kind. SQD-ingested and default RPC-ingested ranges only carry log / data / other."->React.string}
+            </p>
           </div>
 
           <SolanaJoinHints
             tables={[
-              ("transaction", "transaction fields"),
-              ("instruction_call", "instruction fields"),
-              ("block", "block fields"),
+              (Transaction, "transaction fields"),
+              (InstructionCall, "instruction fields"),
+              (Block, "block fields"),
             ]}
             selectedTables={selectedTables}
             onIncludeTable={onIncludeTable}

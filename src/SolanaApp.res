@@ -50,27 +50,33 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
   let (quickStartFeePayer, setQuickStartFeePayer) = React.useState(() => "")
   let (endpointUrl, setEndpointUrl) = React.useState(() => defaultEndpoint)
 
-  // Fetch the selected endpoint's head so users can pick a sensible from_slot
+  // Fetch the selected endpoint's head so users can pick a sensible from_slot.
+  // The head is cleared first so a switch never shows the previous endpoint's value,
+  // and a late response from a superseded endpoint is dropped.
   React.useEffect1(() => {
+    let cancelled = ref(false)
+    setCurrentHead(_ => None)
     let load = async () => {
       try {
         open Fetch
         let response = await fetchSimple(`${endpointUrl}/height`)
         let text = await response->Response.text
         switch Int.fromString(String.trim(text)) {
-        | Some(n) =>
+        | Some(n) if !cancelled.contents =>
           setCurrentHead(_ => Some(n))
-          // A from_slot of 0 is below every endpoint's history floor, and the server
-          // silently fast-forwards instead of erroring, so seed a usable default.
+          // A from_slot of 0 is below every endpoint's history floor, where the server
+          // returns no data and does not error: with a bounded range next_slot comes
+          // back equal to from_slot (the cursor stalls), and with an open-ended one it
+          // jumps to the floor. Seed a usable default instead.
           setQuery(prev => prev.fromSlot === 0 ? {...prev, fromSlot: n - 100} : prev)
-        | None => ()
+        | _ => ()
         }
       } catch {
       | _ => ()
       }
     }
     load()->ignore
-    None
+    Some(() => cancelled := true)
   }, [endpointUrl])
 
   let toggleFilter = key =>
@@ -174,32 +180,8 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
 
   // Joins follow field_selection, so "also return table X" just means "give table X
   // some columns". This is what the removed include_* booleans were pretending to do.
-  let includeTableFields = (table: string) =>
-    setQuery(prev => {
-      let fs = prev.fieldSelection
-      let next = switch table {
-      | "block" => {...fs, block: Array.length(fs.block) > 0 ? fs.block : defaultBlockFields}
-      | "transaction" => {
-          ...fs,
-          transaction: Array.length(fs.transaction) > 0 ? fs.transaction : defaultTransactionFields,
-        }
-      | "instruction_call" => {
-          ...fs,
-          instructionCall: Array.length(fs.instructionCall) > 0
-            ? fs.instructionCall
-            : defaultInstructionFields,
-        }
-      | "log" => {...fs, log: Array.length(fs.log) > 0 ? fs.log : defaultLogFields}
-      | "account_activity" => {
-          ...fs,
-          accountActivity: Array.length(fs.accountActivity) > 0
-            ? fs.accountActivity
-            : defaultAccountActivityFields,
-        }
-      | _ => fs
-      }
-      {...prev, fieldSelection: next}
-    })
+  let includeTableFields = (table: joinTable) =>
+    setQuery(prev => {...prev, fieldSelection: withTableDefaults(prev.fieldSelection, table)})
 
   let currentTables = selectedTables(query.fieldSelection)
 
@@ -677,13 +659,21 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                         <span className="text-xs text-blue-700">
                           {`current head: slot ${Int.toString(h)}`->React.string}
                         </span>
-                      | None => React.null
+                      | None =>
+                        <span className="text-xs text-blue-700">
+                          {"loading head..."->React.string}
+                        </span>
                       }}
                     </div>
+                    {switch endpoints->Array.find(ep => ep.host === endpointUrl) {
+                    | Some(ep) =>
+                      <p className="mt-1 text-[11px] text-blue-800"> {ep.note->React.string} </p>
+                    | None => React.null
+                    }}
                     <p className="mt-1 text-[11px] text-blue-800">
-                      {`History starts around slot ${Int.toString(
+                      {`History starts at slot ${Int.toString(
                           historyFloorSlot,
-                        )}. Below an endpoint's floor the server does not error: it fast-forwards next_slot to the floor, so an early from_slot silently returns nothing.`->React.string}
+                        )}. Below that you get no data and no error: a range bounded under the floor comes back empty with next_slot equal to your from_slot, so paging stalls, and an open-ended one jumps to the floor.`->React.string}
                     </p>
                   </div>
                 </div>

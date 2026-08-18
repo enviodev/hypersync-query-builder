@@ -5,9 +5,9 @@
 // one-click shortcuts that add default columns of a related table to field_selection.
 @react.component
 let make = (
-  ~tables: array<(string, string)>,
-  ~selectedTables: array<string>,
-  ~onIncludeTable: string => unit,
+  ~tables: array<(SolanaQueryStructure.joinTable, string)>,
+  ~selectedTables: array<SolanaQueryStructure.joinTable>,
+  ~onIncludeTable: SolanaQueryStructure.joinTable => unit,
 ) => {
   <div>
     <label className="block text-xs font-medium text-slate-700 mb-1">
@@ -21,7 +21,7 @@ let make = (
       ->Array.map(((table, label)) => {
         let alreadySelected = Array.includes(selectedTables, table)
         <button
-          key={table}
+          key={SolanaQueryStructure.joinTableWireName(table)}
           onClick={_ => onIncludeTable(table)}
           disabled={alreadySelected}
           className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${alreadySelected

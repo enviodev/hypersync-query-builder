@@ -91,6 +91,19 @@ let isBase58Pubkey = (s: string): bool => {
   }
 }
 
+// A transaction id is base58 signatures[0]: 64 bytes, so 86-88 base58 chars in
+// practice. Kept a little loose at both ends rather than rejecting a valid id.
+let isBase58Signature = (s: string): bool => {
+  let trimmed = String.trim(s)
+  let len = String.length(trimmed)
+  if len < 64 || len > 90 {
+    false
+  } else {
+    let re = RegExp.fromString("^[1-9A-HJ-NP-Za-km-z]+$")
+    RegExp.test(re, trimmed)
+  }
+}
+
 @react.component
 let make = (
   ~filterState: filterState,
@@ -99,8 +112,8 @@ let make = (
   ~filterIndex: int,
   ~isExpanded: bool,
   ~onToggleExpand: unit => unit,
-  ~selectedTables: array<string>,
-  ~onIncludeTable: string => unit,
+  ~selectedTables: array<joinTable>,
+  ~onIncludeTable: joinTable => unit,
 ) => {
   let (newProgramId, setNewProgramId) = React.useState(() => "")
   let (newD1, setNewD1) = React.useState(() => "")
@@ -493,9 +506,9 @@ let make = (
 
           <SolanaJoinHints
             tables={[
-              ("transaction", "transaction fields"),
-              ("log", "log fields"),
-              ("block", "block fields"),
+              (Transaction, "transaction fields"),
+              (Log, "log fields"),
+              (Block, "block fields"),
             ]}
             selectedTables={selectedTables}
             onIncludeTable={onIncludeTable}

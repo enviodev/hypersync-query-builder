@@ -6,19 +6,16 @@ let labelClass = "block text-xs font-medium text-slate-700 mb-1"
 let renderListEditor = SolanaInstructionFilter.renderListEditor
 let isBase58Pubkey = SolanaInstructionFilter.isBase58Pubkey
 
-let isBase58Signature = (v: string): bool => {
-  let trimmed = String.trim(v)
-  let len = String.length(trimmed)
-  len >= 64 && len <= 90 && RegExp.test(RegExp.fromString("^[1-9A-HJ-NP-Za-km-z]+$"), trimmed)
-}
+let isBase58Signature = SolanaInstructionFilter.isBase58Signature
 
+// Trims here so every editor on this card stores the same shape.
 let addToList = (current: option<array<string>>, value: string): option<array<string>> => Some(
-  Array.concat(current->Option.getOr([]), [value]),
+  Array.concat(current->Option.getOr([]), [String.trim(value)]),
 )
 
 let removeFromList = (current: option<array<string>>, idx: int): option<array<string>> => {
   let cur = current->Option.getOr([])
-  let next = Belt.Array.keepWithIndex(cur, (_, i) => i !== idx)
+  let next = cur->Array.filterWithIndex((_, i) => i !== idx)
   Array.length(next) > 0 ? Some(next) : None
 }
 
@@ -51,8 +48,8 @@ let make = (
   ~filterIndex: int,
   ~isExpanded: bool,
   ~onToggleExpand: unit => unit,
-  ~selectedTables: array<string>,
-  ~onIncludeTable: string => unit,
+  ~selectedTables: array<joinTable>,
+  ~onIncludeTable: joinTable => unit,
 ) => {
   let (newAccount, setNewAccount) = React.useState(() => "")
   let (newMint, setNewMint) = React.useState(() => "")
@@ -65,7 +62,7 @@ let make = (
   let toggleKind = (kind: string) => {
     let current = filterState.kind->Option.getOr([])
     let next = Array.includes(current, kind)
-      ? current->Belt.Array.keep(k => k !== kind)
+      ? current->Array.filter(k => k !== kind)
       : Array.concat(current, [kind])
     updateField({...filterState, kind: Array.length(next) > 0 ? Some(next) : None})
   }
@@ -191,7 +188,7 @@ let make = (
               if isBase58Signature(v) {
                 updateField({
                   ...filterState,
-                  transactionId: addToList(filterState.transactionId, String.trim(v)),
+                  transactionId: addToList(filterState.transactionId, v),
                 })
                 setNewTransactionId(_ => "")
               },
@@ -276,7 +273,7 @@ let make = (
           </div>
 
           <SolanaJoinHints
-            tables={[("transaction", "transaction fields"), ("block", "block fields")]}
+            tables={[(Transaction, "transaction fields"), (Block, "block fields")]}
             selectedTables={selectedTables}
             onIncludeTable={onIncludeTable}
           />

@@ -118,8 +118,14 @@ let logKinds: array<string> = ["invoke", "success", "failed", "consumed", "log",
 
 // Endpoints. solana-near-head-test.hypersync.xyz is gone; these two are live and
 // both answer CORS preflights, so the browser can call them directly.
-// Below an endpoint's history floor the server does not error: it fast-forwards
-// next_slot to the floor, so a too-early from_slot silently skips history.
+//
+// Below the history floor the server never errors, and what it does depends on the
+// range (measured 2026-08-18 against both hosts):
+// - open ended (no to_slot): it jumps ahead, returning rows from the floor with
+//   next_slot past it, so the range asked for is skipped
+// - bounded entirely below the floor: an empty page with next_slot EQUAL to the
+//   from_slot sent, so the cursor never advances and a paging client stalls
+// Either way an early from_slot returns nothing from the range requested.
 type endpoint = {
   label: string,
   host: string,
@@ -130,18 +136,18 @@ let endpoints: array<endpoint> = [
   {
     label: "Solana Mainnet",
     host: "https://solana.hypersync.xyz",
-    note: "near head, history from about slot 403,000,000",
+    note: "Near head. The default unless you need older slots.",
   },
   {
     label: "Solana Mainnet (history)",
     host: "https://solana-mainnet-history.hypersync.xyz",
-    note: "deeper history, from about slot 403,000,000",
+    note: "History endpoint. Serves the same floor as near head today.",
   },
 ]
 
 let defaultEndpoint = "https://solana.hypersync.xyz"
 
-// Measured history floor. Anything below this is fast-forwarded by the server.
+// First slot either endpoint serves, bisected 2026-08-18. Below it there is no data.
 let historyFloorSlot = 403_000_000
 
 // Field selection enums (snake_case wire names via @as)
@@ -385,27 +391,47 @@ let snakeToTitle = (input: string): string =>
   )
   ->Array.join(" ")
 
+// The tables a query can join in. A variant rather than a string so a typo at a
+// join call site is a compile error, not a silently ignored no-op.
+type joinTable =
+  | Block
+  | Transaction
+  | InstructionCall
+  | Log
+  | AccountActivity
+  | Reward
+
+let joinTableWireName = (t: joinTable): string =>
+  switch t {
+  | Block => "block"
+  | Transaction => "transaction"
+  | InstructionCall => "instruction_call"
+  | Log => "log"
+  | AccountActivity => "account_activity"
+  | Reward => "reward"
+  }
+
 // Which tables the current field selection asks for. Joins follow this list:
 // a table with no selected columns returns no rows, whatever the filters matched.
-let selectedTables = (fs: fieldSelection): array<string> => {
-  let out: array<string> = []
+let selectedTables = (fs: fieldSelection): array<joinTable> => {
+  let out: array<joinTable> = []
   if Array.length(fs.block) > 0 {
-    out->Array.push("block")
+    out->Array.push(Block)
   }
   if Array.length(fs.transaction) > 0 {
-    out->Array.push("transaction")
+    out->Array.push(Transaction)
   }
   if Array.length(fs.instructionCall) > 0 {
-    out->Array.push("instruction_call")
+    out->Array.push(InstructionCall)
   }
   if Array.length(fs.log) > 0 {
-    out->Array.push("log")
+    out->Array.push(Log)
   }
   if Array.length(fs.accountActivity) > 0 {
-    out->Array.push("account_activity")
+    out->Array.push(AccountActivity)
   }
   if Array.length(fs.reward) > 0 {
-    out->Array.push("reward")
+    out->Array.push(Reward)
   }
   out
 }
@@ -440,12 +466,36 @@ let defaultAccountActivityFields: array<accountActivityField> = [
   PreTokenBalance,
   PostTokenBalance,
 ]
+let defaultRewardFields: array<rewardField> = [Slot, Pubkey, Lamports, PostBalance, RewardType]
+
+// "Also return table X" is just "give table X some columns". Leaves a table that
+// already has a selection alone. Exhaustive over joinTable, so a new table cannot
+// be forgotten here.
+let withTableDefaults = (fs: fieldSelection, table: joinTable): fieldSelection =>
+  switch table {
+  | Block => Array.length(fs.block) > 0 ? fs : {...fs, block: defaultBlockFields}
+  | Transaction =>
+    Array.length(fs.transaction) > 0 ? fs : {...fs, transaction: defaultTransactionFields}
+  | InstructionCall =>
+    Array.length(fs.instructionCall) > 0 ? fs : {...fs, instructionCall: defaultInstructionFields}
+  | Log => Array.length(fs.log) > 0 ? fs : {...fs, log: defaultLogFields}
+  | AccountActivity =>
+    Array.length(fs.accountActivity) > 0
+      ? fs
+      : {...fs, accountActivity: defaultAccountActivityFields}
+  | Reward => Array.length(fs.reward) > 0 ? fs : {...fs, reward: defaultRewardFields}
+  }
 
 // ---------------------------------------------------------------------------
 // Query serialization (wire JSON). Lives here so it can be unit tested without React.
 // ---------------------------------------------------------------------------
 
-let strList = (arr: array<string>): string => arr->Array.map(s => `"${s}"`)->Array.join(", ")
+// User-supplied filter values are interpolated into hand-built JSON, so they have to
+// go through a real JSON encoder: a quote, a backslash or a control character would
+// otherwise produce a body the server cannot parse.
+let jsonString = (s: string): string => JSON.stringify(JSON.Encode.string(s))
+
+let strList = (arr: array<string>): string => arr->Array.map(jsonString)->Array.join(", ")
 let intList = (arr: array<int>): string => arr->Array.map(n => Int.toString(n))->Array.join(", ")
 
 let strField = (name: string, v: option<array<string>>): option<string> =>
