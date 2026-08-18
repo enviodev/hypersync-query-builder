@@ -300,20 +300,24 @@ let make = (
     const cmp = (a, b) => {
       const av = a[col];
       const bv = b[col];
-      if (colType === 'numeric') {
-        const an = parseFloat(av ?? '0');
-        const bn = parseFloat(bv ?? '0');
-        return an === bn ? 0 : (an < bn ? -1 : 1);
-      }
-      // Integer-like strings (u64 token balances are carried as decimal strings) must
-      // compare numerically, or "9" would sort after "1000000000000000000".
       const as_ = String(av ?? '');
       const bs = String(bv ?? '');
+      // Integer-like strings compare via BigInt FIRST, ahead of the numeric branch.
+      // analyzeColumns types a column from the first 200 rows, so a column can be
+      // typed numeric and still hold a value beyond the safe-integer range further
+      // down. parseFloat would then make two distinct u64s compare equal. This also
+      // covers the text branch, where "9" would otherwise sort after
+      // "1000000000000000000" under localeCompare.
       const isInt = (v) => /^-?\d+$/.test(v.trim());
       if (isInt(as_) && isInt(bs)) {
         const ab = BigInt(as_.trim());
         const bb = BigInt(bs.trim());
         return ab === bb ? 0 : (ab < bb ? -1 : 1);
+      }
+      if (colType === 'numeric') {
+        const an = parseFloat(av ?? '0');
+        const bn = parseFloat(bv ?? '0');
+        return an === bn ? 0 : (an < bn ? -1 : 1);
       }
       return as_.localeCompare(bs);
     };
