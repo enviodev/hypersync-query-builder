@@ -5,205 +5,13 @@ type activeTab = QueryJson | Results
 type resultsView = Raw | Table
 type rawMode = Plain | Interactive
 
-let solanaEndpoint = "https://solana-near-head-test.hypersync.xyz/query"
-
-let strList = (arr: array<string>): string => arr->Array.map(s => `"${s}"`)->Array.join(", ")
-
-let serializeInstructionFilter = (sel: instructionSelection): string => {
-  let parts: array<option<string>> = [
-    switch sel.programId {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"program_id": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.d1 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"d1": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.d2 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"d2": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.d4 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"d4": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.d8 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"d8": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.a0 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"a0": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.a1 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"a1": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.a2 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"a2": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.a3 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"a3": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.a4 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"a4": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.a5 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"a5": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.a6 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"a6": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.a7 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"a7": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.a8 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"a8": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.a9 {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"a9": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.isInner {
-    | Some(true) => Some(`"is_inner": true`)
-    | Some(false) => Some(`"is_inner": false`)
-    | None => None
-    },
-    sel.includeTransaction ? Some(`"include_transaction": true`) : None,
-    sel.includeLogs ? Some(`"include_logs": true`) : None,
-  ]
-  let active = parts->Array.filterMap(x => x)
-  `{${Array.join(active, ", ")}}`
-}
-
-let serializeTransactionFilter = (sel: transactionSelection): string => {
-  let parts: array<option<string>> = [
-    switch sel.feePayer {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"fee_payer": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.success {
-    | Some(true) => Some(`"success": true`)
-    | Some(false) => Some(`"success": false`)
-    | None => None
-    },
-    sel.includeInstructions ? Some(`"include_instructions": true`) : None,
-  ]
-  let active = parts->Array.filterMap(x => x)
-  `{${Array.join(active, ", ")}}`
-}
-
-let serializeLogFilter = (sel: logSelection): string => {
-  let parts: array<option<string>> = [
-    switch sel.programId {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"program_id": [${strList(arr)}]`)
-    | _ => None
-    },
-    switch sel.kind {
-    | Some(arr) if Array.length(arr) > 0 => Some(`"kind": [${strList(arr)}]`)
-    | _ => None
-    },
-    sel.includeTransaction ? Some(`"include_transaction": true`) : None,
-    sel.includeInstruction ? Some(`"include_instruction": true`) : None,
-  ]
-  let active = parts->Array.filterMap(x => x)
-  `{${Array.join(active, ", ")}}`
-}
-
-let serializeFields = (fs: fieldSelection): string => {
-  let blockArr = fs.block->Array.map(f => `"${blockFieldToSnake(f)}"`)->Array.join(", ")
-  let txnArr = fs.transaction->Array.map(f => `"${transactionFieldToSnake(f)}"`)->Array.join(", ")
-  let instrArr = fs.instruction->Array.map(f => `"${instructionFieldToSnake(f)}"`)->Array.join(", ")
-  let logArr = fs.log->Array.map(f => `"${logFieldToSnake(f)}"`)->Array.join(", ")
-  let balArr = fs.balance->Array.map(f => `"${balanceFieldToSnake(f)}"`)->Array.join(", ")
-  let tbArr = fs.tokenBalance->Array.map(f => `"${tokenBalanceFieldToSnake(f)}"`)->Array.join(", ")
-  let rewArr = fs.reward->Array.map(f => `"${rewardFieldToSnake(f)}"`)->Array.join(", ")
-  `"fields": {
-    "block": [${blockArr}],
-    "transaction": [${txnArr}],
-    "instruction": [${instrArr}],
-    "log": [${logArr}],
-    "balance": [${balArr}],
-    "token_balance": [${tbArr}],
-    "reward": [${rewArr}]
-  }`
-}
-
-let serializeQuery = (q: query): string => {
-  let parts: array<option<string>> = [
-    Some(`"from_slot": ${Int.toString(q.fromSlot)}`),
-    switch q.toSlot {
-    | Some(v) => Some(`"to_slot": ${Int.toString(v)}`)
-    | None => None
-    },
-    switch q.instructions {
-    | Some(arr) if Array.length(arr) > 0 =>
-      let body = arr->Array.map(serializeInstructionFilter)->Array.join(",\n    ")
-      Some(
-        `"instructions": [
-    ${body}
-  ]`,
-      )
-    | _ => None
-    },
-    switch q.transactions {
-    | Some(arr) if Array.length(arr) > 0 =>
-      let body = arr->Array.map(serializeTransactionFilter)->Array.join(",\n    ")
-      Some(
-        `"transactions": [
-    ${body}
-  ]`,
-      )
-    | _ => None
-    },
-    switch q.logs {
-    | Some(arr) if Array.length(arr) > 0 =>
-      let body = arr->Array.map(serializeLogFilter)->Array.join(",\n    ")
-      Some(
-        `"logs": [
-    ${body}
-  ]`,
-      )
-    | _ => None
-    },
-    switch q.includeAllBlocks {
-    | Some(true) => Some(`"include_all_blocks": true`)
-    | Some(false) => Some(`"include_all_blocks": false`)
-    | None => None
-    },
-    Some(serializeFields(q.fields)),
-    switch q.maxNumBlocks {
-    | Some(v) => Some(`"max_num_blocks": ${Int.toString(v)}`)
-    | None => None
-    },
-    switch q.maxNumTransactions {
-    | Some(v) => Some(`"max_num_transactions": ${Int.toString(v)}`)
-    | None => None
-    },
-    switch q.maxNumInstructions {
-    | Some(v) => Some(`"max_num_instructions": ${Int.toString(v)}`)
-    | None => None
-    },
-    switch q.maxNumLogs {
-    | Some(v) => Some(`"max_num_logs": ${Int.toString(v)}`)
-    | None => None
-    },
-  ]
-  let active = parts->Array.filterMap(x => x)
-  `{
-  ${Array.join(active, ",\n  ")}
-}`
-}
-
 @react.component
-let make = (~query: query, ~executeSignal: int, ~bearerToken: option<string>) => {
+let make = (
+  ~query: query,
+  ~executeSignal: int,
+  ~bearerToken: option<string>,
+  ~endpointUrl: string,
+) => {
   let (activeTab, setActiveTab) = React.useState(() => QueryJson)
   let (isExecuting, setIsExecuting) = React.useState(() => false)
   let (queryResult, setQueryResult) = React.useState(() => None)
@@ -220,6 +28,8 @@ let make = (~query: query, ~executeSignal: int, ~bearerToken: option<string>) =>
   let (copiedCurl, setCopiedCurl) = React.useState(() => false)
   let (copiedJson, setCopiedJson) = React.useState(() => false)
   let (copiedResults, setCopiedResults) = React.useState(() => false)
+
+  let queryUrl = `${endpointUrl}/query`
 
   let isFirstRender = React.useRef(true)
   React.useEffect1(() => {
@@ -259,7 +69,7 @@ let make = (~query: query, ~executeSignal: int, ~bearerToken: option<string>) =>
         "body": Body.string(body),
         "headers": headers,
       })
-      let response = await fetch(solanaEndpoint, requestInit)
+      let response = await fetch(queryUrl, requestInit)
       let resultTextRaw = await response->Response.text
       let t1: float = %raw("performance.now()")
       let clientElapsed = t1 -. t0
@@ -309,7 +119,7 @@ let make = (~query: query, ~executeSignal: int, ~bearerToken: option<string>) =>
     | Some(token) => `\n  -H "Authorization: Bearer ${token}" \\`
     | None => ""
     }
-    `curl -X POST "${solanaEndpoint}" \\
+    `curl -X POST "${queryUrl}" \\
   -H "Content-Type: application/json" \\${authHeader}
   -d "${escaped}"`
   }
@@ -361,12 +171,14 @@ let make = (~query: query, ~executeSignal: int, ~bearerToken: option<string>) =>
     return (Math.round(b/104857.6)/10) + ' MB';
   }`)
 
-  // Solana response: { blocks: Vec<Vec<row>>, transactions: ..., ... }
-  // Flatten the outer batches into a single row array
+  // Solana response: every table is an array of row BATCHES, e.g.
+  // { instruction_calls: [[row, row, ...], ...], ... }. A response is usually one
+  // batch, so indexing [0] silently yields a batch instead of a row. Always flatten
+  // one level, and count rows only after flattening.
   // Only include datasets that actually have rows, so the switcher matches reality
   let solanaDatasetNames: JSON.t => array<string> = %raw(`(data) => {
     if (!data || typeof data !== 'object' || Array.isArray(data)) return [];
-    const known = ['blocks','transactions','instructions','logs','balances','token_balances','rewards'];
+    const known = ['blocks','transactions','instruction_calls','logs','account_activity','rewards'];
     const out = [];
     for (const k of known) {
       const v = data[k];
@@ -429,7 +241,10 @@ let make = (~query: query, ~executeSignal: int, ~bearerToken: option<string>) =>
   }`)
 
   let analyzeColumns: array<dict<string>> => dict<string> = %raw(`(flatRows) => {
-    const isNumeric = (v) => typeof v === 'string' && /^-?\d+(?:\.\d+)?$/.test(v.trim());
+    // u64 base units (pre_token_balance / post_token_balance) arrive as decimal
+    // strings beyond the JS safe-integer range, so anything longer than 15 digits
+    // stays text: it must never be run through parseFloat.
+    const isNumeric = (v) => typeof v === 'string' && /^-?\d+(?:\.\d+)?$/.test(v.trim()) && v.trim().replace('-','').length <= 15;
     const counts = new Map();
     for (let i = 0; i < flatRows.length && i < 200; i++) {
       const r = flatRows[i];
@@ -580,7 +395,7 @@ let make = (~query: query, ~executeSignal: int, ~bearerToken: option<string>) =>
         <span
           className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
         >
-          {`Query URL: ${solanaEndpoint}`->React.string}
+          {`Query URL: ${queryUrl}`->React.string}
         </span>
       </div>
     </div>

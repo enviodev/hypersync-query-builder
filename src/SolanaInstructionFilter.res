@@ -99,6 +99,8 @@ let make = (
   ~filterIndex: int,
   ~isExpanded: bool,
   ~onToggleExpand: unit => unit,
+  ~selectedTables: array<string>,
+  ~onIncludeTable: string => unit,
 ) => {
   let (newProgramId, setNewProgramId) = React.useState(() => "")
   let (newD1, setNewD1) = React.useState(() => "")
@@ -164,13 +166,14 @@ let make = (
   }
 
   let hasFilters =
-    Option.isSome(filterState.programId) ||
+    Option.isSome(filterState.executingAccount) ||
     Option.isSome(filterState.d1) ||
     Option.isSome(filterState.d2) ||
     Option.isSome(filterState.d4) ||
     Option.isSome(filterState.d8) ||
     Array.length(activeAccountSlots()) > 0 ||
-    Option.isSome(filterState.isInner)
+    Option.isSome(filterState.isInner) ||
+    Option.isSome(filterState.txSuccess)
 
   <div
     className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full"
@@ -225,19 +228,25 @@ let make = (
     </div>
     {isExpanded
       ? <div className="p-6">
-          // Program IDs
+          // Executing accounts (the invoked programs; wire key executing_account)
           {renderListEditor(
-            ~label="Program IDs (base58)",
+            ~label="Executing Accounts / Program IDs (base58)",
             ~placeholder="e.g. TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-            ~values=filterState.programId->Option.getOr([]),
+            ~values=filterState.executingAccount->Option.getOr([]),
             ~onAdd=v => {
               if isBase58Pubkey(v) {
-                updateField({...filterState, programId: addToList(filterState.programId, v)})
+                updateField({
+                  ...filterState,
+                  executingAccount: addToList(filterState.executingAccount, v),
+                })
                 setNewProgramId(_ => "")
               }
             },
             ~onRemove=i =>
-              updateField({...filterState, programId: removeFromList(filterState.programId, i)}),
+              updateField({
+                ...filterState,
+                executingAccount: removeFromList(filterState.executingAccount, i),
+              }),
             ~draft=newProgramId,
             ~setDraft=setNewProgramId,
             ~validate=isBase58Pubkey,
@@ -458,36 +467,39 @@ let make = (
             </div>
           </div>
 
-          // Joins
-          <div>
-            <label className={labelClass}> {"Joins"->React.string} </label>
-            <div className="flex flex-wrap gap-3">
-              <label className="inline-flex items-center text-xs text-slate-700 cursor-pointer">
-                <input
-                  type_="checkbox"
-                  checked={filterState.includeTransaction}
-                  onChange={e => {
-                    let target = ReactEvent.Form.target(e)
-                    updateField({...filterState, includeTransaction: target["checked"]})
-                  }}
-                  className="mr-2"
-                />
-                {"include_transaction"->React.string}
-              </label>
-              <label className="inline-flex items-center text-xs text-slate-700 cursor-pointer">
-                <input
-                  type_="checkbox"
-                  checked={filterState.includeLogs}
-                  onChange={e => {
-                    let target = ReactEvent.Form.target(e)
-                    updateField({...filterState, includeLogs: target["checked"]})
-                  }}
-                  className="mr-2"
-                />
-                {"include_logs"->React.string}
-              </label>
+          // tx_success tri-state (wire tx_success, legacy alias is_committed)
+          <div className="mb-4">
+            <label className={labelClass}> {"Parent Transaction Success"->React.string} </label>
+            <div className="flex space-x-2">
+              {[("Both", None), ("Successful txs", Some(true)), ("Failed txs", Some(false))]
+              ->Array.map(((label, value)) => {
+                let isActive = filterState.txSuccess === value
+                <button
+                  key={label}
+                  onClick={_ => updateField({...filterState, txSuccess: value})}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${isActive
+                      ? "bg-slate-800 text-white border-slate-800"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
+                >
+                  {label->React.string}
+                </button>
+              })
+              ->React.array}
             </div>
+            <p className="mt-1 text-[11px] text-amber-700">
+              {"Under the server's failed-transaction trim policy no instruction rows are kept for failed transactions, so \"Failed txs\" matches nothing and \"Successful txs\" is a no-op. Use a transaction filter with success: false to see failed transactions."->React.string}
+            </p>
           </div>
+
+          <SolanaJoinHints
+            tables={[
+              ("transaction", "transaction fields"),
+              ("log", "log fields"),
+              ("block", "block fields"),
+            ]}
+            selectedTables={selectedTables}
+            onIncludeTable={onIncludeTable}
+          />
         </div>
       : React.null}
   </div>

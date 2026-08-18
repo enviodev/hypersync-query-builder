@@ -17,8 +17,12 @@ let make = (
   ~filterIndex: int,
   ~isExpanded: bool,
   ~onToggleExpand: unit => unit,
+  ~selectedTables: array<string>,
+  ~onIncludeTable: string => unit,
 ) => {
   let (newFeePayer, setNewFeePayer) = React.useState(() => "")
+  let (newTransactionId, setNewTransactionId) = React.useState(() => "")
+  let (newTransactionIndex, setNewTransactionIndex) = React.useState(() => "")
 
   let updateField = (newState: filterState) => onFilterChange(newState)
 
@@ -38,7 +42,52 @@ let make = (
     updateField({...filterState, feePayer: Array.length(next) > 0 ? Some(next) : None})
   }
 
-  let hasFilters = Option.isSome(filterState.feePayer) || Option.isSome(filterState.success)
+  let isBase58Signature = (v: string): bool => {
+    let len = String.length(String.trim(v))
+    len >= 64 &&
+    len <= 90 &&
+    RegExp.test(RegExp.fromString("^[1-9A-HJ-NP-Za-km-z]+$"), String.trim(v))
+  }
+
+  let addTransactionId = (v: string) => {
+    let trimmed = String.trim(v)
+    if isBase58Signature(trimmed) {
+      updateField({
+        ...filterState,
+        transactionId: Some(Array.concat(filterState.transactionId->Option.getOr([]), [trimmed])),
+      })
+      setNewTransactionId(_ => "")
+    }
+  }
+
+  let removeTransactionId = (idx: int) => {
+    let cur = filterState.transactionId->Option.getOr([])
+    let next = Belt.Array.keepWithIndex(cur, (_, i) => i !== idx)
+    updateField({...filterState, transactionId: Array.length(next) > 0 ? Some(next) : None})
+  }
+
+  let addTransactionIndex = (v: string) =>
+    switch Int.fromString(String.trim(v)) {
+    | Some(n) if n >= 0 =>
+      updateField({
+        ...filterState,
+        transactionIndex: Some(Array.concat(filterState.transactionIndex->Option.getOr([]), [n])),
+      })
+      setNewTransactionIndex(_ => "")
+    | _ => ()
+    }
+
+  let removeTransactionIndex = (idx: int) => {
+    let cur = filterState.transactionIndex->Option.getOr([])
+    let next = Belt.Array.keepWithIndex(cur, (_, i) => i !== idx)
+    updateField({...filterState, transactionIndex: Array.length(next) > 0 ? Some(next) : None})
+  }
+
+  let hasFilters =
+    Option.isSome(filterState.feePayer) ||
+    Option.isSome(filterState.transactionId) ||
+    Option.isSome(filterState.transactionIndex) ||
+    Option.isSome(filterState.success)
 
   <div
     className="relative bg-white rounded-xl border border-slate-200 shadow-sm transition-all w-full"
@@ -163,22 +212,121 @@ let make = (
             </div>
           </div>
 
-          // Joins
-          <div>
-            <label className={labelClass}> {"Joins"->React.string} </label>
-            <label className="inline-flex items-center text-xs text-slate-700 cursor-pointer">
+          // Transaction ids (base58 signatures[0])
+          <div className="mb-4">
+            <label className={labelClass}>
+              {"Transaction IDs (base58 signature)"->React.string}
+            </label>
+            <div className="flex space-x-2 mb-2">
               <input
-                type_="checkbox"
-                checked={filterState.includeInstructions}
+                type_="text"
+                value={newTransactionId}
                 onChange={e => {
                   let target = ReactEvent.Form.target(e)
-                  updateField({...filterState, includeInstructions: target["checked"]})
+                  setNewTransactionId(_ => target["value"])
                 }}
-                className="mr-2"
+                onKeyDown={e =>
+                  if ReactEvent.Keyboard.key(e) === "Enter" {
+                    ReactEvent.Synthetic.preventDefault(e)
+                    addTransactionId(newTransactionId)
+                  }}
+                placeholder="base58 signature"
+                className={inputClass}
               />
-              {"include_instructions"->React.string}
-            </label>
+              <button
+                onClick={_ => addTransactionId(newTransactionId)}
+                disabled={!isBase58Signature(newTransactionId)}
+                className={addBtnClass}
+              >
+                {(
+                  Array.length(filterState.transactionId->Option.getOr([])) > 0 ? "Add (OR)" : "Add"
+                )->React.string}
+              </button>
+            </div>
+            <div className="space-y-1">
+              {filterState.transactionId
+              ->Option.getOr([])
+              ->Array.mapWithIndex((v, i) =>
+                <div key={Int.toString(i)} className={chipClass}>
+                  <span className="text-xs font-mono text-slate-800 truncate">
+                    {v->React.string}
+                  </span>
+                  <button
+                    onClick={_ => removeTransactionId(i)}
+                    className="ml-2 text-red-600 hover:text-red-800 text-xs font-medium transition-colors"
+                  >
+                    {"Remove"->React.string}
+                  </button>
+                </div>
+              )
+              ->React.array}
+            </div>
           </div>
+
+          // Transaction indexes
+          <div className="mb-4">
+            <label className={labelClass}> {"Transaction Indexes"->React.string} </label>
+            <p className="text-[11px] text-slate-500 mb-1">
+              {"A dense 0..n rank over the stored (non-vote) transactions of the slot, not the original block position."->React.string}
+            </p>
+            <div className="flex space-x-2 mb-2">
+              <input
+                type_="number"
+                value={newTransactionIndex}
+                onChange={e => {
+                  let target = ReactEvent.Form.target(e)
+                  setNewTransactionIndex(_ => target["value"])
+                }}
+                onKeyDown={e =>
+                  if ReactEvent.Keyboard.key(e) === "Enter" {
+                    ReactEvent.Synthetic.preventDefault(e)
+                    addTransactionIndex(newTransactionIndex)
+                  }}
+                placeholder="0"
+                className={inputClass}
+              />
+              <button
+                onClick={_ => addTransactionIndex(newTransactionIndex)}
+                disabled={Option.isNone(Int.fromString(String.trim(newTransactionIndex)))}
+                className={addBtnClass}
+              >
+                {(
+                  Array.length(filterState.transactionIndex->Option.getOr([])) > 0
+                    ? "Add (OR)"
+                    : "Add"
+                )->React.string}
+              </button>
+            </div>
+            <div className="space-y-1">
+              {filterState.transactionIndex
+              ->Option.getOr([])
+              ->Array.mapWithIndex((v, i) =>
+                <div key={Int.toString(i)} className={chipClass}>
+                  <span className="text-xs font-mono text-slate-800">
+                    {Int.toString(v)->React.string}
+                  </span>
+                  <button
+                    onClick={_ => removeTransactionIndex(i)}
+                    className="ml-2 text-red-600 hover:text-red-800 text-xs font-medium transition-colors"
+                  >
+                    {"Remove"->React.string}
+                  </button>
+                </div>
+              )
+              ->React.array}
+            </div>
+          </div>
+
+          <SolanaJoinHints
+            tables={[
+              ("instruction_call", "instruction fields"),
+              ("account_activity", "account activity fields"),
+              ("log", "log fields"),
+              ("block", "block fields"),
+            ]}
+            selectedTables={selectedTables}
+            onIncludeTable={onIncludeTable}
+          />
         </div>
       : React.null}
   </div>

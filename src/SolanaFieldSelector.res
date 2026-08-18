@@ -24,18 +24,11 @@ let logOptions: array<TagSelector.selectOption<logField>> = allLogFields->Array.
   label: snakeToTitle(logFieldToSnake(f)),
 })
 
-let balanceOptions: array<
-  TagSelector.selectOption<balanceField>,
-> = allBalanceFields->Array.map(f => {
+let accountActivityOptions: array<
+  TagSelector.selectOption<accountActivityField>,
+> = allAccountActivityFields->Array.map(f => {
   TagSelector.value: f,
-  label: snakeToTitle(balanceFieldToSnake(f)),
-})
-
-let tokenBalanceOptions: array<
-  TagSelector.selectOption<tokenBalanceField>,
-> = allTokenBalanceFields->Array.map(f => {
-  TagSelector.value: f,
-  label: snakeToTitle(tokenBalanceFieldToSnake(f)),
+  label: snakeToTitle(accountActivityFieldToSnake(f)),
 })
 
 let rewardOptions: array<TagSelector.selectOption<rewardField>> = allRewardFields->Array.map(f => {
@@ -84,13 +77,15 @@ let renderSection = (
 let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelection => unit) => {
   let updateBlock = v => onFieldSelectionChange({...fieldSelection, block: v})
   let updateTransaction = v => onFieldSelectionChange({...fieldSelection, transaction: v})
-  let updateInstruction = v => onFieldSelectionChange({...fieldSelection, instruction: v})
+  let updateInstruction = v => onFieldSelectionChange({...fieldSelection, instructionCall: v})
   let updateLog = v => onFieldSelectionChange({...fieldSelection, log: v})
-  let updateBalance = v => onFieldSelectionChange({...fieldSelection, balance: v})
-  let updateTokenBalance = v => onFieldSelectionChange({...fieldSelection, tokenBalance: v})
+  let updateAccountActivity = v => onFieldSelectionChange({...fieldSelection, accountActivity: v})
   let updateReward = v => onFieldSelectionChange({...fieldSelection, reward: v})
 
   <div className="bg-white rounded-lg p-2 mb-2">
+    <p className="text-xs text-slate-500 mb-3">
+      {"Field selection also drives the joins: a table with no columns selected returns no rows, and selecting columns of a related table (say transactions next to an instruction filter) pulls the rows that relate to what the filters matched."->React.string}
+    </p>
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {renderSection(
         ~title="Block Fields",
@@ -123,16 +118,16 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
         />,
       )}
       {renderSection(
-        ~title="Instruction Fields",
+        ~title="Instruction Call Fields",
         ~total=Array.length(instructionOptions),
-        ~selectedCount=Array.length(fieldSelection.instruction),
+        ~selectedCount=Array.length(fieldSelection.instructionCall),
         ~onSelectAll=() => updateInstruction(allInstructionFields),
         ~onClear=() => updateInstruction([]),
         ~child=<TagSelector
           title=""
           placeholder="Add field..."
           options={instructionOptions}
-          selectedValues={fieldSelection.instruction}
+          selectedValues={fieldSelection.instructionCall}
           onSelectionChange={updateInstruction}
           showInput={false}
         />,
@@ -153,32 +148,17 @@ let make = (~fieldSelection: fieldSelection, ~onFieldSelectionChange: fieldSelec
         />,
       )}
       {renderSection(
-        ~title="Balance Fields",
-        ~total=Array.length(balanceOptions),
-        ~selectedCount=Array.length(fieldSelection.balance),
-        ~onSelectAll=() => updateBalance(allBalanceFields),
-        ~onClear=() => updateBalance([]),
+        ~title="Account Activity Fields",
+        ~total=Array.length(accountActivityOptions),
+        ~selectedCount=Array.length(fieldSelection.accountActivity),
+        ~onSelectAll=() => updateAccountActivity(allAccountActivityFields),
+        ~onClear=() => updateAccountActivity([]),
         ~child=<TagSelector
           title=""
           placeholder="Add field..."
-          options={balanceOptions}
-          selectedValues={fieldSelection.balance}
-          onSelectionChange={updateBalance}
-          showInput={false}
-        />,
-      )}
-      {renderSection(
-        ~title="Token Balance Fields",
-        ~total=Array.length(tokenBalanceOptions),
-        ~selectedCount=Array.length(fieldSelection.tokenBalance),
-        ~onSelectAll=() => updateTokenBalance(allTokenBalanceFields),
-        ~onClear=() => updateTokenBalance([]),
-        ~child=<TagSelector
-          title=""
-          placeholder="Add field..."
-          options={tokenBalanceOptions}
-          selectedValues={fieldSelection.tokenBalance}
-          onSelectionChange={updateTokenBalance}
+          options={accountActivityOptions}
+          selectedValues={fieldSelection.accountActivity}
+          onSelectionChange={updateAccountActivity}
           showInput={false}
         />,
       )}

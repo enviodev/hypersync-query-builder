@@ -17,6 +17,8 @@ let make = (
   ~filterIndex: int,
   ~isExpanded: bool,
   ~onToggleExpand: unit => unit,
+  ~selectedTables: array<string>,
+  ~onIncludeTable: string => unit,
 ) => {
   let (newProgramId, setNewProgramId) = React.useState(() => "")
   let (newKind, setNewKind) = React.useState(() => "")
@@ -162,7 +164,10 @@ let make = (
 
           // Kind
           <div className="mb-4">
-            <label className={labelClass}> {"Log Kind (e.g. log, data)"->React.string} </label>
+            <label className={labelClass}> {"Log Kind"->React.string} </label>
+            <p className="text-[11px] text-slate-500 mb-1">
+              {"One of invoke, success, failed, consumed, log, data, other. SQD-ingested and default RPC-ingested ranges only carry log / data / other."->React.string}
+            </p>
             <div className="flex space-x-2 mb-2">
               <input
                 type_="text"
@@ -207,36 +212,15 @@ let make = (
             </div>
           </div>
 
-          // Joins
-          <div>
-            <label className={labelClass}> {"Joins"->React.string} </label>
-            <div className="flex flex-wrap gap-3">
-              <label className="inline-flex items-center text-xs text-slate-700 cursor-pointer">
-                <input
-                  type_="checkbox"
-                  checked={filterState.includeTransaction}
-                  onChange={e => {
-                    let target = ReactEvent.Form.target(e)
-                    updateField({...filterState, includeTransaction: target["checked"]})
-                  }}
-                  className="mr-2"
-                />
-                {"include_transaction"->React.string}
-              </label>
-              <label className="inline-flex items-center text-xs text-slate-700 cursor-pointer">
-                <input
-                  type_="checkbox"
-                  checked={filterState.includeInstruction}
-                  onChange={e => {
-                    let target = ReactEvent.Form.target(e)
-                    updateField({...filterState, includeInstruction: target["checked"]})
-                  }}
-                  className="mr-2"
-                />
-                {"include_instruction"->React.string}
-              </label>
-            </div>
-          </div>
+          <SolanaJoinHints
+            tables={[
+              ("transaction", "transaction fields"),
+              ("instruction_call", "instruction fields"),
+              ("block", "block fields"),
+            ]}
+            selectedTables={selectedTables}
+            onIncludeTable={onIncludeTable}
+          />
         </div>
       : React.null}
   </div>
