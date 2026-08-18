@@ -30,15 +30,17 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
   let defaultQuery = (): query => {
     fromSlot: 0,
     toSlot: None,
-    instructions: None,
+    instructionCalls: None,
     transactions: None,
     logs: None,
+    accountActivity: None,
     includeAllBlocks: None,
-    fields: emptyFieldSelection,
+    fieldSelection: emptyFieldSelection,
     maxNumBlocks: Some(10),
     maxNumTransactions: Some(10),
     maxNumInstructions: Some(50),
     maxNumLogs: Some(50),
+    maxNumAccountActivity: Some(50),
   }
 
   let (query, setQuery) = React.useState(() => defaultQuery())
@@ -46,25 +48,36 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
   let (executeSignal, setExecuteSignal) = React.useState(() => 0)
   let (currentHead, setCurrentHead) = React.useState(() => None)
   let (quickStartFeePayer, setQuickStartFeePayer) = React.useState(() => "")
+  let (endpointUrl, setEndpointUrl) = React.useState(() => defaultEndpoint)
 
-  // Fetch current head on mount so users can pick a sensible from_slot
-  React.useEffect0(() => {
+  // Fetch the selected endpoint's head so users can pick a sensible from_slot.
+  // The head is cleared first so a switch never shows the previous endpoint's value,
+  // and a late response from a superseded endpoint is dropped.
+  React.useEffect1(() => {
+    let cancelled = ref(false)
+    setCurrentHead(_ => None)
     let load = async () => {
       try {
         open Fetch
-        let response = await fetchSimple("https://solana-near-head-test.hypersync.xyz/height")
+        let response = await fetchSimple(`${endpointUrl}/height`)
         let text = await response->Response.text
         switch Int.fromString(String.trim(text)) {
-        | Some(n) => setCurrentHead(_ => Some(n))
-        | None => ()
+        | Some(n) if !cancelled.contents =>
+          setCurrentHead(_ => Some(n))
+          // A from_slot of 0 is below every endpoint's history floor, where the server
+          // returns no data and does not error: with a bounded range next_slot comes
+          // back equal to from_slot (the cursor stalls), and with an open-ended one it
+          // jumps to the floor. Seed a usable default instead.
+          setQuery(prev => prev.fromSlot === 0 ? {...prev, fromSlot: n - 100} : prev)
+        | _ => ()
         }
       } catch {
       | _ => ()
       }
     }
     load()->ignore
-    None
-  })
+    Some(() => cancelled := true)
+  }, [endpointUrl])
 
   let toggleFilter = key =>
     setExpandedFilterKey(prev =>
@@ -82,11 +95,11 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
 
   // Filter management
   let addInstructionFilter = () => {
-    let newIndex = query.instructions->Option.getOr([])->Array.length
+    let newIndex = query.instructionCalls->Option.getOr([])->Array.length
     setQuery(prev => {
       ...prev,
-      instructions: Some(
-        Array.concat(prev.instructions->Option.getOr([]), [emptyInstructionSelection]),
+      instructionCalls: Some(
+        Array.concat(prev.instructionCalls->Option.getOr([]), [emptyInstructionSelection]),
       ),
     })
     setExpandedFilterKey(_ => Some(`instruction-${Int.toString(newIndex)}`))
@@ -94,16 +107,16 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
 
   let updateInstructionFilter = (index, newFilter) =>
     setQuery(prev => {
-      let cur = prev.instructions->Option.getOr([])
+      let cur = prev.instructionCalls->Option.getOr([])
       let next = Array.mapWithIndex(cur, (f, i) => i === index ? newFilter : f)
-      {...prev, instructions: Some(next)}
+      {...prev, instructionCalls: Some(next)}
     })
 
   let removeInstructionFilter = index => {
     setQuery(prev => {
-      let cur = prev.instructions->Option.getOr([])
+      let cur = prev.instructionCalls->Option.getOr([])
       let next = Belt.Array.keepWithIndex(cur, (_, i) => i !== index)
-      {...prev, instructions: Array.length(next) > 0 ? Some(next) : None}
+      {...prev, instructionCalls: Array.length(next) > 0 ? Some(next) : None}
     })
     let key = `instruction-${Int.toString(index)}`
     setExpandedFilterKey(prev => prev === Some(key) ? None : prev)
@@ -163,31 +176,66 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
     setExpandedFilterKey(prev => prev === Some(key) ? None : prev)
   }
 
-  let updateFieldSelection = newFields => setQuery(prev => {...prev, fields: newFields})
+  let updateFieldSelection = newFields => setQuery(prev => {...prev, fieldSelection: newFields})
+
+  // Joins follow field_selection, so "also return table X" just means "give table X
+  // some columns". This is what the removed include_* booleans were pretending to do.
+  let includeTableFields = (table: joinTable) =>
+    setQuery(prev => {...prev, fieldSelection: withTableDefaults(prev.fieldSelection, table)})
+
+  let currentTables = selectedTables(query.fieldSelection)
+
+  // Account activity filter management
+  let addAccountActivityFilter = () => {
+    let newIndex = query.accountActivity->Option.getOr([])->Array.length
+    setQuery(prev => {
+      ...prev,
+      accountActivity: Some(
+        Array.concat(prev.accountActivity->Option.getOr([]), [emptyAccountActivitySelection]),
+      ),
+    })
+    setExpandedFilterKey(_ => Some(`account-activity-${Int.toString(newIndex)}`))
+  }
+
+  let updateAccountActivityFilter = (index, newFilter) =>
+    setQuery(prev => {
+      let cur = prev.accountActivity->Option.getOr([])
+      let next = Array.mapWithIndex(cur, (f, i) => i === index ? newFilter : f)
+      {...prev, accountActivity: Some(next)}
+    })
+
+  let removeAccountActivityFilter = index => {
+    setQuery(prev => {
+      let cur = prev.accountActivity->Option.getOr([])
+      let next = Belt.Array.keepWithIndex(cur, (_, i) => i !== index)
+      {...prev, accountActivity: Array.length(next) > 0 ? Some(next) : None}
+    })
+    let key = `account-activity-${Int.toString(index)}`
+    setExpandedFilterKey(prev => prev === Some(key) ? None : prev)
+  }
 
   // Quick start presets
   let applyPresetSplTokenTransfers = () => {
     let from = switch currentHead {
     | Some(h) => h - 5
-    | None => 0
+    | None => historyFloorSlot
     }
     setQuery(_ => {
       ...defaultQuery(),
       fromSlot: from,
       toSlot: Some(from + 5),
-      instructions: Some([
+      instructionCalls: Some([
         {
           ...emptyInstructionSelection,
-          programId: Some([tokenProgramId]),
+          executingAccount: Some([tokenProgramId]),
           d1: Some(["0x03"]),
-          includeTransaction: true,
         },
       ]),
-      fields: {
+      fieldSelection: {
         ...emptyFieldSelection,
         block: [Slot, Blockhash, BlockTime],
         transaction: [Slot, TransactionIndex, Signatures, FeePayer, Success, Fee],
-        instruction: [Slot, TransactionIndex, ProgramId, Data, A0, A1, A2, D1],
+        instructionCall: [Slot, TransactionIndex, ExecutingAccount, Data, A0, A1, A2, D1],
       },
       maxNumBlocks: Some(5),
       maxNumTransactions: Some(50),
@@ -199,25 +247,24 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
   let applyPresetSystemTransfers = () => {
     let from = switch currentHead {
     | Some(h) => h - 5
-    | None => 0
+    | None => historyFloorSlot
     }
     setQuery(_ => {
       ...defaultQuery(),
       fromSlot: from,
       toSlot: Some(from + 5),
-      instructions: Some([
+      instructionCalls: Some([
         {
           ...emptyInstructionSelection,
-          programId: Some([systemProgramId]),
+          executingAccount: Some([systemProgramId]),
           d4: Some(["0x02000000"]),
-          includeTransaction: true,
         },
       ]),
-      fields: {
+      fieldSelection: {
         ...emptyFieldSelection,
         block: [Slot, Blockhash, BlockTime],
         transaction: [Slot, TransactionIndex, Signatures, FeePayer, Success],
-        instruction: [Slot, TransactionIndex, ProgramId, Data, A0, A1, D4],
+        instructionCall: [Slot, TransactionIndex, ExecutingAccount, Data, A0, A1, D4],
       },
       maxNumBlocks: Some(5),
       maxNumTransactions: Some(50),
@@ -226,20 +273,20 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
     setExpandedFilterKey(_ => Some("instruction-0"))
   }
 
-  // include_all_blocks pulls every block in the slot range AND auto-attaches
-  // balances/token_balances per-tx, so even a few slots can produce many MB.
-  // Keep the range tight by default.
+  // include_all_blocks pulls every block in the slot range. Combined with a wide
+  // field_selection (account_activity in particular) even a few slots are many MB,
+  // so keep the range tight by default.
   let applyPresetAllBlocks = () => {
     let from = switch currentHead {
     | Some(h) => h - 2
-    | None => 0
+    | None => historyFloorSlot
     }
     setQuery(_ => {
       ...defaultQuery(),
       fromSlot: from,
       toSlot: Some(from + 2),
       includeAllBlocks: Some(true),
-      fields: {
+      fieldSelection: {
         ...emptyFieldSelection,
         block: [Slot, Blockhash, ParentSlot, BlockTime, BlockHeight],
       },
@@ -252,25 +299,24 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
   let applyPresetToken2022Transfers = () => {
     let from = switch currentHead {
     | Some(h) => h - 5
-    | None => 0
+    | None => historyFloorSlot
     }
     setQuery(_ => {
       ...defaultQuery(),
       fromSlot: from,
       toSlot: Some(from + 5),
-      instructions: Some([
+      instructionCalls: Some([
         {
           ...emptyInstructionSelection,
-          programId: Some([token2022ProgramId]),
+          executingAccount: Some([token2022ProgramId]),
           d1: Some(["0x03"]),
-          includeTransaction: true,
         },
       ]),
-      fields: {
+      fieldSelection: {
         ...emptyFieldSelection,
         block: [Slot, Blockhash, BlockTime],
         transaction: [Slot, TransactionIndex, Signatures, FeePayer, Success, Fee],
-        instruction: [Slot, TransactionIndex, ProgramId, Data, A0, A1, A2, D1],
+        instructionCall: [Slot, TransactionIndex, ExecutingAccount, Data, A0, A1, A2, D1],
       },
       maxNumBlocks: Some(5),
       maxNumTransactions: Some(50),
@@ -283,30 +329,29 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
   let applyPresetWhirlpoolSwaps = () => {
     let from = switch currentHead {
     | Some(h) => h - 5
-    | None => 0
+    | None => historyFloorSlot
     }
     setQuery(_ => {
       ...defaultQuery(),
       fromSlot: from,
       toSlot: Some(from + 5),
-      instructions: Some([
+      instructionCalls: Some([
         {
           ...emptyInstructionSelection,
-          programId: Some([orcaWhirlpoolProgramId]),
+          executingAccount: Some([orcaWhirlpoolProgramId]),
           d8: Some([whirlpoolSwapD8]),
-          includeTransaction: true,
         },
       ]),
-      fields: {
+      fieldSelection: {
         ...emptyFieldSelection,
         block: [Slot, Blockhash, BlockTime],
         transaction: [Slot, TransactionIndex, Signatures, FeePayer, Success, Err, Fee],
-        instruction: [
+        instructionCall: [
           Slot,
           TransactionIndex,
           InstructionAddress,
-          ProgramId,
-          Accounts,
+          ExecutingAccount,
+          AccountArguments,
           Data,
           D8,
           IsInner,
@@ -319,38 +364,36 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
     setExpandedFilterKey(_ => Some("instruction-0"))
   }
 
-  // Multi-DEX OR - two separate instructions[] entries combine with OR semantics.
-  // Each entry has only program_id set, so any ix from either Jupiter v6 or Whirlpool matches.
+  // Multi-DEX OR - two separate instruction_calls[] entries combine with OR semantics.
+  // Each entry only sets executing_account, so any ix from either Jupiter v6 or Whirlpool matches.
   let applyPresetJupiterOrOrca = () => {
     let from = switch currentHead {
     | Some(h) => h - 3
-    | None => 0
+    | None => historyFloorSlot
     }
     setQuery(_ => {
       ...defaultQuery(),
       fromSlot: from,
       toSlot: Some(from + 3),
-      instructions: Some([
+      instructionCalls: Some([
         {
           ...emptyInstructionSelection,
-          programId: Some([jupiterV6ProgramId]),
-          includeTransaction: true,
+          executingAccount: Some([jupiterV6ProgramId]),
         },
         {
           ...emptyInstructionSelection,
-          programId: Some([orcaWhirlpoolProgramId]),
-          includeTransaction: true,
+          executingAccount: Some([orcaWhirlpoolProgramId]),
         },
       ]),
-      fields: {
+      fieldSelection: {
         ...emptyFieldSelection,
         block: [Slot, Blockhash, BlockTime],
         transaction: [Slot, TransactionIndex, Signatures, FeePayer, Success, Fee],
-        instruction: [
+        instructionCall: [
           Slot,
           TransactionIndex,
           InstructionAddress,
-          ProgramId,
+          ExecutingAccount,
           Data,
           D8,
           IsInner,
@@ -364,11 +407,12 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
   }
 
   // Failed transactions - transaction-side filter using success: false.
-  // include_instructions pulls in every ix from each failed tx for inspection.
+  // Only transaction columns are selected: the server's trim policy keeps no
+  // instruction rows for failed transactions, so an instruction table would be empty.
   let applyPresetFailedTransactions = () => {
     let from = switch currentHead {
     | Some(h) => h - 3
-    | None => 0
+    | None => historyFloorSlot
     }
     setQuery(_ => {
       ...defaultQuery(),
@@ -378,10 +422,9 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
         {
           ...emptyTransactionSelection,
           success: Some(false),
-          includeInstructions: true,
         },
       ]),
-      fields: {
+      fieldSelection: {
         ...emptyFieldSelection,
         block: [Slot, Blockhash, BlockTime],
         transaction: [
@@ -394,21 +437,19 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
           Fee,
           ComputeUnitsConsumed,
         ],
-        instruction: [Slot, TransactionIndex, ProgramId, Data],
       },
       maxNumBlocks: Some(3),
       maxNumTransactions: Some(50),
-      maxNumInstructions: Some(200),
     })
     setExpandedFilterKey(_ => Some("transaction-0"))
   }
 
-  // Transactions by fee payer - inverse direction. Filter on the transactions table,
-  // then pull all ix that belong to those txs via include_instructions.
+  // Transactions by fee payer - inverse direction. Filter on the transactions table;
+  // selecting instruction_call columns pulls the instructions of those transactions.
   let applyPresetTxnsByFeePayer = () => {
     let from = switch currentHead {
     | Some(h) => h - 50
-    | None => 0
+    | None => historyFloorSlot
     }
     let payer = if looksLikePubkey(quickStartFeePayer) {
       quickStartFeePayer
@@ -423,10 +464,9 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
         {
           ...emptyTransactionSelection,
           feePayer: Some([payer]),
-          includeInstructions: true,
         },
       ]),
-      fields: {
+      fieldSelection: {
         ...emptyFieldSelection,
         block: [Slot, Blockhash, BlockTime],
         transaction: [
@@ -439,12 +479,12 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
           Fee,
           ComputeUnitsConsumed,
         ],
-        instruction: [
+        instructionCall: [
           Slot,
           TransactionIndex,
           InstructionAddress,
-          ProgramId,
-          Accounts,
+          ExecutingAccount,
+          AccountArguments,
           Data,
           D8,
         ],
@@ -456,10 +496,63 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
     setExpandedFilterKey(_ => Some("transaction-0"))
   }
 
+  // Every account activity row in a tight range: an empty selection matches all.
+  // There is no include_account_activity flag any more.
+  let applyPresetAccountActivity = () => {
+    let from = switch currentHead {
+    | Some(h) => h - 1
+    | None => historyFloorSlot
+    }
+    setQuery(_ => {
+      ...defaultQuery(),
+      fromSlot: from,
+      toSlot: Some(from + 1),
+      accountActivity: Some([emptyAccountActivitySelection]),
+      fieldSelection: {
+        ...emptyFieldSelection,
+        accountActivity: defaultAccountActivityFields,
+      },
+      maxNumAccountActivity: Some(200),
+    })
+    setExpandedFilterKey(_ => Some("account-activity-0"))
+  }
+
+  // Everything a wallet touched. `account` is the wallet on native rows but the token
+  // account on token rows, so this needs two selections: account = W OR owner = W.
+  let applyPresetWalletActivity = () => {
+    let from = switch currentHead {
+    | Some(h) => h - 50
+    | None => historyFloorSlot
+    }
+    let wallet = if looksLikePubkey(quickStartFeePayer) {
+      quickStartFeePayer
+    } else {
+      demoFeePayer
+    }
+    setQuery(_ => {
+      ...defaultQuery(),
+      fromSlot: from,
+      toSlot: Some(from + 50),
+      accountActivity: Some([
+        {...emptyAccountActivitySelection, account: Some([wallet])},
+        {...emptyAccountActivitySelection, owner: Some([wallet])},
+      ]),
+      fieldSelection: {
+        ...emptyFieldSelection,
+        transaction: [Slot, TransactionIndex, TransactionId, FeePayer, Success],
+        accountActivity: allAccountActivityFields,
+      },
+      maxNumAccountActivity: Some(200),
+      maxNumTransactions: Some(50),
+    })
+    setExpandedFilterKey(_ => Some("account-activity-0"))
+  }
+
   let totalFilters =
-    Array.length(query.instructions->Option.getOr([])) +
+    Array.length(query.instructionCalls->Option.getOr([])) +
     Array.length(query.transactions->Option.getOr([])) +
-    Array.length(query.logs->Option.getOr([]))
+    Array.length(query.logs->Option.getOr([])) +
+    Array.length(query.accountActivity->Option.getOr([]))
 
   <>
     {!AuthToken.isValidToken(bearerToken)
@@ -534,27 +627,54 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                     {"Network & Slot Range"->React.string}
                   </h3>
                   <p className="text-sm text-slate-600">
-                    {"Solana mainnet via the near-head endpoint"->React.string}
+                    {"Pick an endpoint and a slot range"->React.string}
                   </p>
                 </div>
 
-                <div className="mb-4 px-3 py-2 rounded-md bg-blue-50 border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-sm font-medium text-blue-900">
-                        {"Solana Mainnet (near head)"->React.string}
-                      </span>
+                <div className="mb-4">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {endpoints
+                    ->Array.map(ep => {
+                      let isActive = ep.host === endpointUrl
+                      <button
+                        key={ep.host}
+                        onClick={_ => setEndpointUrl(_ => ep.host)}
+                        title={ep.note}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${isActive
+                            ? "bg-slate-800 text-white border-slate-800"
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
+                      >
+                        {ep.label->React.string}
+                      </button>
+                    })
+                    ->React.array}
+                  </div>
+                  <div className="px-3 py-2 rounded-md bg-blue-50 border border-blue-200">
+                    <div className="flex items-center justify-between">
                       <div className="text-xs text-blue-700 font-mono">
-                        {"solana-near-head-test.hypersync.xyz"->React.string}
+                        {endpointUrl->React.string}
                       </div>
+                      {switch currentHead {
+                      | Some(h) =>
+                        <span className="text-xs text-blue-700">
+                          {`current head: slot ${Int.toString(h)}`->React.string}
+                        </span>
+                      | None =>
+                        <span className="text-xs text-blue-700">
+                          {"loading head..."->React.string}
+                        </span>
+                      }}
                     </div>
-                    {switch currentHead {
-                    | Some(h) =>
-                      <span className="text-xs text-blue-700">
-                        {`current head: slot ${Int.toString(h)}`->React.string}
-                      </span>
+                    {switch endpoints->Array.find(ep => ep.host === endpointUrl) {
+                    | Some(ep) =>
+                      <p className="mt-1 text-[11px] text-blue-800"> {ep.note->React.string} </p>
                     | None => React.null
                     }}
+                    <p className="mt-1 text-[11px] text-blue-800">
+                      {`History starts at slot ${Int.toString(
+                          historyFloorSlot,
+                        )}. Below that you get no data and no error: a range bounded under the floor comes back empty with next_slot equal to your from_slot, so paging stalls, and an open-ended one jumps to the floor.`->React.string}
+                    </p>
                   </div>
                 </div>
 
@@ -609,6 +729,9 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                   </div>
                 </div>
 
+                <p className="text-[11px] text-slate-500 mb-2">
+                  {"The max_num_* knobs are approximate server-side bounds, not exact caps: a response can overshoot them."->React.string}
+                </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                   {[
                     (
@@ -630,6 +753,11 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                       "max_num_logs",
                       query.maxNumLogs,
                       n => setQuery(prev => {...prev, maxNumLogs: n}),
+                    ),
+                    (
+                      "max_num_account_activity",
+                      query.maxNumAccountActivity,
+                      n => setQuery(prev => {...prev, maxNumAccountActivity: n}),
                     ),
                   ]
                   ->Array.map(((label, value, onSet)) =>
@@ -692,7 +820,7 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                         let target = ReactEvent.Form.target(e)
                         setQuickStartFeePayer(_ => target["value"])
                       }}
-                      placeholder="Fee payer pubkey for the 'Txns by Fee Payer' preset (base58)"
+                      placeholder="Pubkey for the 'Txns by Fee Payer' and 'Wallet Activity' presets (base58)"
                       className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-colors"
                     />
                     <span className="text-[11px] text-slate-500">
@@ -709,49 +837,71 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                     <button
                       onClick={_ => applyPresetSplTokenTransfers()}
                       title="SPL Token Transfer ix - filtered by program_id and the 1-byte d1 discriminator"
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"SPL Token Transfers (d1)"->React.string}
                     </button>
                     <button
                       onClick={_ => applyPresetToken2022Transfers()}
                       title="Token-2022 Transfer ix - same d1 byte, different program ID"
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"Token-2022 Transfers (d1)"->React.string}
                     </button>
                     <button
                       onClick={_ => applyPresetSystemTransfers()}
                       title="System Program transfer (lamports) - native programs use 4-byte LE u32 indices"
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"System SOL Transfers (d4)"->React.string}
                     </button>
                     <button
                       onClick={_ => applyPresetWhirlpoolSwaps()}
                       title="Orca Whirlpool swap - Anchor programs use 8-byte hash discriminators"
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"Whirlpool Swaps (d8 Anchor)"->React.string}
                     </button>
                     <button
                       onClick={_ => applyPresetJupiterOrOrca()}
-                      title="Two entries in the instructions[] array combine with OR semantics"
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      title="Two entries in the instruction_calls[] array combine with OR semantics"
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"Jupiter OR Orca (multi-filter OR)"->React.string}
                     </button>
                     <button
                       onClick={_ => applyPresetFailedTransactions()}
-                      title="Filter on the transactions table by success: false, then pull each failed tx's ix via include_instructions"
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      title="Filter on the transactions table by success: false. No instruction rows are kept for failed transactions, so only transaction columns are selected"
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"Failed Transactions"->React.string}
                     </button>
                     <button
                       onClick={_ => applyPresetTxnsByFeePayer()}
-                      title="Inverse direction - filter txs by fee_payer, include_instructions pulls the ix"
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      title="Inverse direction - filter txs by fee_payer; selecting instruction columns pulls their instructions"
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"Txns by Fee Payer"->React.string}
+                    </button>
+                    <button
+                      onClick={_ => applyPresetAccountActivity()}
+                      title="account_activity: [{}] - an empty selection returns every activity row in the range"
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      {"All Account Activity"->React.string}
+                    </button>
+                    <button
+                      onClick={_ => applyPresetWalletActivity()}
+                      title="Everything one wallet touched - two selections, account = W OR owner = W"
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      {"Wallet Activity (account OR owner)"->React.string}
                     </button>
                     <button
                       onClick={_ => applyPresetAllBlocks()}
                       title="include_all_blocks: true - returns every block in the slot range"
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                       {"All Blocks"->React.string}
                     </button>
                   </div>
@@ -772,6 +922,8 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                       <span className="font-medium"> {"transactions"->React.string} </span>
                       {", "->React.string}
                       <span className="font-medium"> {"logs"->React.string} </span>
+                      {", "->React.string}
+                      <span className="font-medium"> {"account activity"->React.string} </span>
                     </p>
                   </div>
                   {totalFilters > 0
@@ -805,12 +957,18 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                     >
                       {"+ Log Filter"->React.string}
                     </button>
+                    <button
+                      onClick={_ => addAccountActivityFilter()}
+                      className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-950 transition-colors"
+                    >
+                      {"+ Account Activity Filter"->React.string}
+                    </button>
                   </div>
                 </div>
 
                 {totalFilters > 0
                   ? <div className="grid gap-4">
-                      {query.instructions
+                      {query.instructionCalls
                       ->Option.getOr([])
                       ->Array.mapWithIndex((f, i) =>
                         <SolanaInstructionFilter
@@ -821,6 +979,8 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                           filterIndex={i}
                           isExpanded={expandedFilterKey === Some(`instruction-${Int.toString(i)}`)}
                           onToggleExpand={() => toggleFilter(`instruction-${Int.toString(i)}`)}
+                          selectedTables={currentTables}
+                          onIncludeTable={includeTableFields}
                         />
                       )
                       ->React.array}
@@ -835,6 +995,8 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                           filterIndex={i}
                           isExpanded={expandedFilterKey === Some(`transaction-${Int.toString(i)}`)}
                           onToggleExpand={() => toggleFilter(`transaction-${Int.toString(i)}`)}
+                          selectedTables={currentTables}
+                          onIncludeTable={includeTableFields}
                         />
                       )
                       ->React.array}
@@ -849,6 +1011,25 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                           filterIndex={i}
                           isExpanded={expandedFilterKey === Some(`log-${Int.toString(i)}`)}
                           onToggleExpand={() => toggleFilter(`log-${Int.toString(i)}`)}
+                          selectedTables={currentTables}
+                          onIncludeTable={includeTableFields}
+                        />
+                      )
+                      ->React.array}
+                      {query.accountActivity
+                      ->Option.getOr([])
+                      ->Array.mapWithIndex((f, i) =>
+                        <SolanaAccountActivityFilter
+                          key={`account-activity-${Int.toString(i)}`}
+                          filterState={f}
+                          onFilterChange={updateAccountActivityFilter(i, _)}
+                          onRemove={() => removeAccountActivityFilter(i)}
+                          filterIndex={i}
+                          isExpanded={expandedFilterKey ===
+                            Some(`account-activity-${Int.toString(i)}`)}
+                          onToggleExpand={() => toggleFilter(`account-activity-${Int.toString(i)}`)}
+                          selectedTables={currentTables}
+                          onIncludeTable={includeTableFields}
                         />
                       )
                       ->React.array}
@@ -878,7 +1059,8 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
                   </div>
                 </div>
                 <SolanaFieldSelector
-                  fieldSelection={query.fields} onFieldSelectionChange={updateFieldSelection}
+                  fieldSelection={query.fieldSelection}
+                  onFieldSelectionChange={updateFieldSelection}
                 />
               </div>
             </div>
@@ -907,7 +1089,10 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
               </div>
             </div>
             <SolanaQueryResults
-              query={query} executeSignal={executeSignal} bearerToken={bearerToken}
+              query={query}
+              executeSignal={executeSignal}
+              bearerToken={bearerToken}
+              endpointUrl={endpointUrl}
             />
           </div>
         </div>
