@@ -49,6 +49,7 @@ let make = (~bearerToken: option<string>, ~onTokenSubmit: string => unit) => {
   let (currentHead, setCurrentHead) = React.useState(() => None)
   let (quickStartFeePayer, setQuickStartFeePayer) = React.useState(() => "")
   let (endpointUrl, setEndpointUrl) = React.useState(() => defaultEndpoint)
+  let historyFloorSlot = historyFloorFor(endpointUrl)
 
   // Fetch the selected endpoint's head so users can pick a sensible from_slot.
   // The head is cleared first so a switch never shows the previous endpoint's value,
