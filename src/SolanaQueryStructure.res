@@ -116,11 +116,10 @@ let emptyAccountActivitySelection: accountActivitySelection = {
 let activityKinds: array<string> = ["native", "token"]
 let logKinds: array<string> = ["invoke", "success", "failed", "consumed", "log", "data", "other"]
 
-// Endpoints. solana-near-head-test.hypersync.xyz is gone; these two are live and
-// both answer CORS preflights, so the browser can call them directly.
+// Endpoints. Both answer CORS preflights, so the browser can call them directly.
 //
-// Below the history floor the server never errors, and what it does depends on the
-// range (measured 2026-08-18 against both hosts):
+// Below each endpoint's history floor the server never errors, and what it does
+// depends on the range (measured 2026-08-25):
 // - open ended (no to_slot): it jumps ahead, returning rows from the floor with
 //   next_slot past it, so the range asked for is skipped
 // - bounded entirely below the floor: an empty page with next_slot EQUAL to the
@@ -130,25 +129,31 @@ type endpoint = {
   label: string,
   host: string,
   note: string,
+  historyFloorSlot: int,
 }
 
 let endpoints: array<endpoint> = [
   {
     label: "Solana Mainnet",
     host: "https://solana.hypersync.xyz",
-    note: "Near head. The default unless you need older slots.",
+    note: "Mainnet. Default endpoint.",
+    historyFloorSlot: 403_000_000,
   },
   {
-    label: "Solana Mainnet (history)",
-    host: "https://solana-mainnet-history.hypersync.xyz",
-    note: "History endpoint. Serves the same floor as near head today.",
+    label: "Solana Testnet",
+    host: "https://solana-devnet.hypersync.xyz",
+    note: "Solana Devnet. Same query API as mainnet.",
+    historyFloorSlot: 485_183_000,
   },
 ]
 
 let defaultEndpoint = "https://solana.hypersync.xyz"
 
-// First slot either endpoint serves, bisected 2026-08-18. Below it there is no data.
-let historyFloorSlot = 403_000_000
+let historyFloorFor = (host: string): int =>
+  switch endpoints->Array.find(ep => ep.host === host) {
+  | Some(ep) => ep.historyFloorSlot
+  | None => 403_000_000
+  }
 
 // Field selection enums (snake_case wire names via @as)
 
